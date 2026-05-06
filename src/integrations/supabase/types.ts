@@ -14,13 +14,293 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cards: {
+        Row: {
+          created_at: string
+          id: string
+          post_time: string
+          race_date: string
+          source_id: string | null
+          status: string
+          track_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_time: string
+          race_date: string
+          source_id?: string | null
+          status?: string
+          track_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_time?: string
+          race_date?: string
+          source_id?: string | null
+          status?: string
+          track_name?: string
+        }
+        Relationships: []
+      }
+      horses: {
+        Row: {
+          id: string
+          jockey: string | null
+          name: string
+          number: number
+          odds: string | null
+          race_id: string
+        }
+        Insert: {
+          id?: string
+          jockey?: string | null
+          name: string
+          number: number
+          odds?: string | null
+          race_id: string
+        }
+        Update: {
+          id?: string
+          jockey?: string | null
+          name?: string
+          number?: number
+          odds?: string | null
+          race_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "horses_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      picks: {
+        Row: {
+          created_at: string
+          horse_id: string
+          id: string
+          points: number | null
+          race_id: string
+          scrum_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          horse_id: string
+          id?: string
+          points?: number | null
+          race_id: string
+          scrum_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          horse_id?: string
+          id?: string
+          points?: number | null
+          race_id?: string
+          scrum_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "picks_horse_id_fkey"
+            columns: ["horse_id"]
+            isOneToOne: false
+            referencedRelation: "horses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picks_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picks_scrum_id_fkey"
+            columns: ["scrum_id"]
+            isOneToOne: false
+            referencedRelation: "scrums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          cap_color: string
+          created_at: string
+          handle: string
+          id: string
+        }
+        Insert: {
+          cap_color?: string
+          created_at?: string
+          handle: string
+          id: string
+        }
+        Update: {
+          cap_color?: string
+          created_at?: string
+          handle?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      races: {
+        Row: {
+          card_id: string
+          id: string
+          name: string | null
+          off_time: string
+          race_number: number
+          status: string
+          winners: Json | null
+        }
+        Insert: {
+          card_id: string
+          id?: string
+          name?: string | null
+          off_time: string
+          race_number: number
+          status?: string
+          winners?: Json | null
+        }
+        Update: {
+          card_id?: string
+          id?: string
+          name?: string | null
+          off_time?: string
+          race_number?: number
+          status?: string
+          winners?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "races_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrum_members: {
+        Row: {
+          joined_at: string
+          scrum_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          scrum_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          scrum_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrum_members_scrum_id_fkey"
+            columns: ["scrum_id"]
+            isOneToOne: false
+            referencedRelation: "scrums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrum_results: {
+        Row: {
+          finalized_at: string | null
+          place: number
+          rank: number | null
+          scrum_id: string
+          show: number
+          total_points: number
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          finalized_at?: string | null
+          place?: number
+          rank?: number | null
+          scrum_id: string
+          show?: number
+          total_points?: number
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          finalized_at?: string | null
+          place?: number
+          rank?: number | null
+          scrum_id?: string
+          show?: number
+          total_points?: number
+          user_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrum_results_scrum_id_fkey"
+            columns: ["scrum_id"]
+            isOneToOne: false
+            referencedRelation: "scrums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrums: {
+        Row: {
+          card_id: string
+          created_at: string
+          host_id: string
+          id: string
+          join_code: string
+          name: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          host_id: string
+          id?: string
+          join_code: string
+          name: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          host_id?: string
+          id?: string
+          join_code?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrums_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_scrum_member: {
+        Args: { _scrum_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
