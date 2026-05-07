@@ -19,5 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const courses = await courseRes.json();
   const runners = runnerRes.ok ? await runnerRes.json() : {};
 
+  console.log("OurHub runners sample:", JSON.stringify(runners).slice(0, 500));
+
   res.json({ courses, runners });
 }
