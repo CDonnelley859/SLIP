@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const day = body.date ?? "today";
 
     const auth = "Basic " + btoa(`${u}:${p}`);
-    const url = `https://api.theracingapi.com/v1/racecards/pro?day=${day}`;
+    const url = `https://api.theracingapi.com/v1/racecards/standard?day=${day}`;
     const res = await fetch(url, { headers: { Authorization: auth } });
     if (!res.ok) {
       const txt = await res.text();
