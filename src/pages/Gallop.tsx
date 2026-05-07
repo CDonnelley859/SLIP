@@ -3,8 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection, setDoc, serverTimestamp } from "firebase/firestore";
-import { PageShell } from "@/components/PageShell";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 type Horse = { id: string; number: number; name: string; jockey: string | null; odds: string | null };
@@ -13,52 +11,61 @@ type Race = { id: string; raceNumber: number; name: string | null; offTime: stri
 const Gallop = () => {
   const { id } = useParams();
   const { userId } = useAuth();
+  const navigate = useNavigate();
   const [card, setCard] = useState<any>(null);
   const [races, setRaces] = useState<Race[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const navigate = useNavigate();
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     (async () => {
       const scrumSnap = await getDoc(doc(db, "scrums", id));
       if (!scrumSnap.exists()) return;
-      const scrumData = scrumSnap.data();
+      const scrum = scrumSnap.data();
 
-      const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
-      if (cardSnap.exists()) setCard(cardSnap.data());
+      const cardSnap = await getDoc(doc(db, "cards", scrum.cardId));
+      if (cardSnap.exists()) setCard({ id: scrum.cardId, ...cardSnap.data() });
 
-      const racesSnap = await getDocs(collection(db, "cards", scrumData.cardId, "races"));
-      const raceList: Race[] = [];
+      const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
+      const list: Race[] = [];
       for (const r of racesSnap.docs) {
-        const horsesSnap = await getDocs(collection(db, "cards", scrumData.cardId, "races", r.id, "horses"));
-        const horses = horsesSnap.docs.map(h => ({ id: h.id, ...h.data() } as Horse)).sort((a, b) => a.number - b.number);
-        raceList.push({ id: r.id, ...r.data(), horses } as Race);
+        const horsesSnap = await getDocs(
+          collection(db, "cards", scrum.cardId, "races", r.id, "horses")
+        );
+        const horses = horsesSnap.docs
+          .map(h => ({ id: h.id, ...h.data() } as Horse))
+          .sort((a, b) => a.number - b.number);
+        list.push({ id: r.id, ...r.data(), horses } as Race);
       }
-      setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
+      setRaces(list.sort((a, b) => a.raceNumber - b.raceNumber));
 
       const picksSnap = await getDocs(collection(db, "scrums", id, "picks"));
       const map: Record<string, string> = {};
-      picksSnap.docs.filter(p => p.data().userId === userId).forEach(p => {
-        map[p.data().raceId] = p.data().horseId;
-      });
+      picksSnap.docs
+        .filter(p => p.data().userId === userId)
+        .forEach(p => { map[p.data().raceId] = p.data().horseId; });
       setPicks(map);
     })();
   }, [id]);
 
-  const submit = async () => {
-    if (Object.keys(picks).length !== races.length) {
-      toast.error("Pick a horse in every race");
-      return;
-    }
-    setBusy(true);
+  const currentRace = races[currentIdx];
+  const isLastRace = currentIdx === races.length - 1;
+  const allPicked = races.length > 0 && races.every(r => picks[r.id]);
+  const currentPick = currentRace ? picks[currentRace.id] : undefined;
+  const isLocked = currentRace
+    ? new Date(currentRace.offTime).getTime() <= Date.now()
+    : false;
+
+  async function handleSubmit() {
+    if (!allPicked) { toast.error("Pick a horse in every race"); return; }
+    setSubmitting(true);
     try {
       for (const [raceId, horseId] of Object.entries(picks)) {
-        const pickId = `${userId}_${raceId}`;
-        await setDoc(doc(db, "scrums", id!, "picks", pickId), {
-          scrumId: id,
+        await setDoc(doc(db, "scrums", id!, "picks", `${userId}_${raceId}`), {
           userId,
+          scrumId: id,
           raceId,
           horseId,
           points: null,
@@ -69,62 +76,140 @@ const Gallop = () => {
     } catch (err: any) {
       toast.error(err.message);
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
-  };
+  }
+
+  if (!currentRace) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-label-caps uppercase text-muted-foreground">Loading card…</p>
+      </div>
+    );
+  }
+
+  const offTime = currentRace.offTime
+    ? new Date(currentRace.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "—";
 
   return (
-    <PageShell title="Daily Gallop" back={`/scrum/${id}/stalls`}>
-      <div className="text-xs text-muted-foreground mb-4">
-        {card?.trackName} · ink one horse per race
-      </div>
-      <div className="space-y-6">
-        {races.map((r) => {
-          const isLocked = new Date(r.offTime).getTime() <= Date.now();
-          return (
-            <div key={r.id} className={`bg-card rounded-lg border border-border overflow-hidden ${isLocked ? "opacity-60" : ""}`}>
-              <div className="px-4 py-2 border-b border-border flex justify-between items-baseline">
-                <div className="font-display text-lg">Race {r.raceNumber}{r.name ? ` · ${r.name}` : ""}</div>
-                <div className="flex items-center gap-2">
-                  {isLocked && <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">Locked</span>}
-                  <div className="text-xs text-muted-foreground font-mono">
-                    {new Date(r.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Newspaper-style header */}
+      <header className="w-full border-b-brutalist bg-background px-4 sticky top-0 z-50">
+        <div className="flex justify-between items-baseline py-2">
+          <h1 className="text-[44px] font-black tracking-tighter leading-none">SLIP</h1>
+          <div className="text-label-caps">{card?.raceDate ?? ""}</div>
+        </div>
+        <div className="border-t border-primary/20 pt-1 pb-2 flex justify-between items-center">
+          <h2 className="text-[22px] font-black uppercase tracking-tight flex-1 leading-tight">
+            {card?.trackName ?? "—"}
+          </h2>
+          <span className="text-data-mono text-[16px] border-l border-primary/20 pl-2 ml-2">
+            {offTime}
+          </span>
+        </div>
+      </header>
+
+      <main className="flex-grow px-4 pt-4 pb-[80px]">
+        {/* Race label */}
+        <div className="flex justify-between items-end border-b-brutalist mb-3 pb-2">
+          <div>
+            <span className="text-label-caps text-muted-foreground uppercase">
+              Entry {String(currentIdx + 1).padStart(2, "0")} of {String(races.length).padStart(2, "0")}
+            </span>
+            <h3 className="text-[48px] font-black uppercase leading-none">
+              RACE {String(currentRace.raceNumber).padStart(2, "0")}
+            </h3>
+          </div>
+          <div className="text-right pb-1">
+            {currentRace.name && (
+              <div className="text-headline-md leading-none uppercase">{currentRace.name}</div>
+            )}
+            {isLocked && (
+              <div className="text-label-caps text-destructive uppercase mt-1">LOCKED</div>
+            )}
+          </div>
+        </div>
+
+        {/* Horses */}
+        <div className="border-brutalist divide-y divide-primary/20 bg-background">
+          {currentRace.horses.map((h) => {
+            const selected = currentPick === h.id;
+            return (
+              <button
+                key={h.id}
+                type="button"
+                disabled={isLocked}
+                onClick={() => !isLocked && setPicks(p => ({ ...p, [currentRace.id]: h.id }))}
+                className={`w-full flex items-center gap-4 px-4 py-3 text-left relative transition-none
+                  ${selected ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}
+                  ${isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+              >
+                {selected && (
+                  <div className="absolute inset-0 x-stamp opacity-10 pointer-events-none" />
+                )}
+                <span className="text-headline-md w-8 text-center shrink-0">{h.number}</span>
+                <div className="flex-1 text-left">
+                  <div className="text-body-lg uppercase">{h.name}</div>
+                  {h.jockey && (
+                    <div className="text-label-caps opacity-60">{h.jockey}</div>
+                  )}
                 </div>
-              </div>
-              <div className="divide-y divide-border">
-                {r.horses.map((h) => {
-                  const selected = picks[r.id] === h.id;
-                  return (
-                    <button key={h.id} type="button" disabled={isLocked}
-                      onClick={() => !isLocked && setPicks((p) => ({ ...p, [r.id]: h.id }))}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition relative
-                        ${selected ? "bg-primary/10" : "hover:bg-muted/30"}
-                        ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
-                    >
-                      <span className="font-mono w-6 text-center brass-text">{h.number}</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">{h.name}</div>
-                        {h.jockey && <div className="text-xs text-muted-foreground">{h.jockey}</div>}
-                      </div>
-                      <span className="font-mono text-sm text-muted-foreground">{h.odds}</span>
-                      {selected && (
-                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-primary text-5xl font-display opacity-30">✕</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                <span className="text-body-md font-mono shrink-0">{h.odds ?? "—"}</span>
+                {selected && (
+                  <span className="text-label-caps border border-current px-1 py-0.5 shrink-0">
+                    INKED
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Send to print — only when all races are picked */}
+        {allPicked && (
+          <div className="mt-6 border-brutalist p-4 bg-background">
+            <div className="flex justify-between items-center mb-3 border-b border-primary/20 pb-2">
+              <h4 className="text-label-caps uppercase">Selection Slip</h4>
+              <span className="text-label-caps text-muted-foreground">
+                R1–R{races.length} COMPLETE
+              </span>
             </div>
-          );
-        })}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist disabled:opacity-40 transition-none"
+            >
+              {submitting ? "PRINTING…" : "SEND TO PRINT"}
+            </button>
+            <p className="text-center text-label-caps text-muted-foreground mt-2 uppercase">
+              Confirmation generates your official slip
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* Bottom flipper nav */}
+      <div className="fixed bottom-0 left-0 w-full h-[60px] z-50 flex items-center justify-between border-t-brutalist bg-background px-4">
+        <button
+          onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}
+          disabled={currentIdx === 0}
+          className="text-label-caps uppercase disabled:opacity-30 transition-none"
+        >
+          ← PREV
+        </button>
+        <div className="text-data-mono font-bold tracking-widest">
+          {String(currentIdx + 1).padStart(2, "0")} / {String(races.length).padStart(2, "0")}
+        </div>
+        <button
+          onClick={() => setCurrentIdx(i => Math.min(races.length - 1, i + 1))}
+          disabled={isLastRace}
+          className="text-label-caps uppercase disabled:opacity-30 transition-none"
+        >
+          NEXT →
+        </button>
       </div>
-      <div className="sticky bottom-0 -mx-6 px-6 py-4 bg-background/95 backdrop-blur border-t border-border mt-6">
-        <Button onClick={submit} disabled={busy} className="w-full font-display" size="lg">
-          Validate Slip ({Object.keys(picks).length}/{races.length})
-        </Button>
-      </div>
-    </PageShell>
+    </div>
   );
 };
 

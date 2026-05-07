@@ -1,7 +1,7 @@
 import { db } from "@/lib/firebase";
 import {
   collection, doc, setDoc, getDocs, query,
-  where, writeBatch, Timestamp,
+  where, writeBatch,
 } from "firebase/firestore";
 
 const API_KEY = import.meta.env.VITE_RACING_API_KEY;
@@ -15,7 +15,14 @@ async function apiFetch(path: string) {
   return res.json();
 }
 
-// Pull today's UK racecards and write to Firestore
+// 1st = 5pts, 2nd = 3pts, 3rd = 1pt
+function pointsForPosition(position: number): number {
+  if (position === 1) return 5;
+  if (position === 2) return 3;
+  if (position === 3) return 1;
+  return 0;
+}
+
 export async function syncCards(): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const data = await apiFetch(`/racecards/pro?date=${today}&region=gb`);
@@ -65,7 +72,6 @@ export async function syncCards(): Promise<number> {
   return count;
 }
 
-// Pull results for a card and update picks with points
 export async function syncResults(cardId: string): Promise<void> {
   const racesSnap = await getDocs(collection(db, "cards", cardId, "races"));
 
@@ -76,39 +82,49 @@ export async function syncResults(cardId: string): Promise<void> {
     try {
       const data = await apiFetch(`/results/${raceDoc.id}`);
       const result = data.result ?? data;
-      const winner = result.runners?.find((r: any) => r.position === 1);
-      if (!winner) continue;
+      const runners: any[] = result.runners ?? [];
+
+      const getRunnerAtPosition = (pos: number) =>
+        runners.find((r: any) => Number(r.position) === pos);
+
+      const first = getRunnerAtPosition(1);
+      const second = getRunnerAtPosition(2);
+      const third = getRunnerAtPosition(3);
+
+      if (!first) continue;
 
       const batch = writeBatch(db);
 
-      // Mark race settled
       batch.update(doc(db, "cards", cardId, "races", raceDoc.id), {
         status: "settled",
-        winners: [{ horseId: winner.horse_id, horseName: winner.horse, position: 1 }],
+        winners: {
+          first: first.horse_id ?? null,
+          second: second?.horse_id ?? null,
+          third: third?.horse_id ?? null,
+        },
       });
 
-      // Find all picks for this race across all scrums and award points
-      const scrumPicksSnap = await getDocs(
+      const scrumSnap = await getDocs(
         query(collection(db, "scrums"), where("cardId", "==", cardId))
       );
 
-      for (const scrumDoc of scrumPicksSnap.docs) {
+      for (const scrumDoc of scrumSnap.docs) {
         const picksSnap = await getDocs(
           query(collection(db, "scrums", scrumDoc.id, "picks"), where("raceId", "==", raceDoc.id))
         );
         for (const pickDoc of picksSnap.docs) {
-          const pick = pickDoc.data();
-          const horsesSnap = await getDocs(collection(db, "cards", cardId, "races", raceDoc.id, "horses"));
-          const horse = horsesSnap.docs.find(h => h.id === pick.horseId);
-          const horseName = horse?.data().name ?? "";
-          const isWinner = horseName.toLowerCase() === winner.horse.toLowerCase();
-          batch.update(pickDoc.ref, { points: isWinner ? 1 : 0 });
+          const { horseId } = pickDoc.data();
+          let points = 0;
+          if (horseId === first.horse_id) points = 5;
+          else if (horseId === second?.horse_id) points = 3;
+          else if (horseId === third?.horse_id) points = 1;
+          batch.update(pickDoc.ref, { points });
         }
       }
 
       await batch.commit();
     } catch {
-      // Race result not available yet — skip silently
+      // result not available yet — skip silently
     }
   }
 }

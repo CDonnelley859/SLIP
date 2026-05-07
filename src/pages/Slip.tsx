@@ -1,14 +1,63 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, getDocs, collection, query, where, onSnapshot } from "firebase/firestore";
-import { PageShell } from "@/components/PageShell";
+import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
 import { syncResults } from "@/lib/racingApi";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
-type Line = { raceNumber: number; horseName: string; horseNumber: number; status: string; points: number | null };
+type LineStatus = "WIN" | "PLACE" | "SHOW" | "OUT" | "RUNNING" | "PENDING";
+
+type Line = {
+  raceNumber: number;
+  horseName: string;
+  horseNumber: number;
+  status: LineStatus;
+  points: number;
+};
+
+function getStatus(raceStatus: string, horseId: string, winners: any): LineStatus {
+  if (raceStatus === "upcoming") return "PENDING";
+  if (raceStatus === "live") return "RUNNING";
+  if (!winners) return "OUT";
+  if (winners.first === horseId) return "WIN";
+  if (winners.second === horseId) return "PLACE";
+  if (winners.third === horseId) return "SHOW";
+  return "OUT";
+}
+
+function pointsFor(status: LineStatus): number {
+  if (status === "WIN") return 5;
+  if (status === "PLACE") return 3;
+  if (status === "SHOW") return 1;
+  return 0;
+}
+
+const StatusBadge = ({ status }: { status: LineStatus }) => {
+  if (status === "RUNNING") return (
+    <div className="flex items-center gap-1">
+      <div className="w-4 h-4 bg-primary animate-pulse" />
+      <span className="text-label-caps">RUNNING</span>
+    </div>
+  );
+  if (status === "PENDING") return (
+    <span className="text-label-caps opacity-30">PENDING</span>
+  );
+  if (status === "WIN") return (
+    <div className="text-headline-md uppercase stamp-win">WIN</div>
+  );
+  if (status === "PLACE") return (
+    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-8deg)" }}>
+      PLACE
+    </div>
+  );
+  if (status === "SHOW") return (
+    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-6deg)" }}>
+      SHOW
+    </div>
+  );
+  return <div className="text-label-caps text-muted-foreground">OUT</div>;
+};
 
 const Slip = () => {
   const { id } = useParams();
@@ -16,6 +65,11 @@ const Slip = () => {
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [lines, setLines] = useState<Line[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const serial = id
+    ? `${id.slice(0, 3).toUpperCase()} ${id.slice(3, 6).toUpperCase()}`
+    : "--- ---";
 
   useEffect(() => {
     if (!id) return;
@@ -30,7 +84,11 @@ const Slip = () => {
       const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
       if (cardSnap.exists()) setCard(cardSnap.data());
 
-      const picksQ = query(collection(db, "scrums", id, "picks"), where("userId", "==", userId));
+      const picksQ = query(
+        collection(db, "scrums", id, "picks"),
+        where("userId", "==", userId)
+      );
+
       unsub = onSnapshot(picksQ, async (snap) => {
         const built: Line[] = [];
         for (const p of snap.docs) {
@@ -40,12 +98,15 @@ const Slip = () => {
             getDoc(doc(db, "cards", scrumData.cardId, "races", pick.raceId, "horses", pick.horseId)),
           ]);
           if (!raceSnap.exists() || !horseSnap.exists()) continue;
+          const race = raceSnap.data();
+          const horse = horseSnap.data();
+          const status = getStatus(race.status, pick.horseId, race.winners);
           built.push({
-            raceNumber: raceSnap.data().raceNumber,
-            horseName: horseSnap.data().name,
-            horseNumber: horseSnap.data().number,
-            status: raceSnap.data().status,
-            points: pick.points ?? null,
+            raceNumber: race.raceNumber,
+            horseName: horse.name,
+            horseNumber: horse.number,
+            status,
+            points: pointsFor(status),
           });
         }
         setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
@@ -55,49 +116,115 @@ const Slip = () => {
     return () => { unsub?.(); };
   }, [id]);
 
-  const total = lines.reduce((sum, l) => sum + (l.points ?? 0), 0);
+  const total = lines.reduce((sum, l) => sum + l.points, 0);
 
   async function handleRefresh() {
     if (!scrum?.cardId) return;
-    toast.loading("Pulling results…", { id: "r" });
+    setRefreshing(true);
     try {
       await syncResults(scrum.cardId);
-      toast.success("Results updated", { id: "r" });
+      toast.success("Results updated");
     } catch (err: any) {
-      toast.error(err.message ?? "Failed", { id: "r" });
+      toast.error(err.message ?? "Failed to refresh");
+    } finally {
+      setRefreshing(false);
     }
   }
 
   return (
-    <PageShell title="Official Slip">
-      <button onClick={handleRefresh} className="text-xs text-primary hover:underline mb-3">
-        Refresh results
-      </button>
-      <motion.div
-        initial={{ scaleY: 0, originY: 0 }}
-        animate={{ scaleY: 1 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="slip-paper rounded-sm p-6 font-mono"
-      >
-        <div className="text-center border-b-2 border-dashed border-paper-ink/30 pb-3 mb-4">
-          <div className="font-display font-black text-2xl tracking-tight">SLIP</div>
-          <div className="text-xs uppercase tracking-widest opacity-70">{card?.trackName}</div>
-          <div className="text-xs opacity-60">{scrum?.name}</div>
+    <div className="min-h-screen bg-background flex flex-col items-center py-10 px-4">
+      {/* Ticket */}
+      <div className="animate-print relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
+        {/* Notches */}
+        <div style={{
+          position: "absolute", left: -10, top: "20%",
+          width: 20, height: 20,
+          background: "#f9f9f9", borderRadius: "50%",
+          borderRight: "2.67px solid black", zIndex: 10,
+        }} />
+        <div style={{
+          position: "absolute", right: -10, top: "20%",
+          width: 20, height: 20,
+          background: "#f9f9f9", borderRadius: "50%",
+          borderLeft: "2.67px solid black", zIndex: 10,
+        }} />
+
+        {/* Stub */}
+        <div className="p-6 pt-10 border-b-[2.67px] border-dashed border-primary flex flex-col items-center gap-3">
+          <span className="text-headline-lg uppercase text-center leading-tight">
+            {card?.trackName ?? "—"}
+          </span>
+          <span className="text-label-caps text-muted-foreground uppercase">
+            {scrum?.name ?? "—"}
+          </span>
+          <div className="bg-primary text-primary-foreground px-4 py-2 font-mono tracking-widest text-data-mono">
+            {serial}
+          </div>
         </div>
-        <div className="space-y-2 text-sm">
-          {lines.map((l, i) => (
-            <div key={i} className="flex justify-between">
-              <span>R{l.raceNumber} · #{l.horseNumber} {l.horseName}</span>
-              <span className="font-bold">{l.status === "settled" ? `${l.points ?? 0} pt` : "—"}</span>
-            </div>
-          ))}
+
+        {/* Race lines */}
+        <div className="p-6 space-y-4">
+          {lines.length === 0 && (
+            <p className="text-label-caps text-muted-foreground uppercase text-center py-4">
+              No picks yet — head to the Daily Gallop
+            </p>
+          )}
+          {lines.map((l, i) => {
+            const isOut = l.status === "OUT";
+            const isPending = l.status === "PENDING";
+            const isRunning = l.status === "RUNNING";
+            const isSettled = l.status === "WIN" || l.status === "PLACE" || l.status === "SHOW";
+            return (
+              <div
+                key={i}
+                className={`flex justify-between items-center border-b border-primary/10 pb-3 last:border-0 ${isOut ? "opacity-50" : ""}`}
+              >
+                <div className="flex flex-col">
+                  <span className="text-label-caps text-muted-foreground">
+                    RACE {String(l.raceNumber).padStart(2, "0")}
+                  </span>
+                  <span className={`text-body-lg ${isOut ? "line-through" : ""}`}>
+                    {l.horseNumber}. {l.horseName}
+                  </span>
+                  <span className={`text-label-caps mt-1 ${isSettled ? "text-primary" : "text-muted-foreground"}`}>
+                    {isPending && "PENDING…"}
+                    {isRunning && "IN PROGRESS…"}
+                    {isOut && "+0 PTS"}
+                    {isSettled && `+${l.points} PTS`}
+                  </span>
+                </div>
+                <StatusBadge status={l.status} />
+              </div>
+            );
+          })}
         </div>
-        <div className="border-t-2 border-dashed border-paper-ink/30 mt-4 pt-3 flex justify-between font-bold">
-          <span>TOTAL</span>
-          <span>{total} pts</span>
-        </div>
-      </motion.div>
-    </PageShell>
+
+        {/* Total */}
+        {lines.length > 0 && (
+          <div className="mx-6 mb-6 border-t-[2.67px] border-primary pt-3 flex justify-between text-headline-md uppercase">
+            <span>TOTAL</span>
+            <span>{total} PTS</span>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="w-full max-w-md mt-6 flex flex-col gap-3">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="w-full h-12 border-brutalist text-label-caps uppercase disabled:opacity-40 transition-none"
+        >
+          {refreshing ? "REFRESHING…" : "REFRESH RESULTS"}
+        </button>
+        <Link
+          to="/"
+          className="w-full h-12 flex items-center justify-center text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
+        >
+          BACK TO PADDOCK
+        </Link>
+      </div>
+    </div>
   );
 };
 

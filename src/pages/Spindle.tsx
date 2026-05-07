@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
-import { PageShell } from "@/components/PageShell";
-import { Trophy, BarChart3, Ticket } from "lucide-react";
+import {
+  collection, query, where, getDocs, doc, getDoc, collectionGroup,
+} from "firebase/firestore";
 
 type CompletedSlip = {
   scrumId: string;
@@ -19,6 +19,7 @@ type CompletedSlip = {
 const Spindle = () => {
   const { userId } = useAuth();
   const [slips, setSlips] = useState<CompletedSlip[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -56,7 +57,6 @@ const Spindle = () => {
         });
         const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
         const rank = sorted.indexOf(totalPoints) + 1;
-        const totalMembers = sorted.length;
 
         completed.push({
           scrumId,
@@ -65,60 +65,73 @@ const Spindle = () => {
           date: cardData?.raceDate ?? "",
           totalPoints,
           rank,
-          totalMembers,
+          totalMembers: sorted.length,
         });
       }
+
       setSlips(completed.sort((a, b) => b.date.localeCompare(a.date)));
+      setLoading(false);
     })();
   }, []);
 
   return (
-    <div className="min-h-screen pb-24">
-      <div className="px-6 pt-8 pb-4">
-        <h1 className="font-display text-3xl brass-text font-black">The Spindle</h1>
-        <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mt-1">Completed slips</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
+        <Link to="/" className="text-label-caps uppercase hover:underline">
+          ← PADDOCK
+        </Link>
+        <h1 className="text-headline-md uppercase">THE SPINDLE</h1>
+        <div className="w-20" />
+      </header>
 
-      <div className="px-6">
-        {slips.length === 0 ? (
-          <div className="border border-dashed border-border rounded-lg p-8 text-center">
-            <p className="text-sm text-muted-foreground">No completed slips yet.</p>
-            <p className="text-xs text-muted-foreground mt-1">Finish a Daily Gallop to see it here.</p>
+      <main className="px-4 pt-6 pb-16">
+        {loading ? (
+          <p className="text-label-caps uppercase text-muted-foreground text-center pt-10">
+            Loading…
+          </p>
+        ) : slips.length === 0 ? (
+          <div className="border-brutalist p-8 text-center">
+            <p className="text-body-md text-muted-foreground">No completed slips yet.</p>
+            <p className="text-label-caps text-muted-foreground uppercase mt-2">
+              Finish a Daily Gallop to see it here.
+            </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {slips.map((s) => (
-              <Link key={s.scrumId} to={`/scrum/${s.scrumId}/slip`}
-                className="block bg-card rounded-lg p-4 border border-border hover:border-primary/50 transition">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">{s.trackName}</div>
-                    <div className="font-display text-lg mt-0.5">{s.scrumName}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{s.date}</div>
+          <div className="flex flex-col">
+            {slips.map((s, i) => (
+              <Link
+                key={s.scrumId}
+                to={`/scrum/${s.scrumId}/slip`}
+                className={`border-brutalist p-4 bg-background flex justify-between items-start ${i > 0 ? "mt-[-2.67px]" : ""}`}
+              >
+                <div>
+                  <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
+                  <span className="text-headline-md uppercase">{s.trackName}</span>
+                  <div className="mt-1">
+                    <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
+                    <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
                   </div>
-                  <div className="text-right">
-                    <div className="brass-text font-display text-3xl font-bold">{s.totalPoints}</div>
-                    <div className="text-xs text-muted-foreground">pts</div>
-                    {s.rank && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {s.rank === 1 ? "🏆 " : ""}#{s.rank} of {s.totalMembers}
-                      </div>
-                    )}
+                  <span className="text-label-caps text-muted-foreground uppercase block mt-2">
+                    {s.date}
+                  </span>
+                </div>
+                <div className="text-right flex flex-col items-end gap-1">
+                  <span className="text-headline-lg font-black">{s.totalPoints}</span>
+                  <span className="text-label-caps text-muted-foreground">PTS</span>
+                  {s.rank && (
+                    <span className="text-label-caps text-muted-foreground">
+                      #{s.rank} OF {s.totalMembers}
+                    </span>
+                  )}
+                  <div className="text-label-caps border-brutalist px-2 py-1 mt-1 uppercase">
+                    SETTLED
                   </div>
                 </div>
               </Link>
             ))}
           </div>
         )}
-      </div>
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-md mx-auto flex justify-around py-3">
-          <Link to="/" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><Ticket className="h-5 w-5" /> Paddock</Link>
-          <Link to="/spindle" className="flex flex-col items-center gap-1 text-primary text-xs"><Trophy className="h-5 w-5" /> Spindle</Link>
-          <Link to="/stats" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><BarChart3 className="h-5 w-5" /> Stats</Link>
-        </div>
-      </nav>
+      </main>
     </div>
   );
 };

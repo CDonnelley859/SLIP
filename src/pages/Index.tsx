@@ -1,34 +1,57 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
-import { Button } from "@/components/ui/button";
-import { Trophy, BarChart3, Plus, Ticket } from "lucide-react";
-import { format } from "date-fns";
+import {
+  collection, query, where, orderBy, limit, getDocs,
+  doc, getDoc, collectionGroup, setDoc, serverTimestamp,
+} from "firebase/firestore";
 import { syncCards } from "@/lib/racingApi";
 import { toast } from "sonner";
 
-type Card = { id: string; trackName: string; raceDate: string; postTime: string; status: string };
-type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; score: number };
+type Card = {
+  id: string;
+  trackName: string;
+  raceDate: string;
+  postTime: string;
+  status: string;
+  raceCount: number;
+};
+
+type ActiveSlip = {
+  scrumId: string;
+  scrumName: string;
+  trackName: string;
+  completed: number;
+  total: number;
+};
 
 const Index = () => {
   const { userId, handle } = useAuth();
+  const navigate = useNavigate();
   const [cards, setCards] = useState<Card[]>([]);
-  const [active, setActive] = useState<ActiveSlip[]>([]);
+  const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
+  const [trackSearch, setTrackSearch] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     const cardsSnap = await getDocs(query(
       collection(db, "cards"),
       where("status", "in", ["upcoming", "live"]),
       orderBy("postTime", "asc"),
-      limit(8)
+      limit(10)
     ));
-    setCards(cardsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Card)));
+
+    const cardList: Card[] = [];
+    for (const d of cardsSnap.docs) {
+      const racesSnap = await getDocs(collection(db, "cards", d.id, "races"));
+      cardList.push({ id: d.id, raceCount: racesSnap.size, ...d.data() } as Card);
+    }
+    setCards(cardList);
 
     const membersSnap = await getDocs(query(
       collectionGroup(db, "members"),
@@ -47,105 +70,190 @@ const Index = () => {
       const total = racesSnap.size;
       const completed = racesSnap.docs.filter(r => r.data().status === "settled").length;
       if (total > 0 && completed >= total) continue;
-      const picksSnap = await getDocs(query(collection(db, "scrums", scrumId, "picks"), where("userId", "==", userId)));
-      const score = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
-      slips.push({ scrumId, scrumName: scrum.name, trackName, completed, total, score });
+      slips.push({ scrumId, scrumName: scrum.name, trackName, completed, total });
     }
-    setActive(slips);
+    setActiveSlips(slips);
   }
 
   async function handleRefresh() {
-    toast.loading("Pulling cards…", { id: "sync" });
+    setSyncing(true);
     try {
       const count = await syncCards();
-      toast.success(`${count} cards loaded`, { id: "sync" });
+      toast.success(`${count} races loaded`);
       loadData();
     } catch (err: any) {
-      toast.error(err.message ?? "Failed to sync", { id: "sync" });
+      toast.error(err.message ?? "Sync failed");
+    } finally {
+      setSyncing(false);
     }
   }
 
+  async function handleJoin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setJoining(true);
+    try {
+      const snap = await getDocs(query(
+        collection(db, "scrums"),
+        where("joinCode", "==", joinCode.toUpperCase().trim())
+      ));
+      if (snap.empty) throw new Error("Code not found");
+      const scrumId = snap.docs[0].id;
+      await setDoc(doc(db, "scrums", scrumId, "members", userId), {
+        userId,
+        handle,
+        joinedAt: serverTimestamp(),
+      });
+      navigate(`/scrum/${scrumId}/gallop`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setJoining(false);
+    }
+  }
+
+  const filteredCards = cards.filter(c =>
+    c.trackName.toLowerCase().includes(trackSearch.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen pb-24">
-      <header className="px-6 pt-8 pb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-4xl brass-text font-black leading-none">SLIP</h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mt-1">The Paddock</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">@{handle}</span>
-        </div>
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-background border-b-brutalist flex justify-center items-center w-full h-16 px-4 sticky top-0 z-50">
+        <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
       </header>
 
-      <section className="px-6 mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl">Active Slips</h2>
-          <Ticket className="h-4 w-4 text-muted-foreground" />
-        </div>
-        {active.length === 0 ? (
-          <div className="border border-dashed border-border rounded-lg p-8 text-center">
-            <p className="text-sm text-muted-foreground">No active slips. Start a Scrum below.</p>
+      <main className="px-4">
+        {/* Top Tracks */}
+        <section className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-label-caps uppercase">Top Tracks</h2>
+            <button
+              onClick={handleRefresh}
+              disabled={syncing}
+              className="text-label-caps uppercase underline underline-offset-2 disabled:opacity-40"
+            >
+              {syncing ? "LOADING…" : "REFRESH"}
+            </button>
           </div>
-        ) : (
-          <div className="flex gap-3 overflow-x-auto -mx-6 px-6 snap-x">
-            {active.map((s) => (
-              <Link key={s.scrumId} to={`/scrum/${s.scrumId}/slip`}
-                className="snap-start min-w-[260px] bg-card rounded-lg p-4 border border-border hover:border-primary/50 transition">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">{s.trackName}</div>
-                <div className="font-display text-lg mt-1">{s.scrumName}</div>
-                <div className="flex items-baseline justify-between mt-3">
-                  <div>
-                    <span className="brass-text font-display text-3xl font-bold">{s.score}</span>
-                    <span className="text-muted-foreground text-xs ml-1">pts</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground font-mono">{s.completed}/{s.total || 6} races</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
 
-      <section className="px-6 mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl">The Big Board</h2>
-          <div className="flex items-center gap-3">
-            <button onClick={handleRefresh} className="text-xs text-primary hover:underline">Refresh</button>
-            <Link to="/scrum/join" className="text-xs text-primary hover:underline">Join code</Link>
+          {cards.length === 0 ? (
+            <div className="border-brutalist p-6 text-center">
+              <p className="text-body-md text-muted-foreground">
+                No cards loaded. Hit Refresh to pull today's racecards.
+              </p>
+            </div>
+          ) : (
+            <div className="flex overflow-x-auto gap-0 -mx-4 px-4 pb-2">
+              {filteredCards.map((c, i) => (
+                <Link
+                  key={c.id}
+                  to={`/scrum/new?card=${c.id}`}
+                  className={`flex-shrink-0 w-40 border-brutalist p-4 bg-background flex flex-col justify-between h-28 ${i > 0 ? "ml-[-2.67px]" : ""}`}
+                >
+                  <span className="text-headline-md uppercase leading-tight line-clamp-2">
+                    {c.trackName}
+                  </span>
+                  <span className="text-label-caps text-muted-foreground uppercase">
+                    {c.raceCount} RACES
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Search tracks */}
+        <section className="mt-6">
+          <div className="relative flex border-brutalist h-14">
+            <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              SEARCH_TRACKS
+            </label>
+            <input
+              value={trackSearch}
+              onChange={e => setTrackSearch(e.target.value)}
+              placeholder="ENTER TRACK NAME"
+              className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+            />
           </div>
-        </div>
-        {cards.length === 0 ? (
-          <div className="border border-dashed border-border rounded-lg p-8 text-center space-y-3">
-            <p className="text-sm text-muted-foreground">No cards loaded yet.</p>
-            <p className="text-xs text-muted-foreground">Tap Refresh to pull today's racecards.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {cards.map((c) => (
-              <Link key={c.id} to={`/scrum/new?card=${c.id}`}
-                className="block bg-card rounded-lg p-4 border border-border hover:border-primary/50 transition">
-                <div className="flex items-center justify-between">
+        </section>
+
+        {/* Join by group code */}
+        <section className="mt-4">
+          <form onSubmit={handleJoin}>
+            <div className="relative flex border-brutalist h-14">
+              <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                GROUP_CODE
+              </label>
+              <input
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value)}
+                placeholder="ENTER JOIN CODE"
+                maxLength={6}
+                className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
+              />
+              <button
+                type="submit"
+                disabled={joining || joinCode.length < 6}
+                className="bg-primary text-primary-foreground px-6 text-headline-md uppercase border-l-brutalist disabled:opacity-40 transition-none"
+              >
+                JOIN
+              </button>
+            </div>
+          </form>
+        </section>
+
+        {/* Active Slips */}
+        <section className="mt-8">
+          <h2 className="text-label-caps uppercase mb-2">Active Slips</h2>
+          {activeSlips.length === 0 ? (
+            <div className="border-brutalist p-6 text-center">
+              <p className="text-body-md text-muted-foreground">
+                No active slips. Pick a track above or enter a group code.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {activeSlips.map((s, i) => (
+                <Link
+                  key={s.scrumId}
+                  to={`/scrum/${s.scrumId}/slip`}
+                  className={`border-brutalist p-4 flex flex-col gap-3 bg-background ${i > 0 ? "mt-[-2.67px]" : ""}`}
+                >
                   <div>
-                    <div className="font-display text-lg">{c.trackName}</div>
-                    <div className="text-xs text-muted-foreground font-mono mt-1">
-                      {format(new Date(c.postTime), "EEE MMM d · h:mm a")}
+                    <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
+                    <span className="text-headline-md uppercase">{s.trackName}</span>
+                    <div className="mt-1">
+                      <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
+                      <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
                     </div>
                   </div>
-                  <Plus className="h-5 w-5 text-primary" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between text-label-caps uppercase">
+                      <span>PROGRESS</span>
+                      <span>{s.completed}/{s.total || 6}</span>
+                    </div>
+                    <div className="h-3 w-full border border-primary p-[1px]">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-md mx-auto flex justify-around py-3">
-          <Link to="/" className="flex flex-col items-center gap-1 text-primary text-xs"><Ticket className="h-5 w-5" /> Paddock</Link>
-          <Link to="/spindle" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><Trophy className="h-5 w-5" /> Spindle</Link>
-          <Link to="/stats" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><BarChart3 className="h-5 w-5" /> Stats</Link>
-        </div>
-      </nav>
+        <footer className="mt-10 text-center pb-8">
+          <Link
+            to="/spindle"
+            className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
+          >
+            View The Spindle
+          </Link>
+        </footer>
+      </main>
     </div>
   );
 };
