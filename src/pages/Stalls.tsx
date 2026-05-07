@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection } from "firebase/firestore";
@@ -9,14 +9,14 @@ import { formatDistanceToNow } from "date-fns";
 
 const Stalls = () => {
   const { id } = useParams();
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [horseCount, setHorseCount] = useState(0);
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!id) return;
     (async () => {
       const scrumSnap = await getDoc(doc(db, "scrums", id));
       if (!scrumSnap.exists()) return;
@@ -42,10 +42,7 @@ const Stalls = () => {
       }
       setHorseCount(count);
     })();
-  }, [user, id]);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
+  }, [id]);
 
   return (
     <PageShell title="The Stalls">
@@ -76,7 +73,7 @@ const Stalls = () => {
               {members.map((m) => (
                 <div key={m.userId} className="flex items-center gap-2 bg-card rounded-full pl-1 pr-3 py-1 border border-border">
                   <div className="h-6 w-6 rounded-full" style={{ background: m.profile?.capColor ?? "#c9a84c" }} />
-                  <span className="text-sm">@{m.profile?.handle}</span>
+                  <span className="text-sm">@{m.profile?.handle ?? m.userId.slice(0, 8)}</span>
                 </div>
               ))}
             </div>

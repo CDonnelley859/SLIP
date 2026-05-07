@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection, query, where, onSnapshot } from "firebase/firestore";
@@ -12,13 +12,13 @@ type Line = { raceNumber: number; horseName: string; horseNumber: number; status
 
 const Slip = () => {
   const { id } = useParams();
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [lines, setLines] = useState<Line[]>([]);
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!id) return;
     let unsub: (() => void) | null = null;
 
     (async () => {
@@ -30,7 +30,7 @@ const Slip = () => {
       const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
       if (cardSnap.exists()) setCard(cardSnap.data());
 
-      const picksQ = query(collection(db, "scrums", id, "picks"), where("userId", "==", user.uid));
+      const picksQ = query(collection(db, "scrums", id, "picks"), where("userId", "==", userId));
       unsub = onSnapshot(picksQ, async (snap) => {
         const built: Line[] = [];
         for (const p of snap.docs) {
@@ -53,10 +53,7 @@ const Slip = () => {
     })();
 
     return () => { unsub?.(); };
-  }, [user, id]);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
+  }, [id]);
 
   const total = lines.reduce((sum, l) => sum + (l.points ?? 0), 0);
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
@@ -17,15 +17,14 @@ type CompletedSlip = {
 };
 
 const Spindle = () => {
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [slips, setSlips] = useState<CompletedSlip[]>([]);
 
   useEffect(() => {
-    if (!user) return;
     (async () => {
       const membersSnap = await getDocs(query(
         collectionGroup(db, "members"),
-        where("userId", "==", user.uid)
+        where("userId", "==", userId)
       ));
 
       const completed: CompletedSlip[] = [];
@@ -41,11 +40,11 @@ const Spindle = () => {
         const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
         const total = racesSnap.size;
         const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        if (settled < total || total === 0) continue; // not fully settled
+        if (settled < total || total === 0) continue;
 
         const picksSnap = await getDocs(query(
           collection(db, "scrums", scrumId, "picks"),
-          where("userId", "==", user.uid)
+          where("userId", "==", userId)
         ));
         const totalPoints = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
 
@@ -71,10 +70,7 @@ const Spindle = () => {
       }
       setSlips(completed.sort((a, b) => b.date.localeCompare(a.date)));
     })();
-  }, [user]);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
+  }, []);
 
   return (
     <div className="min-h-screen pb-24">

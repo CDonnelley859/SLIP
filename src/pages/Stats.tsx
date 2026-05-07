@@ -1,28 +1,27 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
 import { Trophy, BarChart3, Ticket } from "lucide-react";
 
-type Stats = {
+type StatsData = {
   totalSlips: number;
   totalPoints: number;
   bestScore: number;
-  podiums: number; // top 3 finishes
-  wins: number;   // 1st place finishes
+  podiums: number;
+  wins: number;
 };
 
 const Stats = () => {
-  const { user, loading } = useAuth();
-  const [stats, setStats] = useState<Stats>({ totalSlips: 0, totalPoints: 0, bestScore: 0, podiums: 0, wins: 0 });
+  const { userId } = useAuth();
+  const [stats, setStats] = useState<StatsData>({ totalSlips: 0, totalPoints: 0, bestScore: 0, podiums: 0, wins: 0 });
 
   useEffect(() => {
-    if (!user) return;
     (async () => {
       const membersSnap = await getDocs(query(
         collectionGroup(db, "members"),
-        where("userId", "==", user.uid)
+        where("userId", "==", userId)
       ));
 
       let totalSlips = 0, totalPoints = 0, bestScore = 0, podiums = 0, wins = 0;
@@ -40,7 +39,7 @@ const Stats = () => {
 
         const picksSnap = await getDocs(query(
           collection(db, "scrums", scrumId, "picks"),
-          where("userId", "==", user.uid)
+          where("userId", "==", userId)
         ));
         const score = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
 
@@ -62,10 +61,7 @@ const Stats = () => {
 
       setStats({ totalSlips, totalPoints, bestScore, podiums, wins });
     })();
-  }, [user]);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
+  }, []);
 
   const tiles = [
     { label: "Slips Filed", value: stats.totalSlips },

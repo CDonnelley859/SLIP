@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -10,13 +10,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const JoinScrum = () => {
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
 
   const join = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +22,8 @@ const JoinScrum = () => {
       const snap = await getDocs(query(collection(db, "scrums"), where("joinCode", "==", code.toUpperCase().trim())));
       if (snap.empty) throw new Error("Code not found");
       const scrumId = snap.docs[0].id;
-      await setDoc(doc(db, "scrums", scrumId, "members", user.uid), {
-        userId: user.uid,
+      await setDoc(doc(db, "scrums", scrumId, "members", userId), {
+        userId,
         joinedAt: serverTimestamp(),
       });
       navigate(`/scrum/${scrumId}/stalls`);

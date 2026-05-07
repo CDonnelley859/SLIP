@@ -12,15 +12,13 @@ import { toast } from "sonner";
 const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 const NewScrum = () => {
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [params] = useSearchParams();
   const cardId = params.get("card");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
   if (!cardId) return <Navigate to="/" replace />;
 
   const create = async (e: React.FormEvent) => {
@@ -30,13 +28,13 @@ const NewScrum = () => {
       const joinCode = genCode();
       const scrumRef = await addDoc(collection(db, "scrums"), {
         cardId,
-        hostId: user.uid,
+        hostId: userId,
         name,
         joinCode,
         createdAt: serverTimestamp(),
       });
-      await setDoc(doc(db, "scrums", scrumRef.id, "members", user.uid), {
-        userId: user.uid,
+      await setDoc(doc(db, "scrums", scrumRef.id, "members", userId), {
+        userId,
         joinedAt: serverTimestamp(),
       });
       toast.success(`Scrum created · code ${joinCode}`);

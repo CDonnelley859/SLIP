@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection, setDoc, serverTimestamp } from "firebase/firestore";
@@ -12,7 +12,7 @@ type Race = { id: string; raceNumber: number; name: string | null; offTime: stri
 
 const Gallop = () => {
   const { id } = useParams();
-  const { user, loading } = useAuth();
+  const { userId } = useAuth();
   const [card, setCard] = useState<any>(null);
   const [races, setRaces] = useState<Race[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
@@ -20,7 +20,7 @@ const Gallop = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!id) return;
     (async () => {
       const scrumSnap = await getDoc(doc(db, "scrums", id));
       if (!scrumSnap.exists()) return;
@@ -40,15 +40,12 @@ const Gallop = () => {
 
       const picksSnap = await getDocs(collection(db, "scrums", id, "picks"));
       const map: Record<string, string> = {};
-      picksSnap.docs.filter(p => p.data().userId === user.uid).forEach(p => {
+      picksSnap.docs.filter(p => p.data().userId === userId).forEach(p => {
         map[p.data().raceId] = p.data().horseId;
       });
       setPicks(map);
     })();
-  }, [user, id]);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
+  }, [id]);
 
   const submit = async () => {
     if (Object.keys(picks).length !== races.length) {
@@ -58,10 +55,10 @@ const Gallop = () => {
     setBusy(true);
     try {
       for (const [raceId, horseId] of Object.entries(picks)) {
-        const pickId = `${user.uid}_${raceId}`;
+        const pickId = `${userId}_${raceId}`;
         await setDoc(doc(db, "scrums", id!, "picks", pickId), {
           scrumId: id,
-          userId: user.uid,
+          userId,
           raceId,
           horseId,
           points: null,

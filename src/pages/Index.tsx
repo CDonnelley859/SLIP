@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { Trophy, BarChart3, Plus, LogOut, Ticket } from "lucide-react";
+import { Trophy, BarChart3, Plus, Ticket } from "lucide-react";
 import { format } from "date-fns";
 import { syncCards } from "@/lib/racingApi";
 import { toast } from "sonner";
@@ -13,14 +13,13 @@ type Card = { id: string; trackName: string; raceDate: string; postTime: string;
 type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; score: number };
 
 const Index = () => {
-  const { user, loading, handle, signOut } = useAuth();
+  const { userId, handle } = useAuth();
   const [cards, setCards] = useState<Card[]>([]);
   const [active, setActive] = useState<ActiveSlip[]>([]);
 
   useEffect(() => {
-    if (!user) return;
     loadData();
-  }, [user]);
+  }, []);
 
   async function loadData() {
     const cardsSnap = await getDocs(query(
@@ -33,7 +32,7 @@ const Index = () => {
 
     const membersSnap = await getDocs(query(
       collectionGroup(db, "members"),
-      where("userId", "==", user!.uid)
+      where("userId", "==", userId)
     ));
 
     const slips: ActiveSlip[] = [];
@@ -48,7 +47,7 @@ const Index = () => {
       const total = racesSnap.size;
       const completed = racesSnap.docs.filter(r => r.data().status === "settled").length;
       if (total > 0 && completed >= total) continue;
-      const picksSnap = await getDocs(query(collection(db, "scrums", scrumId, "picks"), where("userId", "==", user!.uid)));
+      const picksSnap = await getDocs(query(collection(db, "scrums", scrumId, "picks"), where("userId", "==", userId)));
       const score = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
       slips.push({ scrumId, scrumName: scrum.name, trackName, completed, total, score });
     }
@@ -66,9 +65,6 @@ const Index = () => {
     }
   }
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" replace />;
-
   return (
     <div className="min-h-screen pb-24">
       <header className="px-6 pt-8 pb-6 flex items-center justify-between">
@@ -77,8 +73,7 @@ const Index = () => {
           <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mt-1">The Paddock</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground hidden sm:inline">@{handle}</span>
-          <Button variant="ghost" size="icon" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
+          <span className="text-sm text-muted-foreground">@{handle}</span>
         </div>
       </header>
 

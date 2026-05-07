@@ -1,71 +1,50 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User,
-} from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+
+// Generates a stable random ID for this browser
+function getOrCreateUserId(): string {
+  let id = localStorage.getItem('slip_user_id')
+  if (!id) {
+    id = `user_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`
+    localStorage.setItem('slip_user_id', id)
+  }
+  return id
+}
 
 interface AuthCtx {
-  user: User | null
-  loading: boolean
+  userId: string
   handle: string
-  signUp: (email: string, password: string, handle: string) => Promise<void>
-  signIn: (email: string, password: string) => Promise<void>
-  signOut: () => Promise<void>
+  hasHandle: boolean
+  setHandle: (name: string) => void
+  loading: boolean
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null,
-  loading: true,
+  userId: '',
   handle: '',
-  signUp: async () => {},
-  signIn: async () => {},
-  signOut: async () => {},
+  hasHandle: false,
+  setHandle: () => {},
+  loading: true,
 })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [handle, setHandle] = useState('')
+  const [userId] = useState(() => getOrCreateUserId())
+  const [handle, setHandleState] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u)
-      if (u) {
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists()) setHandle(snap.data().handle ?? '')
-      } else {
-        setHandle('')
-      }
-      setLoading(false)
-    })
-    return unsub
+    const saved = localStorage.getItem('slip_handle') ?? ''
+    setHandleState(saved)
+    setLoading(false)
   }, [])
 
-  async function signUp(email: string, password: string, handle: string) {
-    const cred = await createUserWithEmailAndPassword(auth, email, password)
-    await setDoc(doc(db, 'users', cred.user.uid), {
-      handle,
-      capColor: '#c9a84c',
-      createdAt: serverTimestamp(),
-    })
-    setHandle(handle)
-  }
-
-  async function signIn(email: string, password: string) {
-    await signInWithEmailAndPassword(auth, email, password)
-  }
-
-  async function signOut() {
-    await firebaseSignOut(auth)
+  function setHandle(name: string) {
+    const trimmed = name.trim()
+    localStorage.setItem('slip_handle', trimmed)
+    setHandleState(trimmed)
   }
 
   return (
-    <Ctx.Provider value={{ user, loading, handle, signUp, signIn, signOut }}>
+    <Ctx.Provider value={{ userId, handle, hasHandle: handle.length > 0, setHandle, loading }}>
       {children}
     </Ctx.Provider>
   )

@@ -3,9 +3,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { NamePrompt } from "@/components/NamePrompt";
 import Index from "./pages/Index.tsx";
-import Auth from "./pages/Auth.tsx";
 import NewScrum from "./pages/NewScrum.tsx";
 import JoinScrum from "./pages/JoinScrum.tsx";
 import Stalls from "./pages/Stalls.tsx";
@@ -17,6 +17,25 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+const AppRoutes = () => {
+  const { hasHandle, loading } = useAuth();
+  if (loading) return null;
+  if (!hasHandle) return <NamePrompt />;
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/scrum/new" element={<NewScrum />} />
+      <Route path="/scrum/join" element={<JoinScrum />} />
+      <Route path="/scrum/:id/stalls" element={<Stalls />} />
+      <Route path="/scrum/:id/gallop" element={<Gallop />} />
+      <Route path="/scrum/:id/slip" element={<Slip />} />
+      <Route path="/spindle" element={<Spindle />} />
+      <Route path="/stats" element={<Stats />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -24,18 +43,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/scrum/new" element={<NewScrum />} />
-            <Route path="/scrum/join" element={<JoinScrum />} />
-            <Route path="/scrum/:id/stalls" element={<Stalls />} />
-            <Route path="/scrum/:id/gallop" element={<Gallop />} />
-            <Route path="/scrum/:id/slip" element={<Slip />} />
-            <Route path="/spindle" element={<Spindle />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
