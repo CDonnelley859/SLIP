@@ -1,42 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, getDocs, collection } from "firebase/firestore";
 import { PageShell } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 const Stalls = () => {
   const { id } = useParams();
   const { user, loading } = useAuth();
   const [scrum, setScrum] = useState<any>(null);
+  const [card, setCard] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [horseCount, setHorseCount] = useState(0);
 
   useEffect(() => {
     if (!user || !id) return;
     (async () => {
-      const { data: s } = await supabase
-        .from("scrums")
-        .select("*, cards(*)")
-        .eq("id", id)
-        .maybeSingle();
-      setScrum(s);
-      const { data: m } = await supabase
-        .from("scrum_members")
-        .select("user_id, profiles(handle, cap_color)")
-        .eq("scrum_id", id);
-      setMembers(m ?? []);
-      if (s?.card_id) {
-        const { data: races } = await supabase.from("races").select("id").eq("card_id", s.card_id);
-        if (races?.length) {
-          const { count } = await supabase
-            .from("horses")
-            .select("*", { count: "exact", head: true })
-            .in("race_id", races.map((r: any) => r.id));
-          setHorseCount(count ?? 0);
-        }
+      const scrumSnap = await getDoc(doc(db, "scrums", id));
+      if (!scrumSnap.exists()) return;
+      const scrumData = scrumSnap.data();
+      setScrum(scrumData);
+
+      const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
+      if (cardSnap.exists()) setCard(cardSnap.data());
+
+      const membersSnap = await getDocs(collection(db, "scrums", id, "members"));
+      const memberList: any[] = [];
+      for (const m of membersSnap.docs) {
+        const profileSnap = await getDoc(doc(db, "users", m.data().userId));
+        memberList.push({ ...m.data(), profile: profileSnap.data() });
       }
+      setMembers(memberList);
+
+      const racesSnap = await getDocs(collection(db, "cards", scrumData.cardId, "races"));
+      let count = 0;
+      for (const r of racesSnap.docs) {
+        const horsesSnap = await getDocs(collection(db, "cards", scrumData.cardId, "races", r.id, "horses"));
+        count += horsesSnap.size;
+      }
+      setHorseCount(count);
     })();
   }, [user, id]);
 
@@ -45,32 +49,34 @@ const Stalls = () => {
 
   return (
     <PageShell title="The Stalls">
-      {scrum && (
+      {scrum && card && (
         <div className="space-y-6">
           <div className="bg-card rounded-lg p-5 border border-border">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{scrum.cards?.track_name}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{card.trackName}</div>
             <h2 className="font-display text-2xl mt-1">{scrum.name}</h2>
             <div className="flex items-center justify-between mt-4">
               <div>
                 <div className="text-xs text-muted-foreground">Join code</div>
-                <div className="font-mono brass-text text-xl tracking-widest">{scrum.join_code}</div>
+                <div className="font-mono brass-text text-xl tracking-widest">{scrum.joinCode}</div>
               </div>
               <div className="text-right">
                 <div className="text-xs text-muted-foreground">Post Time</div>
                 <div className="font-mono text-sm">
-                  {scrum.cards?.post_time && formatDistanceToNow(new Date(scrum.cards.post_time), { addSuffix: true })}
+                  {card.postTime && formatDistanceToNow(new Date(card.postTime), { addSuffix: true })}
                 </div>
               </div>
             </div>
           </div>
 
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Lineup ({members.length})</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Lineup ({members.length})
+            </div>
             <div className="flex flex-wrap gap-2">
               {members.map((m) => (
-                <div key={m.user_id} className="flex items-center gap-2 bg-card rounded-full pl-1 pr-3 py-1 border border-border">
-                  <div className="h-6 w-6 rounded-full" style={{ background: m.profiles?.cap_color ?? "#c9a84c" }} />
-                  <span className="text-sm">@{m.profiles?.handle}</span>
+                <div key={m.userId} className="flex items-center gap-2 bg-card rounded-full pl-1 pr-3 py-1 border border-border">
+                  <div className="h-6 w-6 rounded-full" style={{ background: m.profile?.capColor ?? "#c9a84c" }} />
+                  <span className="text-sm">@{m.profile?.handle}</span>
                 </div>
               ))}
             </div>
@@ -86,4 +92,5 @@ const Stalls = () => {
     </PageShell>
   );
 };
+
 export default Stalls;

@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { PageShell } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const code = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 const NewScrum = () => {
   const { user, loading } = useAuth();
@@ -26,16 +27,20 @@ const NewScrum = () => {
     e.preventDefault();
     setBusy(true);
     try {
-      const join_code = code();
-      const { data: scrum, error } = await supabase
-        .from("scrums")
-        .insert({ card_id: cardId, host_id: user.id, name, join_code })
-        .select()
-        .single();
-      if (error) throw error;
-      await supabase.from("scrum_members").insert({ scrum_id: scrum.id, user_id: user.id });
-      toast.success(`Scrum created · code ${join_code}`);
-      navigate(`/scrum/${scrum.id}/stalls`);
+      const joinCode = genCode();
+      const scrumRef = await addDoc(collection(db, "scrums"), {
+        cardId,
+        hostId: user.uid,
+        name,
+        joinCode,
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(doc(db, "scrums", scrumRef.id, "members", user.uid), {
+        userId: user.uid,
+        joinedAt: serverTimestamp(),
+      });
+      toast.success(`Scrum created · code ${joinCode}`);
+      navigate(`/scrum/${scrumRef.id}/stalls`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -55,4 +60,5 @@ const NewScrum = () => {
     </PageShell>
   );
 };
+
 export default NewScrum;

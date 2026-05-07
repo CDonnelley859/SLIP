@@ -1,35 +1,58 @@
 import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, getDocs, collection, query, where, onSnapshot } from "firebase/firestore";
 import { PageShell } from "@/components/PageShell";
+import { syncResults } from "@/lib/racingApi";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
+
+type Line = { raceNumber: number; horseName: string; horseNumber: number; status: string; points: number | null };
 
 const Slip = () => {
   const { id } = useParams();
   const { user, loading } = useAuth();
   const [scrum, setScrum] = useState<any>(null);
-  const [lines, setLines] = useState<any[]>([]);
+  const [card, setCard] = useState<any>(null);
+  const [lines, setLines] = useState<Line[]>([]);
 
   useEffect(() => {
     if (!user || !id) return;
-    const load = async () => {
-      const { data: s } = await supabase.from("scrums").select("*, cards(*)").eq("id", id).maybeSingle();
-      setScrum(s);
-      const { data } = await supabase
-        .from("picks")
-        .select("points, horse:horses(number, name), race:races(race_number, status, winners)")
-        .eq("scrum_id", id)
-        .eq("user_id", user.id);
-      setLines((data ?? []).sort((a: any, b: any) => a.race.race_number - b.race.race_number));
-    };
-    load();
-    const ch = supabase
-      .channel(`slip-${id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "races" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "picks" }, load)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let unsub: (() => void) | null = null;
+
+    (async () => {
+      const scrumSnap = await getDoc(doc(db, "scrums", id));
+      if (!scrumSnap.exists()) return;
+      const scrumData = scrumSnap.data();
+      setScrum(scrumData);
+
+      const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
+      if (cardSnap.exists()) setCard(cardSnap.data());
+
+      const picksQ = query(collection(db, "scrums", id, "picks"), where("userId", "==", user.uid));
+      unsub = onSnapshot(picksQ, async (snap) => {
+        const built: Line[] = [];
+        for (const p of snap.docs) {
+          const pick = p.data();
+          const [raceSnap, horseSnap] = await Promise.all([
+            getDoc(doc(db, "cards", scrumData.cardId, "races", pick.raceId)),
+            getDoc(doc(db, "cards", scrumData.cardId, "races", pick.raceId, "horses", pick.horseId)),
+          ]);
+          if (!raceSnap.exists() || !horseSnap.exists()) continue;
+          built.push({
+            raceNumber: raceSnap.data().raceNumber,
+            horseName: horseSnap.data().name,
+            horseNumber: horseSnap.data().number,
+            status: raceSnap.data().status,
+            points: pick.points ?? null,
+          });
+        }
+        setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
+      });
+    })();
+
+    return () => { unsub?.(); };
   }, [user, id]);
 
   if (loading) return null;
@@ -37,18 +60,22 @@ const Slip = () => {
 
   const total = lines.reduce((sum, l) => sum + (l.points ?? 0), 0);
 
-  const refresh = async () => {
-    if (!scrum?.card_id) return;
-    const { toast } = await import("sonner");
+  async function handleRefresh() {
+    if (!scrum?.cardId) return;
     toast.loading("Pulling results…", { id: "r" });
-    const { data, error } = await supabase.functions.invoke("sync-results", { body: { card_id: scrum.card_id } });
-    if (error || !data?.ok) toast.error(error?.message ?? data?.error ?? "Failed", { id: "r" });
-    else toast.success("Results updated", { id: "r" });
-  };
+    try {
+      await syncResults(scrum.cardId);
+      toast.success("Results updated", { id: "r" });
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed", { id: "r" });
+    }
+  }
 
   return (
     <PageShell title="Official Slip">
-      <button onClick={refresh} className="text-xs text-primary hover:underline mb-3">Refresh results</button>
+      <button onClick={handleRefresh} className="text-xs text-primary hover:underline mb-3">
+        Refresh results
+      </button>
       <motion.div
         initial={{ scaleY: 0, originY: 0 }}
         animate={{ scaleY: 1 }}
@@ -57,16 +84,14 @@ const Slip = () => {
       >
         <div className="text-center border-b-2 border-dashed border-paper-ink/30 pb-3 mb-4">
           <div className="font-display font-black text-2xl tracking-tight">SLIP</div>
-          <div className="text-xs uppercase tracking-widest opacity-70">{scrum?.cards?.track_name}</div>
+          <div className="text-xs uppercase tracking-widest opacity-70">{card?.trackName}</div>
           <div className="text-xs opacity-60">{scrum?.name}</div>
         </div>
         <div className="space-y-2 text-sm">
           {lines.map((l, i) => (
             <div key={i} className="flex justify-between">
-              <span>R{l.race?.race_number} · #{l.horse?.number} {l.horse?.name}</span>
-              <span className="font-bold">
-                {l.race?.status === "settled" ? `${l.points ?? 0} pt` : "—"}
-              </span>
+              <span>R{l.raceNumber} · #{l.horseNumber} {l.horseName}</span>
+              <span className="font-bold">{l.status === "settled" ? `${l.points ?? 0} pt` : "—"}</span>
             </div>
           ))}
         </div>
@@ -78,4 +103,5 @@ const Slip = () => {
     </PageShell>
   );
 };
+
 export default Slip;

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 const Auth = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signUp, signIn } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -24,20 +23,12 @@ const Auth = () => {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { handle: handle || `jockey_${Math.random().toString(36).slice(2, 8)}` },
-          },
-        });
-        if (error) throw error;
+        const resolvedHandle = handle.trim() || `jockey_${Math.random().toString(36).slice(2, 8)}`;
+        await signUp(email, password, resolvedHandle);
         toast.success("Welcome to the paddock");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signIn(email, password);
         navigate("/");
       }
     } catch (err: any) {

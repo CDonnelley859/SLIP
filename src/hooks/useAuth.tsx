@@ -1,44 +1,74 @@
-import { useEffect, useState, ReactNode, createContext, useContext } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User,
+} from 'firebase/auth'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 
-type AuthCtx = {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-};
+interface AuthCtx {
+  user: User | null
+  loading: boolean
+  handle: string
+  signUp: (email: string, password: string, handle: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+}
 
-const Ctx = createContext<AuthCtx>({ user: null, session: null, loading: true, signOut: async () => {} });
+const Ctx = createContext<AuthCtx>({
+  user: null,
+  loading: true,
+  handle: '',
+  signUp: async () => {},
+  signIn: async () => {},
+  signOut: async () => {},
+})
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null)
+  const [handle, setHandle] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u)
+      if (u) {
+        const snap = await getDoc(doc(db, 'users', u.uid))
+        if (snap.exists()) setHandle(snap.data().handle ?? '')
+      } else {
+        setHandle('')
+      }
+      setLoading(false)
+    })
+    return unsub
+  }, [])
+
+  async function signUp(email: string, password: string, handle: string) {
+    const cred = await createUserWithEmailAndPassword(auth, email, password)
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      handle,
+      capColor: '#c9a84c',
+      createdAt: serverTimestamp(),
+    })
+    setHandle(handle)
+  }
+
+  async function signIn(email: string, password: string) {
+    await signInWithEmailAndPassword(auth, email, password)
+  }
+
+  async function signOut() {
+    await firebaseSignOut(auth)
+  }
 
   return (
-    <Ctx.Provider
-      value={{
-        user: session?.user ?? null,
-        session,
-        loading,
-        signOut: async () => { await supabase.auth.signOut(); },
-      }}
-    >
+    <Ctx.Provider value={{ user, loading, handle, signUp, signIn, signOut }}>
       {children}
     </Ctx.Provider>
-  );
-};
+  )
+}
 
-export const useAuth = () => useContext(Ctx);
+export const useAuth = () => useContext(Ctx)
