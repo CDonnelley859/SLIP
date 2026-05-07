@@ -1,20 +1,11 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
-
-// Generates a stable random ID for this browser
-function getOrCreateUserId(): string {
-  let id = localStorage.getItem('slip_user_id')
-  if (!id) {
-    id = `user_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`
-    localStorage.setItem('slip_user_id', id)
-  }
-  return id
-}
+import { supabase } from '@/integrations/supabase/client'
 
 interface AuthCtx {
   userId: string
   handle: string
   hasHandle: boolean
-  setHandle: (name: string) => void
+  setHandle: (name: string) => Promise<void>
   loading: boolean
 }
 
@@ -22,24 +13,53 @@ const Ctx = createContext<AuthCtx>({
   userId: '',
   handle: '',
   hasHandle: false,
-  setHandle: () => {},
+  setHandle: async () => {},
   loading: true,
 })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [userId] = useState(() => getOrCreateUserId())
+  const [userId, setUserId] = useState('')
   const [handle, setHandleState] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const saved = localStorage.getItem('slip_handle') ?? ''
-    setHandleState(saved)
-    setLoading(false)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      let uid = session?.user?.id
+
+      if (!uid) {
+        const { data } = await supabase.auth.signInAnonymously()
+        uid = data.user?.id ?? ''
+      }
+
+      setUserId(uid)
+
+      if (uid) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('handle')
+          .eq('id', uid)
+          .single()
+
+        // Auto-generated handles start with 'jockey_' — treat as unset
+        const h = profile?.handle ?? ''
+        if (h && !h.startsWith('jockey_')) {
+          setHandleState(h)
+        }
+      }
+
+      setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.user) setUserId(session.user.id)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  function setHandle(name: string) {
+  async function setHandle(name: string) {
     const trimmed = name.trim()
-    localStorage.setItem('slip_handle', trimmed)
+    await supabase.from('profiles').update({ handle: trimmed }).eq('id', userId)
     setHandleState(trimmed)
   }
 

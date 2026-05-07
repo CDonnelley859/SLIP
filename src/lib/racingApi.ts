@@ -19,37 +19,51 @@ export async function syncCards(): Promise<number> {
 
   for (const card of racecards) {
     const courseId = card.course_id ?? card.course.replace(/\s+/g, "-").toLowerCase();
-    const cardId = `${today}-${courseId}`;
+    const sourceId = `${today}-${courseId}`;
 
-    await supabase.from("cards").upsert({
-      id: cardId,
-      track_name: card.course,
-      race_date: today,
-      post_time: card.races?.[0]?.off_time ?? `${today}T12:00:00Z`,
-      status: "upcoming",
-      source_id: cardId,
-    });
+    // Upsert card by source_id (TEXT UNIQUE in schema), get back the UUID
+    const { data: cardRow } = await supabase
+      .from("cards")
+      .upsert({
+        track_name: card.course,
+        race_date: today,
+        post_time: card.races?.[0]?.off_time ?? `${today}T12:00:00Z`,
+        status: "upcoming",
+        source_id: sourceId,
+      }, { onConflict: "source_id" })
+      .select("id")
+      .single();
+
+    if (!cardRow) continue;
 
     for (const race of card.races ?? []) {
-      await supabase.from("races").upsert({
-        id: race.race_id,
-        card_id: cardId,
-        race_number: race.race_num ?? race.race_number,
-        name: race.race_name ?? null,
-        off_time: race.off_time,
-        status: "upcoming",
-        winners: null,
-      });
+      const raceNum = race.race_num ?? race.race_number;
+      const apiRaceId: string = race.race_id ?? `${sourceId}-r${raceNum}`;
+
+      // Upsert race by card_id + race_number (composite unique), store API race_id in source_id
+      const { data: raceRow } = await (supabase.from("races") as any)
+        .upsert({
+          card_id: cardRow.id,
+          race_number: raceNum,
+          name: race.race_name ?? null,
+          off_time: race.off_time,
+          status: "upcoming",
+          winners: null,
+          source_id: apiRaceId,
+        }, { onConflict: "card_id,race_number" })
+        .select("id")
+        .single();
+
+      if (!raceRow) { count++; continue; }
 
       for (const runner of race.runners ?? []) {
         await supabase.from("horses").upsert({
-          id: runner.horse_id ?? String(runner.number),
-          race_id: race.race_id,
+          race_id: raceRow.id,
           number: runner.number,
           name: runner.horse,
           jockey: runner.jockey ?? null,
           odds: runner.sp_dec ? `${runner.sp_dec}` : (runner.odds ?? null),
-        });
+        }, { onConflict: "race_id,number" });
       }
 
       count++;
@@ -60,16 +74,16 @@ export async function syncCards(): Promise<number> {
 }
 
 export async function syncResults(cardId: string): Promise<void> {
-  const { data: races } = await supabase
-    .from("races")
-    .select("id, status")
+  const { data: races } = await (supabase.from("races") as any)
+    .select("id, source_id, status")
     .eq("card_id", cardId);
 
-  for (const race of races ?? []) {
+  for (const race of (races ?? []) as any[]) {
     if (race.status === "settled") continue;
+    if (!race.source_id) continue;
 
     try {
-      const data = await apiFetch(`/results/${race.id}`);
+      const data = await apiFetch(`/results/${race.source_id}`);
       const result = data.result ?? data;
       const runners: any[] = result.runners ?? [];
 
@@ -94,7 +108,7 @@ export async function syncResults(cardId: string): Promise<void> {
         .select("id, horse_id")
         .eq("race_id", race.id);
 
-      for (const pick of picks ?? []) {
+      for (const pick of (picks ?? []) as any[]) {
         let points = 0;
         if (pick.horse_id === first.horse_id) points = 5;
         else if (pick.horse_id === second?.horse_id) points = 3;

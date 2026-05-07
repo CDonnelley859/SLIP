@@ -4,11 +4,14 @@ import { useAuth } from '@/hooks/useAuth'
 export const NamePrompt = () => {
   const { setHandle } = useAuth()
   const [value, setValue] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!value.trim()) return
-    setHandle(value.trim())
+    setBusy(true)
+    await setHandle(value.trim())
+    setBusy(false)
   }
 
   return (
@@ -34,10 +37,10 @@ export const NamePrompt = () => {
           </div>
           <button
             type="submit"
-            disabled={!value.trim()}
+            disabled={!value.trim() || busy}
             className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist border-t-0 disabled:opacity-40 transition-none"
           >
-            ENTER THE PADDOCK
+            {busy ? "ENTERING…" : "ENTER THE PADDOCK"}
           </button>
         </form>
       </div>
