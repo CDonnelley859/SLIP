@@ -16,10 +16,11 @@ Deno.serve(async (req) => {
     if (!u || !p) throw new Error("Racing API credentials not configured");
 
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-    const day = body.date ?? "today";
 
     const auth = "Basic " + btoa(`${u}:${p}`);
-    const url = `https://api.theracingapi.com/v1/racecards/standard?day=${day}`;
+    // Free plan endpoint — returns next day's UK & IRE meetings.
+    // Upgrade to Standard/Pro to use /racecards/standard or /racecards/pro with a `day` param.
+    const url = `https://api.theracingapi.com/v1/racecards/free`;
     const res = await fetch(url, { headers: { Authorization: auth } });
     if (!res.ok) {
       const txt = await res.text();
