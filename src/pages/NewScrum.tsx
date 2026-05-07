@@ -22,26 +22,25 @@ const NewScrum = () => {
     setBusy(true);
     try {
       const joinCode = genCode();
-      const { data: scrum, error } = await supabase
-        .from("scrums")
-        .insert({
-          card_id: cardId,
-          host_id: userId,
-          name: name.trim(),
-          join_code: joinCode,
-        })
-        .select("id")
-        .single();
+      const scrumId = crypto.randomUUID();
 
-      if (error || !scrum) throw new Error(error?.message ?? "Failed to create group");
+      const { error } = await supabase.from("scrums").insert({
+        id: scrumId,
+        card_id: cardId,
+        host_id: userId,
+        name: name.trim(),
+        join_code: joinCode,
+      });
+
+      if (error) throw new Error(error.message);
 
       await supabase.from("scrum_members").insert({
-        scrum_id: scrum.id,
+        scrum_id: scrumId,
         user_id: userId,
       });
 
       toast.success(`Group code: ${joinCode}`);
-      navigate(`/scrum/${scrum.id}/gallop`);
+      navigate(`/scrum/${scrumId}/gallop`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
