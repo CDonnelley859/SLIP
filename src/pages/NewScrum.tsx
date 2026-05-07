@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
 const NewScrum = () => {
-  const { userId, handle } = useAuth();
+  const { userId } = useAuth();
   const [params] = useSearchParams();
   const cardId = params.get("card");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
   const navigate = useNavigate();
 
   if (!cardId) return <Navigate to="/" replace />;
@@ -25,25 +25,21 @@ const NewScrum = () => {
       const joinCode = genCode();
       const scrumId = crypto.randomUUID();
 
-      const { error } = await supabase.from("scrums").insert({
-        id: scrumId,
-        card_id: cardId,
-        host_id: userId,
+      await setDoc(doc(db, "scrums", scrumId), {
+        cardId,
+        hostId: userId,
         name: name.trim(),
-        join_code: joinCode,
+        joinCode,
       });
 
-      if (error) throw new Error(error.message);
-
-      await supabase.from("scrum_members").insert({
-        scrum_id: scrumId,
-        user_id: userId,
+      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+        scrumId,
+        userId,
       });
 
       toast.success(`Group code: ${joinCode}`);
       navigate(`/scrum/${scrumId}/gallop`);
     } catch (e: any) {
-      setErr(e.message);
       toast.error(e.message);
     } finally {
       setBusy(false);
@@ -88,14 +84,6 @@ const NewScrum = () => {
         </form>
         <p className="text-label-caps text-muted-foreground uppercase mt-4 text-center">
           A join code will be generated for you to share
-        </p>
-        {err && (
-          <p className="text-body-md text-destructive mt-4 border border-destructive p-3 break-all">
-            {err}
-          </p>
-        )}
-        <p className="text-label-caps text-muted-foreground mt-6 break-all opacity-50">
-          db: {import.meta.env.VITE_SUPABASE_URL?.slice(8, 28)}
         </p>
       </main>
     </div>

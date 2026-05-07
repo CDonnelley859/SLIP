@@ -1,4 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
+import {
+  collection, doc, setDoc, getDocs, query, where, updateDoc, writeBatch,
+} from "firebase/firestore";
 
 async function apiFetch(path: string) {
   const res = await fetch(`/api${path}`);
@@ -18,57 +21,49 @@ export async function syncCards(): Promise<number> {
     if (!Array.isArray(races) || races.length === 0) continue;
 
     const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
-    const sourceId = `${today}-${courseSlug}`;
+    const cardId = `${today}-${courseSlug}`;
     const firstRaceTime = races[0]?.race_time ?? "12:00";
-    const postTime = `${today}T${firstRaceTime}:00Z`;
 
-    const { data: cardRow } = await supabase
-      .from("cards")
-      .upsert({
-        track_name: trackName,
-        race_date: today,
-        post_time: postTime,
-        status: "upcoming",
-        source_id: sourceId,
-      }, { onConflict: "source_id" })
-      .select("id")
-      .single();
-
-    if (!cardRow) continue;
+    await setDoc(doc(db, "cards", cardId), {
+      trackName,
+      raceDate: today,
+      postTime: `${today}T${firstRaceTime}:00Z`,
+      status: "upcoming",
+      sourceId: cardId,
+      raceCount: races.length,
+    }, { merge: true });
 
     const trackRunners: Record<string, any[]> = runners[trackName] ?? {};
 
     for (let i = 0; i < races.length; i++) {
       const race = races[i];
       const raceNum = i + 1;
-      const raceSourceId = `${sourceId}-r${raceNum}`;
+      const raceId = `${cardId}-r${raceNum}`;
       const offTime = `${today}T${race.race_time ?? "12:00"}:00Z`;
 
-      const { data: raceRow } = await (supabase.from("races") as any)
-        .upsert({
-          card_id: cardRow.id,
-          race_number: raceNum,
-          name: race.race_name ?? null,
-          off_time: offTime,
-          status: "upcoming",
-          winners: null,
-          source_id: raceSourceId,
-        }, { onConflict: "card_id,race_number" })
-        .select("id")
-        .single();
-
-      if (!raceRow) { count++; continue; }
+      await setDoc(doc(db, "races", raceId), {
+        cardId,
+        raceNumber: raceNum,
+        name: race.race_name ?? null,
+        offTime,
+        status: "upcoming",
+        winners: null,
+        sourceId: raceId,
+      }, { merge: true });
 
       const raceRunners: any[] = trackRunners[race.race_time] ?? [];
-      for (const runner of raceRunners) {
-        await supabase.from("horses").upsert({
-          race_id: raceRow.id,
-          number: runner.saddle_number ?? runner.number ?? 0,
+      const batch = writeBatch(db);
+      raceRunners.forEach((runner, idx) => {
+        const horseId = `${raceId}-h${idx + 1}`;
+        batch.set(doc(db, "horses", horseId), {
+          raceId,
+          number: runner.saddle_number ?? runner.number ?? idx + 1,
           name: runner.horse ?? runner.name ?? "Unknown",
           jockey: runner.jockey ?? null,
           odds: runner.odds ?? null,
-        }, { onConflict: "race_id,number" });
-      }
+        }, { merge: true });
+      });
+      if (raceRunners.length > 0) await batch.commit();
 
       count++;
     }
@@ -78,16 +73,16 @@ export async function syncCards(): Promise<number> {
 }
 
 export async function syncResults(cardId: string): Promise<void> {
-  const { data: races } = await (supabase.from("races") as any)
-    .select("id, source_id, status")
-    .eq("card_id", cardId);
+  const racesSnap = await getDocs(
+    query(collection(db, "races"), where("cardId", "==", cardId))
+  );
 
-  for (const race of (races ?? []) as any[]) {
-    if (race.status === "settled") continue;
-    if (!race.source_id) continue;
+  for (const raceDoc of racesSnap.docs) {
+    const race = raceDoc.data();
+    if (race.status === "settled" || !race.sourceId) continue;
 
     try {
-      const data = await apiFetch(`/results?raceId=${race.source_id}`);
+      const data = await apiFetch(`/results?raceId=${race.sourceId}`);
       const result = data.result ?? data;
       const runners: any[] = result.runners ?? [];
 
@@ -95,32 +90,29 @@ export async function syncResults(cardId: string): Promise<void> {
       const first = getAt(1);
       const second = getAt(2);
       const third = getAt(3);
-
       if (!first) continue;
 
-      await supabase.from("races").update({
-        status: "settled",
-        winners: {
-          first: first.horse_id ?? null,
-          second: second?.horse_id ?? null,
-          third: third?.horse_id ?? null,
-        },
-      }).eq("id", race.id);
+      const winners = {
+        first: first.horse_id ?? null,
+        second: second?.horse_id ?? null,
+        third: third?.horse_id ?? null,
+      };
 
-      const { data: picks } = await supabase
-        .from("picks")
-        .select("id, horse_id")
-        .eq("race_id", race.id);
+      await updateDoc(raceDoc.ref, { status: "settled", winners });
 
-      for (const pick of (picks ?? []) as any[]) {
+      const picksSnap = await getDocs(
+        query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
+      );
+      for (const pickDoc of picksSnap.docs) {
+        const pick = pickDoc.data();
         let points = 0;
-        if (pick.horse_id === first.horse_id) points = 5;
-        else if (pick.horse_id === second?.horse_id) points = 3;
-        else if (pick.horse_id === third?.horse_id) points = 1;
-        await supabase.from("picks").update({ points }).eq("id", pick.id);
+        if (pick.horseId === winners.first) points = 5;
+        else if (pick.horseId === winners.second) points = 3;
+        else if (pick.horseId === winners.third) points = 1;
+        await updateDoc(pickDoc.ref, { points });
       }
     } catch {
-      // result not yet available — skip silently
+      // result not yet available
     }
   }
 }

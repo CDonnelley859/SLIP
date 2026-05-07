@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
+import {
+  doc, getDoc, getDocs, collection, query, where, onSnapshot,
+} from "firebase/firestore";
 import { toast } from "sonner";
 
 type LineStatus = "WIN" | "PLACE" | "SHOW" | "OUT" | "RUNNING" | "PENDING";
-
 type Line = {
-  raceNumber: number;
-  horseName: string;
-  horseNumber: number;
-  status: LineStatus;
-  points: number;
+  raceNumber: number; horseName: string; horseNumber: number;
+  status: LineStatus; points: number;
 };
 
 function getStatus(raceStatus: string, horseId: string, winners: any): LineStatus {
@@ -39,21 +38,13 @@ const StatusBadge = ({ status }: { status: LineStatus }) => {
       <span className="text-label-caps">RUNNING</span>
     </div>
   );
-  if (status === "PENDING") return (
-    <span className="text-label-caps opacity-30">PENDING</span>
-  );
-  if (status === "WIN") return (
-    <div className="text-headline-md uppercase stamp-win">WIN</div>
-  );
+  if (status === "PENDING") return <span className="text-label-caps opacity-30">PENDING</span>;
+  if (status === "WIN") return <div className="text-headline-md uppercase stamp-win">WIN</div>;
   if (status === "PLACE") return (
-    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-8deg)" }}>
-      PLACE
-    </div>
+    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-8deg)" }}>PLACE</div>
   );
   if (status === "SHOW") return (
-    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-6deg)" }}>
-      SHOW
-    </div>
+    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-6deg)" }}>SHOW</div>
   );
   return <div className="text-label-caps text-muted-foreground">OUT</div>;
 };
@@ -70,66 +61,60 @@ const Slip = () => {
     ? `${id.slice(0, 3).toUpperCase()} ${id.slice(3, 6).toUpperCase()}`
     : "--- ---";
 
-  async function loadLines(scrumData: any) {
-    const { data: picks } = await supabase
-      .from("picks")
-      .select("race_id, horse_id, points, races(race_number, status, winners), horses(name, number)")
-      .eq("scrum_id", id!)
-      .eq("user_id", userId);
-
-    const built: Line[] = (picks ?? []).map((p: any) => {
-      const race = p.races;
-      const horse = p.horses;
-      const status = getStatus(race?.status ?? "upcoming", p.horse_id, race?.winners);
-      return {
-        raceNumber: race?.race_number ?? 0,
+  async function buildLines() {
+    if (!id) return;
+    const picksSnap = await getDocs(
+      query(collection(db, "picks"),
+        where("scrumId", "==", id),
+        where("userId", "==", userId))
+    );
+    const built: Line[] = [];
+    for (const pickDoc of picksSnap.docs) {
+      const pick = pickDoc.data();
+      const raceDoc = await getDoc(doc(db, "races", pick.raceId));
+      const horseDoc = await getDoc(doc(db, "horses", pick.horseId));
+      const race = raceDoc.data();
+      const horse = horseDoc.data();
+      const status = getStatus(race?.status ?? "upcoming", pick.horseId, race?.winners);
+      built.push({
+        raceNumber: race?.raceNumber ?? 0,
         horseName: horse?.name ?? "—",
         horseNumber: horse?.number ?? 0,
         status,
         points: pointsFor(status),
-      };
-    });
-
+      });
+    }
     setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
   }
 
   useEffect(() => {
     if (!id) return;
-
     (async () => {
-      const { data: scrumData } = await supabase
-        .from("scrums")
-        .select("card_id, name, cards(track_name)")
-        .eq("id", id)
-        .single();
-
-      if (!scrumData) return;
+      const scrumDoc = await getDoc(doc(db, "scrums", id));
+      if (!scrumDoc.exists()) return;
+      const scrumData = scrumDoc.data();
       setScrum(scrumData);
-      setCard((scrumData as any).cards);
-      await loadLines(scrumData);
+      const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
+      setCard(cardDoc.data());
+      await buildLines();
     })();
 
-    const channel = supabase
-      .channel(`picks_${id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "picks", filter: `scrum_id=eq.${id}` },
-        () => { loadLines(null); }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    const unsub = onSnapshot(
+      query(collection(db, "picks"), where("scrumId", "==", id)),
+      () => buildLines()
+    );
+    return () => unsub();
   }, [id]);
 
   const total = lines.reduce((sum, l) => sum + l.points, 0);
 
   async function handleRefresh() {
-    if (!scrum?.card_id) return;
+    if (!scrum?.cardId) return;
     setRefreshing(true);
     try {
-      await syncResults(scrum.card_id);
+      await syncResults(scrum.cardId);
       toast.success("Results updated");
-      await loadLines(scrum);
+      await buildLines();
     } catch (err: any) {
       toast.error(err.message ?? "Failed to refresh");
     } finally {
@@ -139,26 +124,21 @@ const Slip = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center py-10 px-4">
-      {/* Ticket */}
       <div className="animate-print relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
-        {/* Notches */}
         <div style={{
           position: "absolute", left: -10, top: "20%",
-          width: 20, height: 20,
-          background: "#f9f9f9", borderRadius: "50%",
-          borderRight: "2.67px solid black", zIndex: 10,
+          width: 20, height: 20, background: "#f9f9f9",
+          borderRadius: "50%", borderRight: "2.67px solid black", zIndex: 10,
         }} />
         <div style={{
           position: "absolute", right: -10, top: "20%",
-          width: 20, height: 20,
-          background: "#f9f9f9", borderRadius: "50%",
-          borderLeft: "2.67px solid black", zIndex: 10,
+          width: 20, height: 20, background: "#f9f9f9",
+          borderRadius: "50%", borderLeft: "2.67px solid black", zIndex: 10,
         }} />
 
-        {/* Stub */}
         <div className="p-6 pt-10 border-b-[2.67px] border-dashed border-primary flex flex-col items-center gap-3">
           <span className="text-headline-lg uppercase text-center leading-tight">
-            {card?.track_name ?? "—"}
+            {card?.trackName ?? "—"}
           </span>
           <span className="text-label-caps text-muted-foreground uppercase">
             {scrum?.name ?? "—"}
@@ -168,7 +148,6 @@ const Slip = () => {
           </div>
         </div>
 
-        {/* Race lines */}
         <div className="p-6 space-y-4">
           {lines.length === 0 && (
             <p className="text-label-caps text-muted-foreground uppercase text-center py-4">
@@ -205,7 +184,6 @@ const Slip = () => {
           })}
         </div>
 
-        {/* Total */}
         {lines.length > 0 && (
           <div className="mx-6 mb-6 border-t-[2.67px] border-primary pt-3 flex justify-between text-headline-md uppercase">
             <span>TOTAL</span>
@@ -214,7 +192,6 @@ const Slip = () => {
         )}
       </div>
 
-      {/* Actions */}
       <div className="w-full max-w-md mt-6 flex flex-col gap-3">
         <button
           onClick={handleRefresh}

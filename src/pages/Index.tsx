@@ -1,29 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/firebase";
 import { syncCards } from "@/lib/racingApi";
+import {
+  collection, getDocs, query, where, doc, getDoc, setDoc,
+} from "firebase/firestore";
 import { toast } from "sonner";
 
-type Card = {
-  id: string;
-  track_name: string;
-  race_date: string;
-  post_time: string;
-  status: string;
-  raceCount: number;
-};
-
-type ActiveSlip = {
-  scrumId: string;
-  scrumName: string;
-  trackName: string;
-  completed: number;
-  total: number;
-};
+type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number };
+type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number };
 
 const Index = () => {
-  const { userId, handle } = useAuth();
+  const { userId } = useAuth();
   const navigate = useNavigate();
   const [cards, setCards] = useState<Card[]>([]);
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
@@ -32,48 +21,47 @@ const Index = () => {
   const [joining, setJoining] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [userId]);
 
   async function loadData() {
-    const { data: cardsData } = await supabase
-      .from("cards")
-      .select("id, track_name, race_date, post_time, status, races(id)")
-      .in("status", ["upcoming", "live"])
-      .order("post_time", { ascending: true })
-      .limit(10);
-
-    const cardList: Card[] = (cardsData ?? []).map((c: any) => ({
-      id: c.id,
-      track_name: c.track_name,
-      race_date: c.race_date,
-      post_time: c.post_time,
-      status: c.status,
-      raceCount: Array.isArray(c.races) ? c.races.length : 0,
-    }));
+    const cardsSnap = await getDocs(
+      query(collection(db, "cards"), where("status", "==", "upcoming"))
+    );
+    const cardList: Card[] = cardsSnap.docs.map(d => ({
+      id: d.id,
+      trackName: d.data().trackName,
+      raceDate: d.data().raceDate,
+      postTime: d.data().postTime,
+      raceCount: d.data().raceCount ?? 0,
+    })).sort((a, b) => a.postTime.localeCompare(b.postTime));
     setCards(cardList);
 
-    const { data: memberships } = await supabase
-      .from("scrum_members")
-      .select("scrum_id, scrums(id, name, card_id, cards(track_name))")
-      .eq("user_id", userId);
+    if (!userId) return;
+    const membersSnap = await getDocs(
+      query(collection(db, "scrumMembers"), where("userId", "==", userId))
+    );
 
     const slips: ActiveSlip[] = [];
-    for (const m of (memberships ?? []) as any[]) {
-      const scrum = m.scrums;
-      if (!scrum) continue;
-      const { data: races } = await supabase
-        .from("races")
-        .select("id, status")
-        .eq("card_id", scrum.card_id);
+    for (const m of membersSnap.docs) {
+      const scrumId = m.data().scrumId;
+      const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
+      if (!scrumDoc.exists()) continue;
+      const scrum = scrumDoc.data();
 
-      const total = races?.length ?? 0;
-      const completed = races?.filter((r: any) => r.status === "settled").length ?? 0;
+      const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
+      const cardData = cardDoc.data();
+
+      const racesSnap = await getDocs(
+        query(collection(db, "races"), where("cardId", "==", scrum.cardId))
+      );
+      const total = racesSnap.size;
+      const completed = racesSnap.docs.filter(r => r.data().status === "settled").length;
       if (total > 0 && completed >= total) continue;
 
       slips.push({
-        scrumId: m.scrum_id,
+        scrumId,
         scrumName: scrum.name,
-        trackName: scrum.cards?.track_name ?? "—",
+        trackName: cardData?.trackName ?? "—",
         completed,
         total,
       });
@@ -99,20 +87,15 @@ const Index = () => {
     if (!joinCode.trim()) return;
     setJoining(true);
     try {
-      const { data: scrum, error } = await supabase
-        .from("scrums")
-        .select("id")
-        .eq("join_code", joinCode.toUpperCase().trim())
-        .single();
-
-      if (error || !scrum) throw new Error("Code not found");
-
-      await supabase.from("scrum_members").upsert({
-        scrum_id: scrum.id,
-        user_id: userId,
+      const snap = await getDocs(
+        query(collection(db, "scrums"), where("joinCode", "==", joinCode.toUpperCase().trim()))
+      );
+      if (snap.empty) throw new Error("Code not found");
+      const scrumId = snap.docs[0].id;
+      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+        scrumId, userId,
       });
-
-      navigate(`/scrum/${scrum.id}/gallop`);
+      navigate(`/scrum/${scrumId}/gallop`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -121,7 +104,7 @@ const Index = () => {
   }
 
   const filteredCards = cards.filter(c =>
-    c.track_name.toLowerCase().includes(trackSearch.toLowerCase())
+    c.trackName.toLowerCase().includes(trackSearch.toLowerCase())
   );
 
   return (
@@ -131,7 +114,6 @@ const Index = () => {
       </header>
 
       <main className="px-4">
-        {/* Top Tracks */}
         <section className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-label-caps uppercase">Top Tracks</h2>
@@ -159,7 +141,7 @@ const Index = () => {
                   className={`flex-shrink-0 w-40 border-brutalist p-4 bg-background flex flex-col justify-between h-28 ${i > 0 ? "ml-[-2.67px]" : ""}`}
                 >
                   <span className="text-headline-md uppercase leading-tight line-clamp-2">
-                    {c.track_name}
+                    {c.trackName}
                   </span>
                   <span className="text-label-caps text-muted-foreground uppercase">
                     {c.raceCount} RACES
@@ -170,7 +152,6 @@ const Index = () => {
           )}
         </section>
 
-        {/* Search tracks */}
         <section className="mt-6">
           <div className="relative flex border-brutalist h-14">
             <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
@@ -185,7 +166,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Join by group code */}
         <section className="mt-4">
           <form onSubmit={handleJoin}>
             <div className="relative flex border-brutalist h-14">
@@ -210,7 +190,6 @@ const Index = () => {
           </form>
         </section>
 
-        {/* Active Slips */}
         <section className="mt-8">
           <h2 className="text-label-caps uppercase mb-2">Active Slips</h2>
           {activeSlips.length === 0 ? (
