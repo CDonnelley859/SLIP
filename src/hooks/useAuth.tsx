@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function getOrCreateUserId(): string {
   let id = localStorage.getItem('slip_user_id')
-  if (!id) {
+  if (!id || !UUID_RE.test(id)) {
     id = crypto.randomUUID()
     localStorage.setItem('slip_user_id', id)
   }
