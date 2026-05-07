@@ -94,6 +94,9 @@ const NewScrum = () => {
             {err}
           </p>
         )}
+        <p className="text-label-caps text-muted-foreground mt-6 break-all opacity-50">
+          db: {import.meta.env.VITE_SUPABASE_URL?.slice(8, 28)}
+        </p>
       </main>
     </div>
   );
