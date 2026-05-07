@@ -130,12 +130,24 @@ const Index = () => {
       <section className="px-6 mb-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-xl">The Big Board</h2>
-          <Link to="/scrum/join" className="text-xs text-primary hover:underline">Join with code</Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                const { toast } = await import("sonner");
+                toast.loading("Pulling cards…", { id: "sync" });
+                const { data, error } = await supabase.functions.invoke("sync-cards", { body: {} });
+                if (error || !data?.ok) toast.error(error?.message ?? data?.error ?? "Failed", { id: "sync" });
+                else { toast.success(`${data.cards} cards loaded`, { id: "sync" }); location.reload(); }
+              }}
+              className="text-xs text-primary hover:underline"
+            >Refresh</button>
+            <Link to="/scrum/join" className="text-xs text-primary hover:underline">Join code</Link>
+          </div>
         </div>
         {cards.length === 0 ? (
           <div className="border border-dashed border-border rounded-lg p-8 text-center space-y-3">
             <p className="text-sm text-muted-foreground">No cards loaded yet.</p>
-            <p className="text-xs text-muted-foreground">Add your racing API key to pull today's cards.</p>
+            <p className="text-xs text-muted-foreground">Tap Refresh to pull today's racecards.</p>
           </div>
         ) : (
           <div className="space-y-3">

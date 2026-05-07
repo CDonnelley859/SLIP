@@ -37,8 +37,18 @@ const Slip = () => {
 
   const total = lines.reduce((sum, l) => sum + (l.points ?? 0), 0);
 
+  const refresh = async () => {
+    if (!scrum?.card_id) return;
+    const { toast } = await import("sonner");
+    toast.loading("Pulling results…", { id: "r" });
+    const { data, error } = await supabase.functions.invoke("sync-results", { body: { card_id: scrum.card_id } });
+    if (error || !data?.ok) toast.error(error?.message ?? data?.error ?? "Failed", { id: "r" });
+    else toast.success("Results updated", { id: "r" });
+  };
+
   return (
     <PageShell title="Official Slip">
+      <button onClick={refresh} className="text-xs text-primary hover:underline mb-3">Refresh results</button>
       <motion.div
         initial={{ scaleY: 0, originY: 0 }}
         animate={{ scaleY: 1 }}
