@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, getDocs, collection, setDoc, serverTimestamp } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Horse = { id: string; number: number; name: string; jockey: string | null; odds: string | null };
-type Race = { id: string; raceNumber: number; name: string | null; offTime: string; horses: Horse[] };
+type Race = { id: string; race_number: number; name: string | null; off_time: string; horses: Horse[] };
 
 const Gallop = () => {
   const { id } = useParams();
@@ -21,31 +20,40 @@ const Gallop = () => {
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const scrumSnap = await getDoc(doc(db, "scrums", id));
-      if (!scrumSnap.exists()) return;
-      const scrum = scrumSnap.data();
+      const { data: scrum } = await supabase
+        .from("scrums")
+        .select("card_id, cards(id, track_name, race_date)")
+        .eq("id", id)
+        .single();
 
-      const cardSnap = await getDoc(doc(db, "cards", scrum.cardId));
-      if (cardSnap.exists()) setCard({ id: scrum.cardId, ...cardSnap.data() });
+      if (!scrum) return;
+      setCard((scrum as any).cards);
 
-      const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
-      const list: Race[] = [];
-      for (const r of racesSnap.docs) {
-        const horsesSnap = await getDocs(
-          collection(db, "cards", scrum.cardId, "races", r.id, "horses")
-        );
-        const horses = horsesSnap.docs
-          .map(h => ({ id: h.id, ...h.data() } as Horse))
-          .sort((a, b) => a.number - b.number);
-        list.push({ id: r.id, ...r.data(), horses } as Race);
-      }
-      setRaces(list.sort((a, b) => a.raceNumber - b.raceNumber));
+      const cardId = scrum.card_id;
 
-      const picksSnap = await getDocs(collection(db, "scrums", id, "picks"));
+      const { data: racesData } = await supabase
+        .from("races")
+        .select("id, race_number, name, off_time, horses(id, number, name, jockey, odds)")
+        .eq("card_id", cardId)
+        .order("race_number");
+
+      const list: Race[] = (racesData ?? []).map((r: any) => ({
+        id: r.id,
+        race_number: r.race_number,
+        name: r.name,
+        off_time: r.off_time,
+        horses: [...(r.horses ?? [])].sort((a: Horse, b: Horse) => a.number - b.number),
+      }));
+      setRaces(list);
+
+      const { data: existingPicks } = await supabase
+        .from("picks")
+        .select("race_id, horse_id")
+        .eq("scrum_id", id)
+        .eq("user_id", userId);
+
       const map: Record<string, string> = {};
-      picksSnap.docs
-        .filter(p => p.data().userId === userId)
-        .forEach(p => { map[p.data().raceId] = p.data().horseId; });
+      (existingPicks ?? []).forEach(p => { map[p.race_id] = p.horse_id; });
       setPicks(map);
     })();
   }, [id]);
@@ -55,23 +63,25 @@ const Gallop = () => {
   const allPicked = races.length > 0 && races.every(r => picks[r.id]);
   const currentPick = currentRace ? picks[currentRace.id] : undefined;
   const isLocked = currentRace
-    ? new Date(currentRace.offTime).getTime() <= Date.now()
+    ? new Date(currentRace.off_time).getTime() <= Date.now()
     : false;
 
   async function handleSubmit() {
     if (!allPicked) { toast.error("Pick a horse in every race"); return; }
     setSubmitting(true);
     try {
-      for (const [raceId, horseId] of Object.entries(picks)) {
-        await setDoc(doc(db, "scrums", id!, "picks", `${userId}_${raceId}`), {
-          userId,
-          scrumId: id,
-          raceId,
-          horseId,
-          points: null,
-          createdAt: serverTimestamp(),
-        });
-      }
+      await supabase.from("picks").delete().eq("scrum_id", id!).eq("user_id", userId);
+
+      const rows = Object.entries(picks).map(([raceId, horseId]) => ({
+        scrum_id: id!,
+        race_id: raceId,
+        horse_id: horseId,
+        user_id: userId,
+        points: null,
+      }));
+      const { error } = await supabase.from("picks").insert(rows);
+      if (error) throw new Error(error.message);
+
       navigate(`/scrum/${id}/slip`);
     } catch (err: any) {
       toast.error(err.message);
@@ -88,8 +98,8 @@ const Gallop = () => {
     );
   }
 
-  const offTime = currentRace.offTime
-    ? new Date(currentRace.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  const offTime = currentRace.off_time
+    ? new Date(currentRace.off_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     : "—";
 
   return (
@@ -98,11 +108,11 @@ const Gallop = () => {
       <header className="w-full border-b-brutalist bg-background px-4 sticky top-0 z-50">
         <div className="flex justify-between items-baseline py-2">
           <h1 className="text-[44px] font-black tracking-tighter leading-none">SLIP</h1>
-          <div className="text-label-caps">{card?.raceDate ?? ""}</div>
+          <div className="text-label-caps">{card?.race_date ?? ""}</div>
         </div>
         <div className="border-t border-primary/20 pt-1 pb-2 flex justify-between items-center">
           <h2 className="text-[22px] font-black uppercase tracking-tight flex-1 leading-tight">
-            {card?.trackName ?? "—"}
+            {card?.track_name ?? "—"}
           </h2>
           <span className="text-data-mono text-[16px] border-l border-primary/20 pl-2 ml-2">
             {offTime}
@@ -118,7 +128,7 @@ const Gallop = () => {
               Entry {String(currentIdx + 1).padStart(2, "0")} of {String(races.length).padStart(2, "0")}
             </span>
             <h3 className="text-[48px] font-black uppercase leading-none">
-              RACE {String(currentRace.raceNumber).padStart(2, "0")}
+              RACE {String(currentRace.race_number).padStart(2, "0")}
             </h3>
           </div>
           <div className="text-right pb-1">

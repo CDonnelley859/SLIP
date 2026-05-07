@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, onSnapshot } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { syncResults } from "@/lib/racingApi";
 import { toast } from "sonner";
 
@@ -71,59 +70,66 @@ const Slip = () => {
     ? `${id.slice(0, 3).toUpperCase()} ${id.slice(3, 6).toUpperCase()}`
     : "--- ---";
 
+  async function loadLines(scrumData: any) {
+    const { data: picks } = await supabase
+      .from("picks")
+      .select("race_id, horse_id, points, races(race_number, status, winners), horses(name, number)")
+      .eq("scrum_id", id!)
+      .eq("user_id", userId);
+
+    const built: Line[] = (picks ?? []).map((p: any) => {
+      const race = p.races;
+      const horse = p.horses;
+      const status = getStatus(race?.status ?? "upcoming", p.horse_id, race?.winners);
+      return {
+        raceNumber: race?.race_number ?? 0,
+        horseName: horse?.name ?? "—",
+        horseNumber: horse?.number ?? 0,
+        status,
+        points: pointsFor(status),
+      };
+    });
+
+    setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
+  }
+
   useEffect(() => {
     if (!id) return;
-    let unsub: (() => void) | null = null;
 
     (async () => {
-      const scrumSnap = await getDoc(doc(db, "scrums", id));
-      if (!scrumSnap.exists()) return;
-      const scrumData = scrumSnap.data();
+      const { data: scrumData } = await supabase
+        .from("scrums")
+        .select("card_id, name, cards(track_name)")
+        .eq("id", id)
+        .single();
+
+      if (!scrumData) return;
       setScrum(scrumData);
-
-      const cardSnap = await getDoc(doc(db, "cards", scrumData.cardId));
-      if (cardSnap.exists()) setCard(cardSnap.data());
-
-      const picksQ = query(
-        collection(db, "scrums", id, "picks"),
-        where("userId", "==", userId)
-      );
-
-      unsub = onSnapshot(picksQ, async (snap) => {
-        const built: Line[] = [];
-        for (const p of snap.docs) {
-          const pick = p.data();
-          const [raceSnap, horseSnap] = await Promise.all([
-            getDoc(doc(db, "cards", scrumData.cardId, "races", pick.raceId)),
-            getDoc(doc(db, "cards", scrumData.cardId, "races", pick.raceId, "horses", pick.horseId)),
-          ]);
-          if (!raceSnap.exists() || !horseSnap.exists()) continue;
-          const race = raceSnap.data();
-          const horse = horseSnap.data();
-          const status = getStatus(race.status, pick.horseId, race.winners);
-          built.push({
-            raceNumber: race.raceNumber,
-            horseName: horse.name,
-            horseNumber: horse.number,
-            status,
-            points: pointsFor(status),
-          });
-        }
-        setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
-      });
+      setCard((scrumData as any).cards);
+      await loadLines(scrumData);
     })();
 
-    return () => { unsub?.(); };
+    const channel = supabase
+      .channel(`picks_${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "picks", filter: `scrum_id=eq.${id}` },
+        () => { loadLines(null); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [id]);
 
   const total = lines.reduce((sum, l) => sum + l.points, 0);
 
   async function handleRefresh() {
-    if (!scrum?.cardId) return;
+    if (!scrum?.card_id) return;
     setRefreshing(true);
     try {
-      await syncResults(scrum.cardId);
+      await syncResults(scrum.card_id);
       toast.success("Results updated");
+      await loadLines(scrum);
     } catch (err: any) {
       toast.error(err.message ?? "Failed to refresh");
     } finally {
@@ -152,7 +158,7 @@ const Slip = () => {
         {/* Stub */}
         <div className="p-6 pt-10 border-b-[2.67px] border-dashed border-primary flex flex-col items-center gap-3">
           <span className="text-headline-lg uppercase text-center leading-tight">
-            {card?.trackName ?? "—"}
+            {card?.track_name ?? "—"}
           </span>
           <span className="text-label-caps text-muted-foreground uppercase">
             {scrum?.name ?? "—"}

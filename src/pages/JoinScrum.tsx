@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const JoinScrum = () => {
-  const { userId, handle } = useAuth();
+  const { userId } = useAuth();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -15,18 +14,20 @@ const JoinScrum = () => {
     e.preventDefault();
     setBusy(true);
     try {
-      const snap = await getDocs(query(
-        collection(db, "scrums"),
-        where("joinCode", "==", code.toUpperCase().trim())
-      ));
-      if (snap.empty) throw new Error("Code not found");
-      const scrumId = snap.docs[0].id;
-      await setDoc(doc(db, "scrums", scrumId, "members", userId), {
-        userId,
-        handle,
-        joinedAt: serverTimestamp(),
+      const { data: scrum, error } = await supabase
+        .from("scrums")
+        .select("id")
+        .eq("join_code", code.toUpperCase().trim())
+        .single();
+
+      if (error || !scrum) throw new Error("Code not found");
+
+      await supabase.from("scrum_members").upsert({
+        scrum_id: scrum.id,
+        user_id: userId,
       });
-      navigate(`/scrum/${scrumId}/gallop`);
+
+      navigate(`/scrum/${scrum.id}/gallop`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {

@@ -1,19 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import {
-  collection, query, where, orderBy, limit, getDocs,
-  doc, getDoc, collectionGroup, setDoc, serverTimestamp,
-} from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { syncCards } from "@/lib/racingApi";
 import { toast } from "sonner";
 
 type Card = {
   id: string;
-  trackName: string;
-  raceDate: string;
-  postTime: string;
+  track_name: string;
+  race_date: string;
+  post_time: string;
   status: string;
   raceCount: number;
 };
@@ -39,38 +35,48 @@ const Index = () => {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const cardsSnap = await getDocs(query(
-      collection(db, "cards"),
-      where("status", "in", ["upcoming", "live"]),
-      orderBy("postTime", "asc"),
-      limit(10)
-    ));
+    const { data: cardsData } = await supabase
+      .from("cards")
+      .select("id, track_name, race_date, post_time, status, races(id)")
+      .in("status", ["upcoming", "live"])
+      .order("post_time", { ascending: true })
+      .limit(10);
 
-    const cardList: Card[] = [];
-    for (const d of cardsSnap.docs) {
-      const racesSnap = await getDocs(collection(db, "cards", d.id, "races"));
-      cardList.push({ id: d.id, raceCount: racesSnap.size, ...d.data() } as Card);
-    }
+    const cardList: Card[] = (cardsData ?? []).map((c: any) => ({
+      id: c.id,
+      track_name: c.track_name,
+      race_date: c.race_date,
+      post_time: c.post_time,
+      status: c.status,
+      raceCount: Array.isArray(c.races) ? c.races.length : 0,
+    }));
     setCards(cardList);
 
-    const membersSnap = await getDocs(query(
-      collectionGroup(db, "members"),
-      where("userId", "==", userId)
-    ));
+    const { data: memberships } = await supabase
+      .from("scrum_members")
+      .select("scrum_id, scrums(id, name, card_id, cards(track_name))")
+      .eq("user_id", userId);
 
     const slips: ActiveSlip[] = [];
-    for (const m of membersSnap.docs) {
-      const scrumId = m.ref.parent.parent!.id;
-      const scrumSnap = await getDoc(doc(db, "scrums", scrumId));
-      if (!scrumSnap.exists()) continue;
-      const scrum = scrumSnap.data();
-      const cardSnap = await getDoc(doc(db, "cards", scrum.cardId));
-      const trackName = cardSnap.exists() ? cardSnap.data().trackName : "—";
-      const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
-      const total = racesSnap.size;
-      const completed = racesSnap.docs.filter(r => r.data().status === "settled").length;
+    for (const m of (memberships ?? []) as any[]) {
+      const scrum = m.scrums;
+      if (!scrum) continue;
+      const { data: races } = await supabase
+        .from("races")
+        .select("id, status")
+        .eq("card_id", scrum.card_id);
+
+      const total = races?.length ?? 0;
+      const completed = races?.filter((r: any) => r.status === "settled").length ?? 0;
       if (total > 0 && completed >= total) continue;
-      slips.push({ scrumId, scrumName: scrum.name, trackName, completed, total });
+
+      slips.push({
+        scrumId: m.scrum_id,
+        scrumName: scrum.name,
+        trackName: scrum.cards?.track_name ?? "—",
+        completed,
+        total,
+      });
     }
     setActiveSlips(slips);
   }
@@ -93,18 +99,20 @@ const Index = () => {
     if (!joinCode.trim()) return;
     setJoining(true);
     try {
-      const snap = await getDocs(query(
-        collection(db, "scrums"),
-        where("joinCode", "==", joinCode.toUpperCase().trim())
-      ));
-      if (snap.empty) throw new Error("Code not found");
-      const scrumId = snap.docs[0].id;
-      await setDoc(doc(db, "scrums", scrumId, "members", userId), {
-        userId,
-        handle,
-        joinedAt: serverTimestamp(),
+      const { data: scrum, error } = await supabase
+        .from("scrums")
+        .select("id")
+        .eq("join_code", joinCode.toUpperCase().trim())
+        .single();
+
+      if (error || !scrum) throw new Error("Code not found");
+
+      await supabase.from("scrum_members").upsert({
+        scrum_id: scrum.id,
+        user_id: userId,
       });
-      navigate(`/scrum/${scrumId}/gallop`);
+
+      navigate(`/scrum/${scrum.id}/gallop`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -113,7 +121,7 @@ const Index = () => {
   }
 
   const filteredCards = cards.filter(c =>
-    c.trackName.toLowerCase().includes(trackSearch.toLowerCase())
+    c.track_name.toLowerCase().includes(trackSearch.toLowerCase())
   );
 
   return (
@@ -151,7 +159,7 @@ const Index = () => {
                   className={`flex-shrink-0 w-40 border-brutalist p-4 bg-background flex flex-col justify-between h-28 ${i > 0 ? "ml-[-2.67px]" : ""}`}
                 >
                   <span className="text-headline-md uppercase leading-tight line-clamp-2">
-                    {c.trackName}
+                    {c.track_name}
                   </span>
                   <span className="text-label-caps text-muted-foreground uppercase">
                     {c.raceCount} RACES

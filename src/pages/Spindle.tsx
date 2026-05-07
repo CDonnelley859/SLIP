@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import {
-  collection, query, where, getDocs, doc, getDoc, collectionGroup,
-} from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 
 type CompletedSlip = {
   scrumId: string;
@@ -23,46 +20,51 @@ const Spindle = () => {
 
   useEffect(() => {
     (async () => {
-      const membersSnap = await getDocs(query(
-        collectionGroup(db, "members"),
-        where("userId", "==", userId)
-      ));
+      const { data: memberships } = await supabase
+        .from("scrum_members")
+        .select("scrum_id, scrums(id, name, card_id, cards(track_name, race_date))")
+        .eq("user_id", userId);
 
       const completed: CompletedSlip[] = [];
-      for (const m of membersSnap.docs) {
-        const scrumId = m.ref.parent.parent!.id;
-        const scrumSnap = await getDoc(doc(db, "scrums", scrumId));
-        if (!scrumSnap.exists()) continue;
-        const scrum = scrumSnap.data();
 
-        const cardSnap = await getDoc(doc(db, "cards", scrum.cardId));
-        const cardData = cardSnap.exists() ? cardSnap.data() : null;
+      for (const m of (memberships ?? []) as any[]) {
+        const scrum = m.scrums;
+        if (!scrum) continue;
 
-        const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
-        const total = racesSnap.size;
-        const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        if (settled < total || total === 0) continue;
+        const { data: races } = await supabase
+          .from("races")
+          .select("id, status")
+          .eq("card_id", scrum.card_id);
 
-        const picksSnap = await getDocs(query(
-          collection(db, "scrums", scrumId, "picks"),
-          where("userId", "==", userId)
-        ));
-        const totalPoints = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
+        const total = races?.length ?? 0;
+        const settled = races?.filter((r: any) => r.status === "settled").length ?? 0;
+        if (total === 0 || settled < total) continue;
 
-        const allPicksSnap = await getDocs(collection(db, "scrums", scrumId, "picks"));
+        const { data: myPicks } = await supabase
+          .from("picks")
+          .select("points")
+          .eq("scrum_id", m.scrum_id)
+          .eq("user_id", userId);
+
+        const totalPoints = (myPicks ?? []).reduce((a, p) => a + (p.points ?? 0), 0);
+
+        const { data: allPicks } = await supabase
+          .from("picks")
+          .select("user_id, points")
+          .eq("scrum_id", m.scrum_id);
+
         const pointsByUser: Record<string, number> = {};
-        allPicksSnap.docs.forEach(p => {
-          const d = p.data();
-          pointsByUser[d.userId] = (pointsByUser[d.userId] ?? 0) + (d.points ?? 0);
+        (allPicks ?? []).forEach(p => {
+          pointsByUser[p.user_id] = (pointsByUser[p.user_id] ?? 0) + (p.points ?? 0);
         });
         const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
         const rank = sorted.indexOf(totalPoints) + 1;
 
         completed.push({
-          scrumId,
+          scrumId: m.scrum_id,
           scrumName: scrum.name,
-          trackName: cardData?.trackName ?? "—",
-          date: cardData?.raceDate ?? "",
+          trackName: scrum.cards?.track_name ?? "—",
+          date: scrum.cards?.race_date ?? "",
           totalPoints,
           rank,
           totalMembers: sorted.length,

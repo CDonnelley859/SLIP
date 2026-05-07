@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -23,20 +22,26 @@ const NewScrum = () => {
     setBusy(true);
     try {
       const joinCode = genCode();
-      const scrumRef = await addDoc(collection(db, "scrums"), {
-        cardId,
-        hostId: userId,
-        name: name.trim(),
-        joinCode,
-        createdAt: serverTimestamp(),
+      const { data: scrum, error } = await supabase
+        .from("scrums")
+        .insert({
+          card_id: cardId,
+          host_id: userId,
+          name: name.trim(),
+          join_code: joinCode,
+        })
+        .select("id")
+        .single();
+
+      if (error || !scrum) throw new Error(error?.message ?? "Failed to create group");
+
+      await supabase.from("scrum_members").insert({
+        scrum_id: scrum.id,
+        user_id: userId,
       });
-      await setDoc(doc(db, "scrums", scrumRef.id, "members", userId), {
-        userId,
-        handle,
-        joinedAt: serverTimestamp(),
-      });
+
       toast.success(`Group code: ${joinCode}`);
-      navigate(`/scrum/${scrumRef.id}/gallop`);
+      navigate(`/scrum/${scrum.id}/gallop`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
