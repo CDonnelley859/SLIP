@@ -1,19 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const API_KEY = import.meta.env.VITE_RACING_API_KEY;
-const BASE = "https://api.theracingapi.com/v1";
-
 async function apiFetch(path: string) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "x-api-key": API_KEY },
-  });
+  const res = await fetch(`/api${path}`);
   if (!res.ok) throw new Error(`Racing API error ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
 export async function syncCards(): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
-  const data = await apiFetch(`/racecards/pro?date=${today}&region=gb`);
+  const data = await apiFetch(`/racecards?date=${today}&region=gb`);
   const racecards = data.racecards ?? [];
   let count = 0;
 
@@ -83,7 +78,7 @@ export async function syncResults(cardId: string): Promise<void> {
     if (!race.source_id) continue;
 
     try {
-      const data = await apiFetch(`/results/${race.source_id}`);
+      const data = await apiFetch(`/results?raceId=${race.source_id}`);
       const result = data.result ?? data;
       const runners: any[] = result.runners ?? [];
 
