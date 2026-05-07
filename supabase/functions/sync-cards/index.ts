@@ -1,5 +1,9 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { corsHeaders } from "@supabase/supabase-js/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 // Sync upcoming racecards from TheRacingAPI into cards/races/horses.
 // Defaults to today. Pass {date: "YYYY-MM-DD"} or {region: "gb"} in body to filter.
