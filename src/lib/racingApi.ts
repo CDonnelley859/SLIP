@@ -8,21 +8,26 @@ async function apiFetch(path: string) {
 
 export async function syncCards(): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
-  const data = await apiFetch(`/racecards?date=${today}&region=gb`);
-  const racecards = data.racecards ?? [];
+  const data = await apiFetch(`/racecards?date=${today}`);
+
+  const courses: Record<string, any[]> = data.courses ?? {};
+  const runners: Record<string, any> = data.runners ?? {};
   let count = 0;
 
-  for (const card of racecards) {
-    const courseId = card.course_id ?? card.course.replace(/\s+/g, "-").toLowerCase();
-    const sourceId = `${today}-${courseId}`;
+  for (const [trackName, races] of Object.entries(courses)) {
+    if (!Array.isArray(races) || races.length === 0) continue;
 
-    // Upsert card by source_id (TEXT UNIQUE in schema), get back the UUID
+    const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
+    const sourceId = `${today}-${courseSlug}`;
+    const firstRaceTime = races[0]?.race_time ?? "12:00";
+    const postTime = `${today}T${firstRaceTime}:00Z`;
+
     const { data: cardRow } = await supabase
       .from("cards")
       .upsert({
-        track_name: card.course,
+        track_name: trackName,
         race_date: today,
-        post_time: card.races?.[0]?.off_time ?? `${today}T12:00:00Z`,
+        post_time: postTime,
         status: "upcoming",
         source_id: sourceId,
       }, { onConflict: "source_id" })
@@ -31,33 +36,37 @@ export async function syncCards(): Promise<number> {
 
     if (!cardRow) continue;
 
-    for (const race of card.races ?? []) {
-      const raceNum = race.race_num ?? race.race_number;
-      const apiRaceId: string = race.race_id ?? `${sourceId}-r${raceNum}`;
+    const trackRunners: Record<string, any[]> = runners[trackName] ?? {};
 
-      // Upsert race by card_id + race_number (composite unique), store API race_id in source_id
+    for (let i = 0; i < races.length; i++) {
+      const race = races[i];
+      const raceNum = i + 1;
+      const raceSourceId = `${sourceId}-r${raceNum}`;
+      const offTime = `${today}T${race.race_time ?? "12:00"}:00Z`;
+
       const { data: raceRow } = await (supabase.from("races") as any)
         .upsert({
           card_id: cardRow.id,
           race_number: raceNum,
           name: race.race_name ?? null,
-          off_time: race.off_time,
+          off_time: offTime,
           status: "upcoming",
           winners: null,
-          source_id: apiRaceId,
+          source_id: raceSourceId,
         }, { onConflict: "card_id,race_number" })
         .select("id")
         .single();
 
       if (!raceRow) { count++; continue; }
 
-      for (const runner of race.runners ?? []) {
+      const raceRunners: any[] = trackRunners[race.race_time] ?? [];
+      for (const runner of raceRunners) {
         await supabase.from("horses").upsert({
           race_id: raceRow.id,
-          number: runner.number,
-          name: runner.horse,
+          number: runner.saddle_number ?? runner.number ?? 0,
+          name: runner.horse ?? runner.name ?? "Unknown",
           jockey: runner.jockey ?? null,
-          odds: runner.sp_dec ? `${runner.sp_dec}` : (runner.odds ?? null),
+          odds: runner.odds ?? null,
         }, { onConflict: "race_id,number" });
       }
 
