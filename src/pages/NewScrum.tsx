@@ -12,6 +12,7 @@ const NewScrum = () => {
   const cardId = params.get("card");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   const navigate = useNavigate();
 
   if (!cardId) return <Navigate to="/" replace />;
@@ -41,8 +42,9 @@ const NewScrum = () => {
 
       toast.success(`Group code: ${joinCode}`);
       navigate(`/scrum/${scrumId}/gallop`);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (e: any) {
+      setErr(e.message);
+      toast.error(e.message);
     } finally {
       setBusy(false);
     }
@@ -87,6 +89,11 @@ const NewScrum = () => {
         <p className="text-label-caps text-muted-foreground uppercase mt-4 text-center">
           A join code will be generated for you to share
         </p>
+        {err && (
+          <p className="text-body-md text-destructive mt-4 border border-destructive p-3 break-all">
+            {err}
+          </p>
+        )}
       </main>
     </div>
   );
