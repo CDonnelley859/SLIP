@@ -8,22 +8,26 @@ const HEADERS = { "x-rapidapi-key": RAPID_KEY, "x-rapidapi-host": RAPID_HOST };
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
-  // Fetch first race from today's racecards
-  const date = new Date().toISOString().slice(0, 10);
-  const racecardsRes = await fetch(`${BASE}/racecards?date=${date}`, { headers: HEADERS });
-  const raw = await racecardsRes.json();
-  const races: any[] = Array.isArray(raw) ? raw : [];
-  const firstRace = races[0];
+  const id = "269481";
 
-  if (!firstRace) return res.json({ error: "No races today" });
+  // Try several possible endpoint patterns in parallel
+  const attempts = [
+    `/race-detail?id_race=${id}`,
+    `/race-detail/${id}`,
+    `/race/${id}`,
+    `/races?id_race=${id}`,
+    `/runners?id_race=${id}`,
+    `/runners/${id}`,
+    `/racecards/${id}`,
+  ];
 
-  // Try to fetch race detail for first race
-  const detailRes = await fetch(`${BASE}/races/${firstRace.id_race}`, { headers: HEADERS });
-  const detail = await detailRes.json();
+  const results = await Promise.all(
+    attempts.map(async (path) => {
+      const r = await fetch(`${BASE}${path}`, { headers: HEADERS });
+      const body = await r.text();
+      return { path, status: r.status, body: body.slice(0, 200) };
+    })
+  );
 
-  res.json({
-    detailStatus: detailRes.status,
-    detailKeys: Object.keys(Array.isArray(detail) ? (detail[0] ?? {}) : detail),
-    detail: Array.isArray(detail) ? detail.slice(0, 2) : detail,
-  });
+  res.json(results);
 }
