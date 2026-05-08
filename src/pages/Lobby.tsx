@@ -129,6 +129,16 @@ const Lobby = () => {
           SHOW SLIP
         </Link>
 
+        {/* Host-only results entry */}
+        {userId === scrum.hostId && (
+          <Link
+            to={`/scrum/${id}/host-results`}
+            className="w-full h-12 bg-primary text-primary-foreground text-label-caps uppercase flex items-center justify-center border-brutalist transition-none"
+          >
+            ENTER RESULTS →
+          </Link>
+        )}
+
         {/* Leave with confirmation */}
         {confirmLeave ? (
           <div className="border-brutalist p-4 flex flex-col gap-3">

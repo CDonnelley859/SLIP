@@ -12,6 +12,7 @@ import Gallop from "./pages/Gallop";
 import Lobby from "./pages/Lobby";
 import Slip from "./pages/Slip";
 import Spindle from "./pages/Spindle";
+import HostResults from "./pages/HostResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const AppRoutes = () => {
       <Route path="/scrum/:id/lobby" element={<Lobby />} />
       <Route path="/scrum/:id/gallop" element={<Gallop />} />
       <Route path="/scrum/:id/slip" element={<Slip />} />
+      <Route path="/scrum/:id/host-results" element={<HostResults />} />
       <Route path="/spindle" element={<Spindle />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
