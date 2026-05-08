@@ -24,8 +24,9 @@ const Index = () => {
   useEffect(() => { loadData(); }, [userId]);
 
   async function loadData() {
+    const today = new Date().toISOString().slice(0, 10);
     const cardsSnap = await getDocs(
-      query(collection(db, "cards"), where("status", "==", "upcoming"))
+      query(collection(db, "cards"), where("raceDate", "==", today))
     );
     const cardList: Card[] = cardsSnap.docs.map(d => ({
       id: d.id,
