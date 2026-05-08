@@ -8,26 +8,15 @@ const HEADERS = { "x-rapidapi-key": RAPID_KEY, "x-rapidapi-host": RAPID_HOST };
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
-  const id = "269481";
+  const detailRes = await fetch(`${BASE}/race/269481`, { headers: HEADERS });
+  const detail = await detailRes.json();
 
-  // Try several possible endpoint patterns in parallel
-  const attempts = [
-    `/race-detail?id_race=${id}`,
-    `/race-detail/${id}`,
-    `/race/${id}`,
-    `/races?id_race=${id}`,
-    `/runners?id_race=${id}`,
-    `/runners/${id}`,
-    `/racecards/${id}`,
-  ];
+  const runners: any[] = detail.runners ?? detail.horses ?? detail.entries ?? [];
 
-  const results = await Promise.all(
-    attempts.map(async (path) => {
-      const r = await fetch(`${BASE}${path}`, { headers: HEADERS });
-      const body = await r.text();
-      return { path, status: r.status, body: body.slice(0, 200) };
-    })
-  );
-
-  res.json(results);
+  res.json({
+    topLevelKeys: Object.keys(detail),
+    runnerCount: runners.length,
+    firstRunner: runners[0] ?? null,
+    firstRunnerKeys: runners[0] ? Object.keys(runners[0]) : [],
+  });
 }
