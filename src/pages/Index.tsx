@@ -195,8 +195,8 @@ const Index = () => {
               </p>
             </div>
           ) : (
-            <div className="flex overflow-x-auto gap-0 -mx-4 px-4 pb-2">
-              {filteredCards.map((c, i) => {
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 pb-2 gap-3 px-4 scroll-px-4">
+              {filteredCards.map((c) => {
                 const isSelected = selectedCard?.id === c.id;
                 const firstRace = c.postTime
                   ? new Date(c.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -205,14 +205,13 @@ const Index = () => {
                   <button
                     key={c.id}
                     onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(c)}
-                    className={`flex-shrink-0 w-40 border-brutalist p-4 flex flex-col justify-between h-28 text-left transition-none
-                      ${isSelected ? "bg-primary text-primary-foreground" : "bg-background"}
-                      ${i > 0 ? "ml-[-2.67px]" : ""}`}
+                    className={`flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32 text-left transition-none
+                      ${isSelected ? "bg-primary text-primary-foreground" : "bg-background"}`}
                   >
-                    <span className="text-headline-md uppercase leading-tight line-clamp-2">
+                    <span className="text-headline-md uppercase leading-tight">
                       {c.trackName}
                     </span>
-                    <div className={`flex flex-col ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
+                    <div className={`flex gap-4 items-end ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
                       <span className="text-label-caps uppercase">{firstRace}</span>
                       <span className="text-label-caps uppercase">{c.raceCount} RACES</span>
                     </div>
