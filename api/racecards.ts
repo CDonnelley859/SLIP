@@ -37,14 +37,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const timeMatch = key.match(/\b(\d{2}:\d{2})\b/);
     if (!timeMatch) continue;
 
-    const time12 = timeMatch[1];
-    const time24 = to24h(time12);
-    const trackName = key.slice(0, key.indexOf(time12)).trim();
+    const raceTime = timeMatch[1]; // "01:50" — same format as course-info race_time
+    const trackName = key.slice(0, key.indexOf(raceTime)).trim();
 
     if (!runners[trackName]) runners[trackName] = {};
-    if (!runners[trackName][time24]) runners[trackName][time24] = [];
+    if (!runners[trackName][raceTime]) runners[trackName][raceTime] = [];
 
-    if (Array.isArray(entries)) runners[trackName][time24].push(...entries);
+    if (Array.isArray(entries)) runners[trackName][raceTime].push(...entries);
   }
 
   // Log a sample to verify matching
