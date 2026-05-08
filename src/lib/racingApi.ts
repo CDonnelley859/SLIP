@@ -3,78 +3,94 @@ import {
   collection, doc, getDoc, setDoc, getDocs, query, where, updateDoc, writeBatch,
 } from "firebase/firestore";
 
-// OurHub times are 12-hour UK local (e.g. "01:50" = 1:50 PM BST)
-// Convert to proper UTC ISO string for storage
-function raceTimeToISO(dateStr: string, time12h: string): string {
-  const [h, m] = (time12h ?? "12:00").split(":").map(Number);
-  const h24 = h < 12 ? h + 12 : h; // UK racing is always afternoon
-  const month = parseInt(dateStr.split("-")[1]);
-  const isBST = month >= 4 && month <= 10; // Apr–Oct = BST (UTC+1)
-  const utcH = h24 - (isBST ? 1 : 0);
-  return `${dateStr}T${String(utcH).padStart(2, "0")}:${String(m).padStart(2, "0")}:00Z`;
-}
-
 async function apiFetch(path: string) {
   const res = await fetch(`/api${path}`);
-  if (!res.ok) throw new Error(`Racing API error ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
   return res.json();
 }
 
-// Syncs card + race metadata only (fast — 1 API call)
+// Strip any country/surface suffix: "Wolverhampton (AW)" → "wolverhampton"
+function normaliseCourse(course: string): string {
+  return course.replace(/\s*\([^)]+\)\s*$/, "").trim().toLowerCase();
+}
+
+// Display name from TRA course: "Wolverhampton (AW)" → "Wolverhampton"
+function displayName(course: string): string {
+  return normaliseCourse(course)
+    .split(" ")
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// Strip country suffix from horse name: "Rubellite (IRE)" → "RUBELLITE"
+function normaliseName(name: string): string {
+  return name.replace(/\s*\([A-Z]+\)\s*$/, "").trim().toUpperCase();
+}
+
+// Syncs today's cards, races, and horses from TRA /racecards/free
 export async function syncCards(): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
-  const data = await apiFetch(`/racecards?date=${today}`);
+  const data = await apiFetch(`/tra-racecards`);
+  const racecards: any[] = data?.racecards ?? [];
 
-  const courses: Record<string, any[]> = data.courses ?? {};
-  // runners is { "Ascot": { "13:50": [...runners] } }
-  const runners: Record<string, Record<string, any[]>> = data.runners ?? {};
+  // Group racecards by normalised course name
+  const byCourse: Record<string, any[]> = {};
+  for (const rc of racecards) {
+    const norm = normaliseCourse(rc.course ?? "");
+    if (!norm) continue;
+    if (!byCourse[norm]) byCourse[norm] = [];
+    byCourse[norm].push(rc);
+  }
+
   let raceCount = 0;
   let horseCount = 0;
 
-  for (const [trackName, races] of Object.entries(courses)) {
-    if (!Array.isArray(races) || races.length === 0) continue;
+  for (const [normCourse, courseRacecards] of Object.entries(byCourse)) {
+    if (courseRacecards.length === 0) continue;
 
-    const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
+    // Sort by off time
+    courseRacecards.sort((a, b) =>
+      new Date(a.off_dt).getTime() - new Date(b.off_dt).getTime()
+    );
+
+    const trackName = displayName(courseRacecards[0].course);
+    const courseSlug = normCourse.replace(/\s+/g, "-");
     const cardId = `${today}-${courseSlug}`;
-    const firstRaceTime = races[0]?.race_time ?? "12:00";
 
     await setDoc(doc(db, "cards", cardId), {
       trackName,
       raceDate: today,
-      postTime: raceTimeToISO(today, firstRaceTime),
+      postTime: courseRacecards[0].off_dt,
       status: "upcoming",
       sourceId: cardId,
-      raceCount: races.length,
+      raceCount: courseRacecards.length,
     }, { merge: true });
 
-    const trackRunners: Record<string, any[]> = runners[trackName] ?? {};
-
-    for (let i = 0; i < races.length; i++) {
-      const race = races[i];
+    for (let i = 0; i < courseRacecards.length; i++) {
+      const rc = courseRacecards[i];
       const raceNum = i + 1;
       const raceId = `${cardId}-r${raceNum}`;
-      const raceTime = race.race_time ?? "12:00";
 
       await setDoc(doc(db, "races", raceId), {
         cardId,
         raceNumber: raceNum,
-        name: race.race_name ?? null,
-        offTime: raceTimeToISO(today, raceTime),
+        name: rc.race_name ?? null,
+        offTime: rc.off_dt,
         status: "upcoming",
         winners: null,
         sourceId: raceId,
       }, { merge: true });
 
-      const raceRunners: any[] = trackRunners[raceTime] ?? [];
-      if (raceRunners.length > 0) {
+      const runners: any[] = rc.runners ?? [];
+      if (runners.length > 0) {
         const batch = writeBatch(db);
-        raceRunners.forEach((runner, idx) => {
+        runners.forEach((runner, idx) => {
           const horseId = `${raceId}-h${idx + 1}`;
           batch.set(doc(db, "horses", horseId), {
             raceId,
             number: Number(runner.number) || idx + 1,
-            name: runner.horse_name ?? runner.horse ?? "Unknown",
-            jockey: runner.jockey_name ?? runner.jockey ?? null,
+            name: runner.horse ?? "Unknown",
+            jockey: runner.jockey ?? null,
             odds: null,
           }, { merge: true });
           horseCount++;
@@ -89,20 +105,20 @@ export async function syncCards(): Promise<string> {
   return `${raceCount} races, ${horseCount} horses`;
 }
 
-// Syncs runners for a specific card using TRA /racecards/free
+// Syncs runners for a specific card from TRA /racecards/free
+// Called when Gallop opens and a race has no horses
 export async function syncRunners(cardId: string): Promise<number> {
   const cardDoc = await getDoc(doc(db, "cards", cardId));
   if (!cardDoc.exists()) return 0;
   const { trackName } = cardDoc.data();
   const normTrack = normaliseCourse(trackName);
 
-  // Get all races for this card
   const racesSnap = await getDocs(
     query(collection(db, "races"), where("cardId", "==", cardId))
   );
   if (racesSnap.empty) return 0;
 
-  // Only sync races that have no horses yet
+  // Only process races that have no horses yet
   const racesNeedingRunners: typeof racesSnap.docs = [];
   for (const raceDoc of racesSnap.docs) {
     const existing = await getDocs(
@@ -112,11 +128,8 @@ export async function syncRunners(cardId: string): Promise<number> {
   }
   if (racesNeedingRunners.length === 0) return 0;
 
-  // Fetch TRA free racecards
   const data = await apiFetch(`/tra-racecards`);
   const traCards: any[] = data?.racecards ?? [];
-
-  // Filter to this track
   const trackCards = traCards.filter(
     (rc: any) => normaliseCourse(rc.course ?? "") === normTrack
   );
@@ -129,7 +142,6 @@ export async function syncRunners(cardId: string): Promise<number> {
     if (!race.offTime) continue;
     const raceUTC = new Date(race.offTime).getTime();
 
-    // Match by off time within 5 minutes
     const match = trackCards.find((rc: any) => {
       const traTime = new Date(rc.off_dt).getTime();
       return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
@@ -157,39 +169,26 @@ export async function syncRunners(cardId: string): Promise<number> {
   return horseCount;
 }
 
-// Strip country suffix: "Rubellite (IRE)" → "RUBELLITE"
-function normaliseName(name: string): string {
-  return name.replace(/\s*\([A-Z]+\)\s*$/, "").trim().toUpperCase();
-}
-
-// Strip any country/surface suffix: "Wolverhampton (AW)" → "wolverhampton", "Ballinrobe (IRE)" → "ballinrobe"
-function normaliseCourse(course: string): string {
-  return course.replace(/\s*\([^)]+\)\s*$/, "").trim().toLowerCase();
-}
-
+// Syncs results for a specific card from TRA /results/today/free
 export async function syncResults(cardId: string): Promise<void> {
   const cardDoc = await getDoc(doc(db, "cards", cardId));
   if (!cardDoc.exists()) return;
   const { trackName } = cardDoc.data();
   const normTrack = normaliseCourse(trackName);
 
-  // Fetch today's results from The Racing API (requires Basic plan or above)
   let traRaces: any[] = [];
   try {
     const data = await apiFetch(`/results`);
-    // TRA format: { results: [ { course, off_dt, runners: [{ horse, position }] } ] }
     traRaces = data?.results ?? [];
   } catch {
-    return; // Results not available yet
+    return;
   }
 
-  // Filter to races at this track
   const trackRaces = traRaces.filter(
     (r: any) => normaliseCourse(r.course ?? "") === normTrack
   );
   if (trackRaces.length === 0) return;
 
-  // Get all races for this card
   const racesSnap = await getDocs(
     query(collection(db, "races"), where("cardId", "==", cardId))
   );
@@ -201,7 +200,6 @@ export async function syncResults(cardId: string): Promise<void> {
 
     const raceUTC = new Date(race.offTime).getTime();
 
-    // Find the TRA race whose off_dt is closest to our stored offTime (within 5 min)
     const match = trackRaces.find((r: any) => {
       const traTime = new Date(r.off_dt).getTime();
       return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
@@ -215,7 +213,6 @@ export async function syncResults(cardId: string): Promise<void> {
     const third = atPos("3");
     if (!first) continue;
 
-    // Look up Firestore horse IDs by normalised name
     const horsesSnap = await getDocs(
       query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
     );
@@ -232,7 +229,6 @@ export async function syncResults(cardId: string): Promise<void> {
       second: toId(second),
       third: toId(third),
     };
-
     if (!winners.first) continue;
 
     await updateDoc(raceDoc.ref, { status: "settled", winners });
