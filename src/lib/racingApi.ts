@@ -33,8 +33,6 @@ export async function syncCards(): Promise<number> {
       raceCount: races.length,
     }, { merge: true });
 
-    const trackRunnerList: any[] = Array.isArray(runners[trackName]) ? runners[trackName] : [];
-
     for (let i = 0; i < races.length; i++) {
       const race = races[i];
       const raceNum = i + 1;
@@ -51,7 +49,9 @@ export async function syncCards(): Promise<number> {
         sourceId: raceId,
       }, { merge: true });
 
-      const raceRunners: any[] = trackRunnerList.filter((r: any) => r.race_time === race.race_time);
+      // OurHub runner-info keys are "TrackName HH:MM" format
+      const raceKey = `${trackName} ${race.race_time}`;
+      const raceRunners: any[] = Array.isArray(runners[raceKey]) ? runners[raceKey] : [];
       const batch = writeBatch(db);
       raceRunners.forEach((runner, idx) => {
         const horseId = `${raceId}-h${idx + 1}`;
