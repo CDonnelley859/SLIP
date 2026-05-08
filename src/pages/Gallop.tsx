@@ -5,7 +5,6 @@ import { db } from "@/lib/firebase";
 import {
   doc, getDoc, getDocs, collection, query, where, setDoc, writeBatch,
 } from "firebase/firestore";
-import { syncRunners } from "@/lib/racingApi";
 import { toast } from "sonner";
 
 type Horse = { id: string; number: number; name: string; jockey: string | null; odds: string | null };
@@ -60,16 +59,7 @@ const Gallop = () => {
         setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
       }
 
-      // Load whatever is already in Firestore first
       await loadRaces();
-
-      // Then try to fetch any missing runners from API
-      try {
-        const newHorses = await syncRunners(scrum.cardId);
-        if (newHorses > 0) await loadRaces(); // Reload if new data was written
-      } catch {
-        // Rate limit or network error — use whatever horses are already stored
-      }
 
       const picksSnap = await getDocs(
         query(collection(db, "picks"),

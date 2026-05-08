@@ -15,14 +15,17 @@ export async function syncCards(): Promise<string> {
   const data = await apiFetch(`/racecards?date=${today}`);
 
   const courses: Record<string, any[]> = data.courses ?? {};
+  // runners is { "Ascot": { "13:50": [...runners] } }
+  const runners: Record<string, Record<string, any[]>> = data.runners ?? {};
   let raceCount = 0;
+  let horseCount = 0;
 
   for (const [trackName, races] of Object.entries(courses)) {
     if (!Array.isArray(races) || races.length === 0) continue;
 
     const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
     const cardId = `${today}-${courseSlug}`;
-    const firstRaceTime = (races[0]?.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
+    const firstRaceTime = races[0]?.race_time ?? "12:00";
 
     await setDoc(doc(db, "cards", cardId), {
       trackName,
@@ -33,27 +36,46 @@ export async function syncCards(): Promise<string> {
       raceCount: races.length,
     }, { merge: true });
 
+    const trackRunners: Record<string, any[]> = runners[trackName] ?? {};
+
     for (let i = 0; i < races.length; i++) {
       const race = races[i];
       const raceNum = i + 1;
       const raceId = `${cardId}-r${raceNum}`;
-      const raceTime = (race.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
+      const raceTime = race.race_time ?? "12:00";
 
       await setDoc(doc(db, "races", raceId), {
         cardId,
         raceNumber: raceNum,
-        name: race.title ?? null,
+        name: race.race_name ?? null,
         offTime: `${today}T${raceTime}:00Z`,
         status: "upcoming",
         winners: null,
-        sourceId: race.id_race ?? raceId,
+        sourceId: raceId,
       }, { merge: true });
+
+      const raceRunners: any[] = trackRunners[raceTime] ?? [];
+      if (raceRunners.length > 0) {
+        const batch = writeBatch(db);
+        raceRunners.forEach((runner, idx) => {
+          const horseId = `${raceId}-h${idx + 1}`;
+          batch.set(doc(db, "horses", horseId), {
+            raceId,
+            number: Number(runner.number) || idx + 1,
+            name: runner.horse_name ?? runner.horse ?? "Unknown",
+            jockey: runner.jockey_name ?? runner.jockey ?? null,
+            odds: null,
+          }, { merge: true });
+          horseCount++;
+        });
+        await batch.commit();
+      }
 
       raceCount++;
     }
   }
 
-  return `${raceCount} races loaded`;
+  return `${raceCount} races, ${horseCount} horses`;
 }
 
 // Syncs runners for a specific card — called when Gallop page opens

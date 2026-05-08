@@ -3,6 +3,14 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 const API_KEY = "oh_C2xOzhL0KOZPyGVtDjwq-ySdZYYwMwvQ";
 const BASE = "https://api.ourhub.site";
 
+// OurHub runner keys use 12-hour time (e.g. "01:50" = 1:50 PM = "13:50")
+// Convert to 24-hour so it matches course-info race_time
+function to24h(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const h24 = h < 12 ? h + 12 : h;
+  return `${String(h24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -19,14 +27,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const courses = await courseRes.json();
-  const rawRunners = runnerRes.ok ? await runnerRes.json() : {};
+  const rawRunners: Record<string, any[]> = runnerRes.ok ? await runnerRes.json() : {};
 
-  // Log the exact runner structure so we can see the format
-  const keys = Object.keys(rawRunners);
-  console.log("RUNNER_KEY_COUNT:", keys.length);
-  console.log("RUNNER_KEY_0:", JSON.stringify(keys[0]));
-  console.log("RUNNER_KEY_1:", JSON.stringify(keys[1]));
-  console.log("RUNNER_ENTRY_0:", JSON.stringify((rawRunners[keys[0]] ?? []).slice(0, 1)));
+  // Transform runner keys "Ascot 01:50 Race Name" → nested by track + 24h time
+  // Result: { "Ascot": { "13:50": [...runners] } }
+  const runners: Record<string, Record<string, any[]>> = {};
 
-  res.json({ courses, runners: rawRunners });
+  for (const [key, entries] of Object.entries(rawRunners)) {
+    const timeMatch = key.match(/\b(\d{2}:\d{2})\b/);
+    if (!timeMatch) continue;
+
+    const time12 = timeMatch[1];
+    const time24 = to24h(time12);
+    const trackName = key.slice(0, key.indexOf(time12)).trim();
+
+    if (!runners[trackName]) runners[trackName] = {};
+    if (!runners[trackName][time24]) runners[trackName][time24] = [];
+
+    if (Array.isArray(entries)) runners[trackName][time24].push(...entries);
+  }
+
+  // Log a sample to verify matching
+  const firstTrack = Object.keys(courses)[0];
+  const firstRace = courses[firstTrack]?.[0];
+  const firstRaceTime = firstRace?.race_time;
+  const firstRunners = firstTrack && firstRaceTime ? runners[firstTrack]?.[firstRaceTime] : null;
+  console.log("MATCH_CHECK:", JSON.stringify({ firstTrack, firstRaceTime, runnerCount: firstRunners?.length ?? 0 }));
+
+  res.json({ courses, runners });
 }
