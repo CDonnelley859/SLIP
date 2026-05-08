@@ -78,6 +78,7 @@ const Spindle = () => {
         if (!scrumDoc.exists()) continue;
         const scrum = scrumDoc.data();
 
+        const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
         const cardData = cardDoc.data();
 
         // Show previous-day games always; today's games only once fully settled
