@@ -201,14 +201,34 @@ const Spindle = () => {
                       borderRadius: "50%", borderLeft: "2.67px solid black", zIndex: 10,
                     }} />
 
-                    {/* Header */}
-                    <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary flex flex-col items-center gap-1">
-                      <span className="text-headline-lg uppercase text-center leading-tight">{s.trackName}</span>
-                      <span className="text-label-caps text-muted-foreground uppercase">{s.scrumName}</span>
-                      <span className="text-label-caps text-muted-foreground">{s.date}</span>
+                    {/* ── STUB ── */}
+                    <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary">
+                      <div className="flex flex-col items-center gap-1 mb-5">
+                        <span className="text-headline-lg uppercase text-center leading-tight">{s.trackName}</span>
+                        <span className="text-label-caps text-muted-foreground uppercase">{s.scrumName}</span>
+                        {s.date && (
+                          <span className="text-label-caps text-muted-foreground">
+                            {new Date(s.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-end border-t border-primary/20 pt-4">
+                        <div>
+                          <span className="text-label-caps text-muted-foreground uppercase block">TOTAL</span>
+                          <span className="text-[40px] font-black leading-none">{s.totalPoints}</span>
+                          <span className="text-label-caps text-muted-foreground uppercase"> PTS</span>
+                        </div>
+                        {s.rank && (
+                          <div className="text-right">
+                            <span className="text-label-caps text-muted-foreground uppercase block">RANK</span>
+                            <span className="text-headline-md font-black">#{s.rank}</span>
+                            <span className="text-label-caps text-muted-foreground"> OF {s.totalMembers}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Lines */}
+                    {/* ── BODY ── Lines */}
                     <div className="p-6 space-y-4">
                       {s.lines.map((l, i) => {
                         const isOut = l.status === "OUT";
@@ -252,18 +272,8 @@ const Spindle = () => {
                       })}
                     </div>
 
-                    {/* Total + rank */}
-                    <div className="mx-6 mb-4 border-t-[2.67px] border-primary pt-3 flex justify-between text-headline-md uppercase">
-                      <span>TOTAL</span>
-                      <span>{s.totalPoints} PTS</span>
-                    </div>
-                    {s.rank && (
-                      <div className="mx-6 mb-6 text-center">
-                        <span className="text-label-caps text-muted-foreground uppercase">
-                          #{s.rank} of {s.totalMembers} in {s.scrumName}
-                        </span>
-                      </div>
-                    )}
+                    {/* Bottom padding */}
+                    <div className="pb-2" />
                   </div>
                 </div>
               ))}

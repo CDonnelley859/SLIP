@@ -61,8 +61,8 @@ const Slip = () => {
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [lines, setLines] = useState<Line[]>([]);
+  const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
 
   async function buildLines() {
     if (!id) return;
@@ -101,7 +101,24 @@ const Slip = () => {
         podium,
       });
     }
-    setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
+    const sorted = built.sort((a, b) => a.raceNumber - b.raceNumber);
+    setLines(sorted);
+
+    // Calculate rank across all players in this scrum
+    const myTotal = sorted.reduce((sum, l) => sum + l.points, 0);
+    const allPicksSnap = await getDocs(
+      query(collection(db, "picks"), where("scrumId", "==", id))
+    );
+    const pointsByUser: Record<string, number> = {};
+    allPicksSnap.docs.forEach(p => {
+      const uid = p.data().userId;
+      pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
+    });
+    const allTotals = Object.values(pointsByUser).sort((a, b) => b - a);
+    const position = allTotals.indexOf(myTotal) + 1;
+    if (position > 0 && allTotals.length > 1) {
+      setRank({ position, total: allTotals.length });
+    }
   }
 
   useEffect(() => {
@@ -121,52 +138,63 @@ const Slip = () => {
       () => buildLines()
     );
 
-    // Auto-refresh results every 30 seconds
     const interval = setInterval(() => buildLines(), 30000);
-
     return () => { unsub(); clearInterval(interval); };
   }, [id]);
 
   const total = lines.reduce((sum, l) => sum + l.points, 0);
-
-  async function handleRefresh() {
-    if (!scrum?.cardId) return;
-    setRefreshing(true);
-    try {
-      await syncResults(scrum.cardId);
-      await buildLines();
-      toast.success("Results updated");
-    } catch (err: any) {
-      // Sync may fail on free plan — still refresh the display
-      await buildLines();
-    } finally {
-      setRefreshing(false);
-    }
-  }
+  const isFullyPending = lines.length > 0 && lines.every(l => l.status === "PENDING");
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center py-10 px-4">
       <div className="animate-print relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
+        {/* Punch holes */}
         <div style={{
-          position: "absolute", left: -10, top: "20%",
+          position: "absolute", left: -10, top: "15%",
           width: 20, height: 20, background: "#f9f9f9",
           borderRadius: "50%", borderRight: "2.67px solid black", zIndex: 10,
         }} />
         <div style={{
-          position: "absolute", right: -10, top: "20%",
+          position: "absolute", right: -10, top: "15%",
           width: 20, height: 20, background: "#f9f9f9",
           borderRadius: "50%", borderLeft: "2.67px solid black", zIndex: 10,
         }} />
 
-        <div className="p-6 pt-10 border-b-[2.67px] border-dashed border-primary flex flex-col items-center gap-3">
-          <span className="text-headline-lg uppercase text-center leading-tight">
-            {card?.trackName ?? "—"}
-          </span>
-          <span className="text-label-caps text-muted-foreground uppercase">
-            {scrum?.name ?? "—"}
-          </span>
+        {/* ── STUB ── track, group, date, total, rank */}
+        <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary">
+          {/* Venue + group centred at top */}
+          <div className="flex flex-col items-center gap-1 mb-5">
+            <span className="text-headline-lg uppercase text-center leading-tight">
+              {card?.trackName ?? "—"}
+            </span>
+            <span className="text-label-caps text-muted-foreground uppercase">
+              {scrum?.name ?? "—"}
+            </span>
+            {card?.raceDate && (
+              <span className="text-label-caps text-muted-foreground">
+                {new Date(card.raceDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+              </span>
+            )}
+          </div>
+
+          {/* Points + rank row */}
+          <div className="flex justify-between items-end border-t border-primary/20 pt-4">
+            <div>
+              <span className="text-label-caps text-muted-foreground uppercase block">TOTAL</span>
+              <span className="text-[40px] font-black leading-none">{isFullyPending ? "—" : total}</span>
+              <span className="text-label-caps text-muted-foreground uppercase"> PTS</span>
+            </div>
+            {rank && (
+              <div className="text-right">
+                <span className="text-label-caps text-muted-foreground uppercase block">RANK</span>
+                <span className="text-headline-md font-black">#{rank.position}</span>
+                <span className="text-label-caps text-muted-foreground"> OF {rank.total}</span>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* ── BODY ── race lines */}
         <div className="p-6 space-y-4">
           {lines.length === 0 && (
             <p className="text-label-caps text-muted-foreground uppercase text-center py-4">
@@ -198,9 +226,9 @@ const Slip = () => {
                     {isSettled && `+${l.points} PTS`}
                   </span>
                   <div className="flex gap-2 mt-2">
-                    {(["first","second","third"] as const).map((pos, pi) => {
+                    {(["first", "second", "third"] as const).map((pos, pi) => {
                       const horse = l.podium[pos];
-                      const label = ["1ST","2ND","3RD"][pi];
+                      const label = ["1ST", "2ND", "3RD"][pi];
                       return (
                         <div key={pos} className="flex-1 border border-primary/30 p-1 text-center">
                           <div className="text-[9px] text-muted-foreground font-mono uppercase">{label}</div>
@@ -219,13 +247,6 @@ const Slip = () => {
             );
           })}
         </div>
-
-        {lines.length > 0 && (
-          <div className="mx-6 mb-6 border-t-[2.67px] border-primary pt-3 flex justify-between text-headline-md uppercase">
-            <span>TOTAL</span>
-            <span>{total} PTS</span>
-          </div>
-        )}
       </div>
 
       <div className="w-full max-w-md mt-6 flex flex-col gap-3">
@@ -245,6 +266,20 @@ const Slip = () => {
       </div>
     </div>
   );
+
+  async function handleRefresh() {
+    if (!scrum?.cardId) return;
+    setRefreshing(true);
+    try {
+      await syncResults(scrum.cardId);
+      await buildLines();
+      toast.success("Results updated");
+    } catch {
+      await buildLines();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 };
 
 export default Slip;
