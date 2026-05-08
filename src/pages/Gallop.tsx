@@ -31,39 +31,45 @@ const Gallop = () => {
       const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
       setCard(cardDoc.data());
 
-      // Fetch & write runners for this card (only a handful of API calls)
-      try {
-        const horseCount = await syncRunners(scrum.cardId);
-        toast.info(`${horseCount} horses synced`);
-      } catch (err: any) {
-        toast.error(`Runner sync failed: ${err.message}`);
-      }
-
       const racesSnap = await getDocs(
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
       );
-      const raceList: Race[] = [];
-      for (const raceDoc of racesSnap.docs) {
-        const r = raceDoc.data();
-        const horsesSnap = await getDocs(
-          query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
-        );
-        const horses: Horse[] = horsesSnap.docs.map(h => ({
-          id: h.id,
-          number: h.data().number,
-          name: h.data().name,
-          jockey: h.data().jockey ?? null,
-          odds: h.data().odds ?? null,
-        })).sort((a, b) => a.number - b.number);
-        raceList.push({
-          id: raceDoc.id,
-          raceNumber: r.raceNumber,
-          name: r.name ?? null,
-          offTime: r.offTime,
-          horses,
-        });
+
+      async function loadRaces() {
+        const raceList: Race[] = [];
+        for (const raceDoc of racesSnap.docs) {
+          const r = raceDoc.data();
+          const horsesSnap = await getDocs(
+            query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
+          );
+          const horses: Horse[] = horsesSnap.docs.map(h => ({
+            id: h.id,
+            number: h.data().number,
+            name: h.data().name,
+            jockey: h.data().jockey ?? null,
+            odds: h.data().odds ?? null,
+          })).sort((a, b) => a.number - b.number);
+          raceList.push({
+            id: raceDoc.id,
+            raceNumber: r.raceNumber,
+            name: r.name ?? null,
+            offTime: r.offTime,
+            horses,
+          });
+        }
+        setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
       }
-      setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
+
+      // Load whatever is already in Firestore first
+      await loadRaces();
+
+      // Then try to fetch any missing runners from API
+      try {
+        const newHorses = await syncRunners(scrum.cardId);
+        if (newHorses > 0) await loadRaces(); // Reload if new data was written
+      } catch {
+        // Rate limit or network error — use whatever horses are already stored
+      }
 
       const picksSnap = await getDocs(
         query(collection(db, "picks"),

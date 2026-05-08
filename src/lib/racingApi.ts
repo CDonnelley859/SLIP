@@ -64,8 +64,19 @@ export async function syncRunners(cardId: string): Promise<number> {
   );
   if (racesSnap.empty) return 0;
 
-  // Collect the RapidAPI race IDs
-  const raceIds = racesSnap.docs
+  // Only fetch races that don't already have horses in Firestore
+  const racesNeedingRunners: typeof racesSnap.docs = [];
+  for (const raceDoc of racesSnap.docs) {
+    const existingHorses = await getDocs(
+      query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
+    );
+    if (existingHorses.empty) racesNeedingRunners.push(raceDoc);
+  }
+
+  if (racesNeedingRunners.length === 0) return 0; // Already have all horses
+
+  // Collect the RapidAPI race IDs for races that need runners
+  const raceIds = racesNeedingRunners
     .map(d => d.data().sourceId)
     .filter(Boolean)
     .join(",");
@@ -75,7 +86,7 @@ export async function syncRunners(cardId: string): Promise<number> {
 
   let horseCount = 0;
 
-  for (const raceDoc of racesSnap.docs) {
+  for (const raceDoc of racesNeedingRunners) {
     const sourceId = raceDoc.data().sourceId;
     const detail = byId[sourceId];
     if (!detail) continue;
