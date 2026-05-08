@@ -33,7 +33,7 @@ export async function syncCards(): Promise<number> {
       raceCount: races.length,
     }, { merge: true });
 
-    const trackRunners: Record<string, any[]> = runners[trackName] ?? {};
+    const trackRunnerList: any[] = Array.isArray(runners[trackName]) ? runners[trackName] : [];
 
     for (let i = 0; i < races.length; i++) {
       const race = races[i];
@@ -51,7 +51,7 @@ export async function syncCards(): Promise<number> {
         sourceId: raceId,
       }, { merge: true });
 
-      const raceRunners: any[] = trackRunners[race.race_time] ?? [];
+      const raceRunners: any[] = trackRunnerList.filter((r: any) => r.race_time === race.race_time);
       const batch = writeBatch(db);
       raceRunners.forEach((runner, idx) => {
         const horseId = `${raceId}-h${idx + 1}`;
