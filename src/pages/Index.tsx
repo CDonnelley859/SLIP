@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards } from "@/lib/racingApi";
@@ -14,6 +14,7 @@ type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; compl
 const Index = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [cards, setCards] = useState<Card[]>([]);
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
   const [trackSearch, setTrackSearch] = useState("");
@@ -21,7 +22,7 @@ const Index = () => {
   const [joining, setJoining] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  useEffect(() => { loadData(); }, [userId]);
+  useEffect(() => { loadData(); }, [userId, location.key]);
 
   async function loadData() {
     const today = new Date().toISOString().slice(0, 10);
