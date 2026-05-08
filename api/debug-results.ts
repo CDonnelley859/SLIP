@@ -11,14 +11,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const date = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
 
   const endpoints = [
-    `/results`,
-    `/results?day=today`,
-    `/results?region=gb`,
-    `/results?region=gb&date=${date}`,
-    `/racecards/results`,
-    `/racecards/results/today`,
-    `/results/free`,
-    `/results?limit=10`,
+    `/racecards/${date}`,
+    `/racecards?date=${date}`,
+    `/racecards/results/${date}`,
+    `/racecards/${date}/results`,
+    `/results/racecards`,
+    `/results/racecards/${date}`,
+    `/racecards?date=${date}&results=true`,
+    `/racecards/pro?date=${date}`,
+    `/racecards/standard?date=${date}`,
+    `/racecards/free?date=${date}`,
   ];
 
   const out: Record<string, any> = {};
@@ -31,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const text = await r.text();
       let body: any;
       try { body = JSON.parse(text); } catch { body = text; }
-      out[path] = { status: r.status, sample: JSON.stringify(body).slice(0, 600) };
+      out[path] = { status: r.status, sample: JSON.stringify(body).slice(0, 500) };
     } catch (e: any) {
       out[path] = { error: e.message };
     }
