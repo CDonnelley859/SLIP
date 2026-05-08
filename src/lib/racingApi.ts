@@ -130,22 +130,25 @@ export async function syncRunners(cardId: string): Promise<number> {
 
   const data = await apiFetch(`/tra-racecards`);
   const traCards: any[] = data?.racecards ?? [];
-  const trackCards = traCards.filter(
-    (rc: any) => normaliseCourse(rc.course ?? "") === normTrack
-  );
+
+  // All TRA racecards for this track, sorted by off time
+  const trackCards = traCards
+    .filter((rc: any) => normaliseCourse(rc.course ?? "") === normTrack)
+    .sort((a: any, b: any) => new Date(a.off_dt).getTime() - new Date(b.off_dt).getTime());
+
   if (trackCards.length === 0) return 0;
+
+  // All races for this card sorted by race number
+  const allRacesSorted = racesSnap.docs
+    .slice()
+    .sort((a, b) => (a.data().raceNumber ?? 0) - (b.data().raceNumber ?? 0));
 
   let horseCount = 0;
 
   for (const raceDoc of racesNeedingRunners) {
-    const race = raceDoc.data();
-    if (!race.offTime) continue;
-    const raceUTC = new Date(race.offTime).getTime();
-
-    const match = trackCards.find((rc: any) => {
-      const traTime = new Date(rc.off_dt).getTime();
-      return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
-    });
+    const raceNumber: number = raceDoc.data().raceNumber ?? 0;
+    // Match by position: raceNumber 1 → trackCards[0], raceNumber 2 → trackCards[1], etc.
+    const match = trackCards[raceNumber - 1];
     if (!match) continue;
 
     const runners: any[] = match.runners ?? [];
