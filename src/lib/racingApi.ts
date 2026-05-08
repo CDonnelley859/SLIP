@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebase";
 import {
-  collection, doc, setDoc, getDocs, query, where, updateDoc, writeBatch,
+  collection, doc, getDoc, setDoc, getDocs, query, where, updateDoc, writeBatch,
 } from "firebase/firestore";
 
 // OurHub times are 12-hour UK local (e.g. "01:50" = 1:50 PM BST)
@@ -150,46 +150,88 @@ export async function syncRunners(cardId: string): Promise<number> {
 }
 
 export async function syncResults(cardId: string): Promise<void> {
+  // Get card to find the date and track name
+  const cardDoc = await getDoc(doc(db, "cards", cardId));
+  if (!cardDoc.exists()) return;
+  const card = cardDoc.data();
+  const { raceDate, trackName } = card;
+
+  // Fetch all results for today from OurHub
+  let allResults: Record<string, any[]> = {};
+  try {
+    const data = await apiFetch(`/results?date=${raceDate}`);
+    // OurHub result-info format mirrors runner-info:
+    // { "Ascot 13:50 Race Name": [...runners with position] }
+    allResults = data ?? {};
+  } catch {
+    return; // Results not available yet
+  }
+
+  // Get all races for this card
   const racesSnap = await getDocs(
     query(collection(db, "races"), where("cardId", "==", cardId))
   );
 
   for (const raceDoc of racesSnap.docs) {
     const race = raceDoc.data();
-    if (race.status === "settled" || !race.sourceId) continue;
+    if (race.status === "settled") continue;
 
-    try {
-      const data = await apiFetch(`/results?raceId=${race.sourceId}`);
-      const result = data.result ?? data;
-      const runners: any[] = result.runners ?? [];
+    // Convert stored UTC offTime back to local race time string to match OurHub key
+    const offDate = new Date(race.offTime);
+    const localH = offDate.getUTCHours() + (raceDate >= "2026-04" && raceDate <= "2026-10" ? 1 : 0);
+    const localM = offDate.getUTCMinutes();
+    const timeStr = `${String(localH).padStart(2, "0")}:${String(localM).padStart(2, "0")}`;
 
-      const getAt = (pos: number) => runners.find((r: any) => Number(r.position) === pos);
-      const first = getAt(1);
-      const second = getAt(2);
-      const third = getAt(3);
-      if (!first) continue;
+    // Find the matching result entry by track name + time
+    const resultKey = Object.keys(allResults).find(
+      k => k.startsWith(trackName) && k.includes(timeStr)
+    );
+    if (!resultKey) continue;
 
-      const winners = {
-        first: first.horse_id ?? null,
-        second: second?.horse_id ?? null,
-        third: third?.horse_id ?? null,
-      };
+    const runners: any[] = allResults[resultKey] ?? [];
+    const getAt = (pos: number) =>
+      runners.find((r: any) => Number(r.position) === pos || r.finishing_position === String(pos));
+    const first = getAt(1);
+    const second = getAt(2);
+    const third = getAt(3);
+    if (!first) continue;
 
-      await updateDoc(raceDoc.ref, { status: "settled", winners });
+    // Look up Firestore horse IDs by name so picks can be matched correctly
+    const horsesSnap = await getDocs(
+      query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
+    );
+    const nameToId: Record<string, string> = {};
+    horsesSnap.docs.forEach(h => {
+      const name = (h.data().name ?? "").toUpperCase();
+      nameToId[name] = h.id;
+    });
 
-      const picksSnap = await getDocs(
-        query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
-      );
-      for (const pickDoc of picksSnap.docs) {
-        const pick = pickDoc.data();
-        let points = 0;
-        if (pick.horseId === winners.first) points = 5;
-        else if (pick.horseId === winners.second) points = 3;
-        else if (pick.horseId === winners.third) points = 1;
-        await updateDoc(pickDoc.ref, { points });
-      }
-    } catch {
-      // result not yet available
+    const toId = (runner: any) => {
+      if (!runner) return null;
+      const name = (runner.horse_name ?? runner.horse ?? "").toUpperCase();
+      return nameToId[name] ?? null;
+    };
+
+    const winners = {
+      first: toId(first),
+      second: toId(second),
+      third: toId(third),
+    };
+
+    if (!winners.first) continue; // Couldn't match winner — skip
+
+    await updateDoc(raceDoc.ref, { status: "settled", winners });
+
+    const picksSnap = await getDocs(
+      query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
+    );
+    for (const pickDoc of picksSnap.docs) {
+      const pick = pickDoc.data();
+      let points = 0;
+      if (pick.horseId === winners.first) points = 5;
+      else if (pick.horseId === winners.second) points = 3;
+      else if (pick.horseId === winners.third) points = 1;
+      await updateDoc(pickDoc.ref, { points });
     }
   }
 }
