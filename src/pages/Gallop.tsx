@@ -61,7 +61,7 @@ const Gallop = () => {
 
       await loadRaces();
 
-const picksSnap = await getDocs(
+      const picksSnap = await getDocs(
         query(collection(db, "picks"),
           where("scrumId", "==", id),
           where("userId", "==", userId))
@@ -80,10 +80,23 @@ const picksSnap = await getDocs(
     ? new Date(currentRace.offTime).getTime() <= Date.now()
     : false;
 
+  // Save pick immediately to Firestore as well as local state
+  async function handlePick(raceId: string, horseId: string) {
+    setPicks(p => ({ ...p, [raceId]: horseId }));
+    try {
+      await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {
+        scrumId: id, raceId, horseId, userId, points: null,
+      });
+    } catch {
+      // non-blocking — pick is still in local state
+    }
+  }
+
   async function handleSubmit() {
     if (!allPicked) { toast.error("Pick a horse in every race"); return; }
     setSubmitting(true);
     try {
+      // Batch-write all picks to make sure everything is saved
       const batch = writeBatch(db);
       Object.entries(picks).forEach(([raceId, horseId]) => {
         const pickRef = doc(db, "picks", `${id}_${userId}_${raceId}`);
@@ -125,6 +138,27 @@ const picksSnap = await getDocs(
             {offTime}
           </span>
         </div>
+
+        {/* Race progress dots */}
+        {races.length > 0 && (
+          <div className="flex gap-1 pb-2 flex-wrap">
+            {races.map((r, i) => (
+              <button
+                key={r.id}
+                onClick={() => setCurrentIdx(i)}
+                className={`w-5 h-5 flex items-center justify-center text-[9px] font-mono border transition-none
+                  ${i === currentIdx
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : picks[r.id]
+                      ? "bg-primary/20 border-primary/40 text-primary"
+                      : "bg-background border-primary/20 text-muted-foreground"
+                  }`}
+              >
+                {r.raceNumber}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <main className="flex-grow px-4 pt-4 pb-[80px]">
@@ -160,7 +194,7 @@ const picksSnap = await getDocs(
                 key={h.id}
                 type="button"
                 disabled={isLocked}
-                onClick={() => !isLocked && setPicks(p => ({ ...p, [currentRace.id]: h.id }))}
+                onClick={() => !isLocked && handlePick(currentRace.id, h.id)}
                 className={`w-full flex items-center gap-4 px-4 py-3 text-left relative transition-none
                   ${selected ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}
                   ${isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
@@ -181,7 +215,6 @@ const picksSnap = await getDocs(
             );
           })}
         </div>
-
       </main>
 
       <div className="fixed bottom-0 left-0 w-full h-[60px] z-50 flex items-center justify-between border-t-brutalist bg-background px-4">
@@ -193,7 +226,7 @@ const picksSnap = await getDocs(
           ← PREV
         </button>
         <div className="text-data-mono font-bold tracking-widest">
-          {String(currentIdx + 1).padStart(2, "0")} / {String(races.length).padStart(2, "0")}
+          {Object.keys(picks).length}/{races.length} PICKED
         </div>
         {isLastRace ? (
           <button

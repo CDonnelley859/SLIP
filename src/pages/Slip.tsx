@@ -120,7 +120,11 @@ const Slip = () => {
       query(collection(db, "picks"), where("scrumId", "==", id)),
       () => buildLines()
     );
-    return () => unsub();
+
+    // Auto-refresh results every 30 seconds
+    const interval = setInterval(() => buildLines(), 30000);
+
+    return () => { unsub(); clearInterval(interval); };
   }, [id]);
 
   const total = lines.reduce((sum, l) => sum + l.points, 0);

@@ -156,6 +156,7 @@ const Index = () => {
   }
 
   async function handleLeave(scrumId: string) {
+    if (!window.confirm("Are you sure you want to leave this group?")) return;
     try {
       await deleteDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`));
       setActiveSlips(prev => prev.filter(s => s.scrumId !== scrumId));

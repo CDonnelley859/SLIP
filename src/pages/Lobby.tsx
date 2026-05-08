@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import {
   doc, getDoc, getDocs, collection, query, where, deleteDoc,
 } from "firebase/firestore";
+import { toast } from "sonner";
 
 const Lobby = () => {
   const { id } = useParams();
@@ -12,8 +13,9 @@ const Lobby = () => {
   const navigate = useNavigate();
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
-  const [members, setMembers] = useState<string[]>([]);
+  const [members, setMembers] = useState<{ handle: string; userId: string; submitted: boolean }[]>([]);
   const [leaving, setLeaving] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -22,12 +24,25 @@ const Lobby = () => {
       if (!scrumDoc.exists()) { navigate("/"); return; }
       const scrumData = scrumDoc.data();
       setScrum(scrumData);
+
       const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
       setCard(cardDoc.data());
+
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("scrumId", "==", id))
       );
-      setMembers(membersSnap.docs.map(d => d.data().handle ?? "Anonymous"));
+
+      // Check who has submitted picks
+      const picksSnap = await getDocs(
+        query(collection(db, "picks"), where("scrumId", "==", id))
+      );
+      const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
+
+      setMembers(membersSnap.docs.map(d => ({
+        handle: d.data().handle ?? "Anonymous",
+        userId: d.data().userId,
+        submitted: submittedUserIds.has(d.data().userId),
+      })));
     })();
   }, [id]);
 
@@ -38,6 +53,13 @@ const Lobby = () => {
       await deleteDoc(doc(db, "scrumMembers", `${id}_${userId}`));
       navigate("/");
     } catch { setLeaving(false); }
+  }
+
+  function handleCopyCode() {
+    if (!scrum?.joinCode) return;
+    navigator.clipboard.writeText(scrum.joinCode).then(() => {
+      toast.success("Code copied!");
+    });
   }
 
   if (!scrum) return (
@@ -62,19 +84,33 @@ const Lobby = () => {
           <span className="text-body-lg font-bold uppercase">{scrum.name}</span>
         </div>
 
+        {/* Join code with copy button */}
         <div className="border-brutalist p-6 flex flex-col items-center gap-2">
           <span className="text-label-caps text-muted-foreground uppercase">JOIN CODE</span>
           <span className="text-[56px] font-black tracking-[0.2em] font-mono leading-none">{scrum.joinCode}</span>
-          <span className="text-label-caps text-muted-foreground uppercase mt-1">Share with your group</span>
+          <button
+            onClick={handleCopyCode}
+            className="text-label-caps uppercase underline underline-offset-2 mt-1"
+          >
+            COPY CODE
+          </button>
         </div>
 
+        {/* Players with submitted indicator */}
         <div className="border-brutalist">
           <div className="px-4 py-2 border-b border-primary/20">
             <span className="text-label-caps uppercase">PLAYERS — {members.length}</span>
           </div>
           {members.map((m, i) => (
-            <div key={i} className={`px-4 py-3 text-body-md font-bold uppercase ${i > 0 ? "border-t border-primary/20" : ""}`}>
-              {m}
+            <div
+              key={i}
+              className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""}`}
+            >
+              <span className="text-body-md font-bold uppercase">{m.handle}</span>
+              {m.submitted
+                ? <span className="text-label-caps uppercase text-primary">✓ PRINTED</span>
+                : <span className="text-label-caps uppercase text-muted-foreground opacity-40">PENDING</span>
+              }
             </div>
           ))}
         </div>
@@ -93,13 +129,34 @@ const Lobby = () => {
           SHOW SLIP
         </Link>
 
-        <button
-          onClick={handleLeave}
-          disabled={leaving}
-          className="w-full h-12 border-brutalist text-label-caps uppercase opacity-60 hover:opacity-100 disabled:opacity-30 transition-none"
-        >
-          {leaving ? "LEAVING…" : "LEAVE GROUP"}
-        </button>
+        {/* Leave with confirmation */}
+        {confirmLeave ? (
+          <div className="border-brutalist p-4 flex flex-col gap-3">
+            <p className="text-label-caps uppercase text-center">Are you sure you want to leave?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmLeave(false)}
+                className="flex-1 h-10 border-brutalist text-label-caps uppercase transition-none"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="flex-1 h-10 bg-destructive text-white text-label-caps uppercase border-brutalist disabled:opacity-40 transition-none"
+              >
+                {leaving ? "LEAVING…" : "YES, LEAVE"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmLeave(true)}
+            className="w-full h-12 border-brutalist text-label-caps uppercase opacity-60 hover:opacity-100 transition-none"
+          >
+            LEAVE GROUP
+          </button>
+        )}
       </main>
     </div>
   );
