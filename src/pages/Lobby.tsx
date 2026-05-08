@@ -86,6 +86,13 @@ const Lobby = () => {
           START PICKING →
         </button>
 
+        <Link
+          to={`/scrum/${id}/slip`}
+          className="w-full h-12 border-brutalist text-label-caps uppercase flex items-center justify-center opacity-60 hover:opacity-100 transition-none"
+        >
+          SHOW SLIP
+        </Link>
+
         <button
           onClick={handleLeave}
           disabled={leaving}
