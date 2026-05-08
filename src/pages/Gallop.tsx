@@ -85,6 +85,7 @@ const Gallop = () => {
 
   // Save pick immediately to Firestore as well as local state
   async function handlePick(raceId: string, horseId: string) {
+    if (navigator.vibrate) navigator.vibrate(40);
     setPicks(p => ({ ...p, [raceId]: horseId }));
     try {
       await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {

@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
-  doc, getDoc, getDocs, collection, query, where, deleteDoc,
+  doc, getDoc, getDocs, collection, query, where, deleteDoc, onSnapshot,
 } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ const Lobby = () => {
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [countdown, setCountdown] = useState<string | null>(null);
+  const [leaderboard, setLeaderboard] = useState<{ handle: string; points: number; userId: string }[]>([]);
 
   // Countdown to first race
   useEffect(() => {
@@ -58,11 +59,32 @@ const Lobby = () => {
       );
       const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
 
-      setMembers(membersSnap.docs.map(d => ({
+      const memberList = membersSnap.docs.map(d => ({
         handle: d.data().handle ?? "Anonymous",
         userId: d.data().userId,
         submitted: submittedUserIds.has(d.data().userId),
-      })));
+      }));
+      setMembers(memberList);
+
+      // Live leaderboard — updates in real time as races settle
+      const handleMap: Record<string, string> = {};
+      memberList.forEach(m => { handleMap[m.userId] = m.handle; });
+
+      const unsub = onSnapshot(
+        query(collection(db, "picks"), where("scrumId", "==", id)),
+        (snap) => {
+          const pointsByUser: Record<string, number> = {};
+          snap.docs.forEach(p => {
+            const uid = p.data().userId;
+            pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
+          });
+          const board = Object.entries(pointsByUser)
+            .map(([uid, points]) => ({ userId: uid, handle: handleMap[uid] ?? "—", points }))
+            .sort((a, b) => b.points - a.points);
+          setLeaderboard(board);
+        }
+      );
+      return unsub;
     })();
   }, [id]);
 
@@ -84,11 +106,12 @@ const Lobby = () => {
 
   function handleShare() {
     if (!scrum?.joinCode) return;
-    const text = `Join my SLIP group! Code: ${scrum.joinCode} — slip-racing.vercel.app`;
+    const url = `https://slip-racing.vercel.app/join/${scrum.joinCode}`;
+    const text = `Join my SLIP group — tap to join instantly!`;
     if (navigator.share) {
-      navigator.share({ title: "SLIP", text }).catch(() => {});
+      navigator.share({ title: "SLIP", text, url }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(text).then(() => toast.success("Link copied!"));
+      navigator.clipboard.writeText(url).then(() => toast.success("Invite link copied!"));
     }
   }
 
@@ -154,6 +177,27 @@ const Lobby = () => {
             </div>
           ))}
         </div>
+
+        {/* Live leaderboard — only show once someone has points */}
+        {leaderboard.some(r => r.points > 0) && (
+          <div className="border-brutalist">
+            <div className="px-4 py-2 border-b border-primary/20">
+              <span className="text-label-caps uppercase">Leaderboard</span>
+            </div>
+            {leaderboard.map((r, i) => (
+              <div
+                key={r.userId}
+                className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""} ${r.userId === userId ? "bg-primary/5" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-label-caps text-muted-foreground w-5">#{i + 1}</span>
+                  <span className="text-body-md font-bold uppercase">{r.handle}</span>
+                </div>
+                <span className="text-headline-md font-black">{r.points}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={() => navigate(`/scrum/${id}/gallop`)}

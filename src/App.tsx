@@ -13,6 +13,7 @@ import Lobby from "./pages/Lobby";
 import Slip from "./pages/Slip";
 import Spindle from "./pages/Spindle";
 import Stats from "./pages/Stats";
+import JoinViaLink from "./pages/JoinViaLink";
 import HostResults from "./pages/HostResults";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const AppRoutes = () => {
       <Route path="/scrum/:id/host-results" element={<HostResults />} />
       <Route path="/spindle" element={<Spindle />} />
       <Route path="/stats" element={<Stats />} />
+      <Route path="/join/:code" element={<JoinViaLink />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
