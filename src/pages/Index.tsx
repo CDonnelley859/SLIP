@@ -188,8 +188,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-background border-b-brutalist flex justify-center items-center w-full h-16 px-4 sticky top-0 z-50">
+      <header className="bg-background border-b-brutalist flex justify-between items-center w-full h-16 px-4 sticky top-0 z-50">
+        <Link to="/spindle" className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] w-20">
+          SPINDLE
+        </Link>
         <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
+        <Link to="/stats" className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] w-20 text-right">
+          THE FORM
+        </Link>
       </header>
 
       <main className="px-4">
@@ -394,20 +400,6 @@ const Index = () => {
           )}
         </section>
 
-        <footer className="mt-10 flex justify-center gap-8 pb-8">
-          <Link
-            to="/spindle"
-            className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
-          >
-            The Spindle
-          </Link>
-          <Link
-            to="/stats"
-            className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
-          >
-            The Form
-          </Link>
-        </footer>
       </main>
     </div>
   );
