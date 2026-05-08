@@ -18,16 +18,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!racecardsRes.ok) {
     const text = await racecardsRes.text();
-    console.log("RAPIDAPI_ERROR:", racecardsRes.status, text.slice(0, 500));
+    console.log("RAPIDAPI_ERROR:", racecardsRes.status, text.slice(0, 300));
     return res.status(racecardsRes.status).json({ error: `RapidAPI error ${racecardsRes.status}: ${text}` });
   }
 
   const raw = await racecardsRes.json();
+  const races: any[] = Array.isArray(raw) ? raw : (raw.races ?? raw.data ?? []);
 
-  // Log structure so we can see exactly what comes back
-  console.log("RAPIDAPI_TYPE:", typeof raw, Array.isArray(raw) ? "array" : "object");
-  console.log("RAPIDAPI_KEYS:", JSON.stringify(Array.isArray(raw) ? Object.keys(raw[0] ?? {}) : Object.keys(raw)));
-  console.log("RAPIDAPI_SAMPLE:", JSON.stringify(raw).slice(0, 2000));
+  // Single log with everything we need to understand the shape
+  const sample = races[0] ?? {};
+  console.log("SAMPLE_RACE:", JSON.stringify({
+    keys: Object.keys(sample),
+    time: sample.time ?? sample.race_time ?? sample.off ?? sample.off_time,
+    course: sample.course ?? sample.venue ?? sample.track,
+    title: sample.title ?? sample.race_name ?? sample.name,
+    runnerCount: (sample.runners ?? sample.horses ?? []).length,
+    firstRunner: (sample.runners ?? sample.horses ?? [])[0] ?? null,
+  }));
 
-  res.json({ raw });
+  // Group races by course for racingApi.ts to consume
+  const courses: Record<string, any[]> = {};
+  for (const race of races) {
+    const course = race.course ?? race.venue ?? race.track ?? "Unknown";
+    if (!courses[course]) courses[course] = [];
+    courses[course].push(race);
+  }
+
+  res.json({ courses, races });
 }
