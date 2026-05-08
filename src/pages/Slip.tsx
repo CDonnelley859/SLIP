@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
+import { registerPush, unregisterPush, isPushRegistered } from "@/lib/notifications";
 import {
   doc, getDoc, getDocs, collection, query, where, onSnapshot,
 } from "firebase/firestore";
@@ -63,6 +64,8 @@ const Slip = () => {
   const [lines, setLines] = useState<Line[]>([]);
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   async function buildLines() {
     if (!id) return;
@@ -130,6 +133,11 @@ const Slip = () => {
       setRank({ position, total: allTotals.length });
     }
   }
+
+  // Check whether push is already registered on mount
+  useEffect(() => {
+    isPushRegistered().then(setNotifEnabled).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -267,6 +275,24 @@ const Slip = () => {
         >
           {refreshing ? "REFRESHING…" : "REFRESH RESULTS"}
         </button>
+
+        {"Notification" in window && (
+          <button
+            onClick={handleNotifToggle}
+            disabled={notifLoading}
+            className="w-full h-12 border-brutalist text-label-caps uppercase disabled:opacity-40 transition-none flex items-center justify-center gap-2"
+          >
+            <span>{notifEnabled ? "🔔" : "🔕"}</span>
+            <span>
+              {notifLoading
+                ? "UPDATING…"
+                : notifEnabled
+                  ? "NOTIFICATIONS ON — TAP TO MUTE"
+                  : "GET RACE NOTIFICATIONS"}
+            </span>
+          </button>
+        )}
+
         <Link
           to="/"
           className="w-full h-12 flex items-center justify-center text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
@@ -276,6 +302,30 @@ const Slip = () => {
       </div>
     </div>
   );
+
+  async function handleNotifToggle() {
+    if (!userId) return;
+    setNotifLoading(true);
+    try {
+      if (notifEnabled) {
+        await unregisterPush(userId);
+        setNotifEnabled(false);
+        toast.success("Notifications off");
+      } else {
+        const ok = await registerPush(userId);
+        if (ok) {
+          setNotifEnabled(true);
+          toast.success("Notifications on — we'll ping you when results are in");
+        } else {
+          toast.error("Couldn't enable notifications — check your browser settings");
+        }
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setNotifLoading(false);
+    }
+  }
 
   async function handleRefresh() {
     if (!scrum?.cardId) return;

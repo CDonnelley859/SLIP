@@ -234,14 +234,25 @@ export async function syncResults(cardId: string): Promise<void> {
       query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
     );
     const batch = writeBatch(db);
+    const uniqueScrumIds = new Set<string>();
     for (const pickDoc of picksSnap.docs) {
-      const { horseId } = pickDoc.data();
+      const { horseId, scrumId } = pickDoc.data();
       let points = 0;
       if (horseId === winners.first) points = 5;
       else if (horseId === winners.second) points = 3;
       else if (horseId === winners.third) points = 1;
       batch.update(pickDoc.ref, { points });
+      if (scrumId) uniqueScrumIds.add(scrumId);
     }
     await batch.commit();
+
+    // Fire push notifications for every scrum with picks on this race
+    for (const scrumId of uniqueScrumIds) {
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scrumId, raceId: raceDoc.id, winners }),
+      }).catch(() => {});
+    }
   }
 }
