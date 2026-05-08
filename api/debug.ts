@@ -8,15 +8,26 @@ const HEADERS = { "x-rapidapi-key": RAPID_KEY, "x-rapidapi-host": RAPID_HOST };
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
-  const detailRes = await fetch(`${BASE}/race/269481`, { headers: HEADERS });
-  const detail = await detailRes.json();
+  // Fetch first 5 races and check if detail calls return horses
+  const date = new Date().toISOString().slice(0, 10);
+  const racecardsRes = await fetch(`${BASE}/racecards?date=${date}`, { headers: HEADERS });
+  const rawRaces: any[] = await racecardsRes.json();
+  const first5 = rawRaces.slice(0, 5);
 
-  const runners: any[] = detail.runners ?? detail.horses ?? detail.entries ?? [];
+  const results = await Promise.all(
+    first5.map(async (race: any) => {
+      const r = await fetch(`${BASE}/race/${race.id_race}`, { headers: HEADERS });
+      const detail = await r.json();
+      return {
+        id_race: race.id_race,
+        course: race.course,
+        status: r.status,
+        hasHorses: Array.isArray(detail.horses),
+        horseCount: detail.horses?.length ?? 0,
+        error: r.status !== 200 ? detail : undefined,
+      };
+    })
+  );
 
-  res.json({
-    topLevelKeys: Object.keys(detail),
-    runnerCount: runners.length,
-    firstRunner: runners[0] ?? null,
-    firstRunnerKeys: runners[0] ? Object.keys(runners[0]) : [],
-  });
+  res.json(results);
 }
