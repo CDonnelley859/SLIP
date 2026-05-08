@@ -154,9 +154,9 @@ function normaliseName(name: string): string {
   return name.replace(/\s*\([A-Z]+\)\s*$/, "").trim().toUpperCase();
 }
 
-// Strip surface suffix: "Wolverhampton (AW)" → "wolverhampton"
+// Strip any country/surface suffix: "Wolverhampton (AW)" → "wolverhampton", "Ballinrobe (IRE)" → "ballinrobe"
 function normaliseCourse(course: string): string {
-  return course.replace(/\s*\(AW\)\s*$/, "").trim().toLowerCase();
+  return course.replace(/\s*\([^)]+\)\s*$/, "").trim().toLowerCase();
 }
 
 export async function syncResults(cardId: string): Promise<void> {
