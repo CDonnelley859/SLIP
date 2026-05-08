@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import {
   doc, getDoc, getDocs, collection, query, where, setDoc, writeBatch,
 } from "firebase/firestore";
+import { syncRunners } from "@/lib/racingApi";
 import { toast } from "sonner";
 
 type Horse = { id: string; number: number; name: string; jockey: string | null; odds: string | null };
@@ -29,6 +30,9 @@ const Gallop = () => {
 
       const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
       setCard(cardDoc.data());
+
+      // Fetch & write runners for this card (only a handful of API calls)
+      await syncRunners(scrum.cardId).catch(() => {});
 
       const racesSnap = await getDocs(
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))

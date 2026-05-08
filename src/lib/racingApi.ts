@@ -9,24 +9,20 @@ async function apiFetch(path: string) {
   return res.json();
 }
 
+// Syncs card + race metadata only (fast — 1 API call)
 export async function syncCards(): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
   const data = await apiFetch(`/racecards?date=${today}`);
 
-  // RapidAPI returns races grouped by course
   const courses: Record<string, any[]> = data.courses ?? {};
   let raceCount = 0;
-  let horseCount = 0;
 
   for (const [trackName, races] of Object.entries(courses)) {
     if (!Array.isArray(races) || races.length === 0) continue;
 
     const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
     const cardId = `${today}-${courseSlug}`;
-
-    // date field is "YYYY-MM-DD HH:MM:SS" — extract HH:MM for first race
-    const firstRace = races[0] ?? {};
-    const firstRaceTime = (firstRace.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
+    const firstRaceTime = (races[0]?.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
 
     await setDoc(doc(db, "cards", cardId), {
       trackName,
@@ -42,45 +38,71 @@ export async function syncCards(): Promise<string> {
       const raceNum = i + 1;
       const raceId = `${cardId}-r${raceNum}`;
       const raceTime = (race.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
-      const offTime = `${today}T${raceTime}:00Z`;
 
       await setDoc(doc(db, "races", raceId), {
         cardId,
         raceNumber: raceNum,
         name: race.title ?? null,
-        offTime,
+        offTime: `${today}T${raceTime}:00Z`,
         status: "upcoming",
         winners: null,
         sourceId: race.id_race ?? raceId,
       }, { merge: true });
 
-      // Runners are under "horses" key, filter out non-runners
-      const raceRunners: any[] = (race.horses ?? []).filter((h: any) => h.non_runner !== "1");
-      if (raceRunners.length > 0) {
-        const batch = writeBatch(db);
-        raceRunners.forEach((runner, idx) => {
-          const horseId = `${raceId}-h${idx + 1}`;
-          const bestOdds = Array.isArray(runner.odds) && runner.odds.length > 0
-            ? runner.odds[0].odd
-            : (runner.sp || null);
-          batch.set(doc(db, "horses", horseId), {
-            raceId,
-            number: Number(runner.number) || idx + 1,
-            name: runner.horse ?? "Unknown",
-            jockey: runner.jockey ?? null,
-            odds: bestOdds,
-            sourceId: runner.id_horse ?? null,
-          }, { merge: true });
-          horseCount++;
-        });
-        await batch.commit();
-      }
-
       raceCount++;
     }
   }
 
-  return `${raceCount} races, ${horseCount} horses`;
+  return `${raceCount} races loaded`;
+}
+
+// Syncs runners for a specific card — called when Gallop page opens
+export async function syncRunners(cardId: string): Promise<number> {
+  // Get all races for this card
+  const racesSnap = await getDocs(
+    query(collection(db, "races"), where("cardId", "==", cardId))
+  );
+  if (racesSnap.empty) return 0;
+
+  // Collect the RapidAPI race IDs
+  const raceIds = racesSnap.docs
+    .map(d => d.data().sourceId)
+    .filter(Boolean)
+    .join(",");
+
+  const data = await apiFetch(`/runners?ids=${raceIds}`);
+  const byId: Record<string, any> = data ?? {};
+
+  let horseCount = 0;
+
+  for (const raceDoc of racesSnap.docs) {
+    const sourceId = raceDoc.data().sourceId;
+    const detail = byId[sourceId];
+    if (!detail) continue;
+
+    const raceRunners: any[] = (detail.horses ?? []).filter((h: any) => h.non_runner !== "1");
+    if (raceRunners.length === 0) continue;
+
+    const batch = writeBatch(db);
+    raceRunners.forEach((runner, idx) => {
+      const horseId = `${raceDoc.id}-h${idx + 1}`;
+      const bestOdds = Array.isArray(runner.odds) && runner.odds.length > 0
+        ? runner.odds[0].odd
+        : (runner.sp || null);
+      batch.set(doc(db, "horses", horseId), {
+        raceId: raceDoc.id,
+        number: Number(runner.number) || idx + 1,
+        name: runner.horse ?? "Unknown",
+        jockey: runner.jockey ?? null,
+        odds: bestOdds,
+        sourceId: runner.id_horse ?? null,
+      }, { merge: true });
+      horseCount++;
+    });
+    await batch.commit();
+  }
+
+  return horseCount;
 }
 
 export async function syncResults(cardId: string): Promise<void> {
