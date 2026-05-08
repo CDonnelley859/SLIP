@@ -364,13 +364,19 @@ const Index = () => {
                       </div>
                     </div>
                   </Link>
-                  <div className="border-t border-primary/20 px-4 py-2 flex justify-end">
+                  <div className="border-t border-primary/20 px-4 py-2 flex justify-between">
                     <button
                       onClick={() => handleLeave(s.scrumId)}
                       className="text-label-caps uppercase text-destructive underline underline-offset-2"
                     >
                       LEAVE
                     </button>
+                    <Link
+                      to={`/scrum/${s.scrumId}/slip`}
+                      className="text-label-caps uppercase underline underline-offset-2"
+                    >
+                      SHOW SLIP
+                    </Link>
                   </div>
                 </div>
               ))}
