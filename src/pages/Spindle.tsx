@@ -179,16 +179,16 @@ const Spindle = () => {
         ) : (
           <>
             <div
-              className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 scroll-px-4 pb-4"
+              className="flex overflow-x-auto snap-x snap-mandatory pb-4"
               style={{ scrollbarWidth: "none" }}
             >
               {slips.map((s) => (
                 <div
                   key={s.scrumId}
-                  className="flex-shrink-0 w-[calc(100vw-2rem)] snap-center"
+                  className="flex-shrink-0 w-screen snap-center flex justify-center px-4"
                 >
                   {/* Full ticket */}
-                  <div className="relative bg-white border-brutalist ticket-clip overflow-hidden">
+                  <div className="relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
                     {/* Punch holes */}
                     <div style={{
                       position: "absolute", left: -10, top: "20%",
