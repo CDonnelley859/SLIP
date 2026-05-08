@@ -23,9 +23,9 @@ export async function syncCards(): Promise<number> {
     const courseSlug = trackName.replace(/\s+/g, "-").toLowerCase();
     const cardId = `${today}-${courseSlug}`;
 
-    // Race time field varies by API — try all common names
+    // date field is "YYYY-MM-DD HH:MM:SS" — extract HH:MM for first race
     const firstRace = races[0] ?? {};
-    const firstRaceTime = firstRace.time ?? firstRace.race_time ?? firstRace.off ?? firstRace.off_time ?? "12:00";
+    const firstRaceTime = (firstRace.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
 
     await setDoc(doc(db, "cards", cardId), {
       trackName,
@@ -40,31 +40,35 @@ export async function syncCards(): Promise<number> {
       const race = races[i];
       const raceNum = i + 1;
       const raceId = `${cardId}-r${raceNum}`;
-      const raceTime = race.time ?? race.race_time ?? race.off ?? race.off_time ?? "12:00";
+      const raceTime = (race.date ?? "").split(" ")[1]?.slice(0, 5) ?? "12:00";
       const offTime = `${today}T${raceTime}:00Z`;
 
       await setDoc(doc(db, "races", raceId), {
         cardId,
         raceNumber: raceNum,
-        name: race.title ?? race.race_name ?? race.name ?? null,
+        name: race.title ?? null,
         offTime,
         status: "upcoming",
         winners: null,
-        sourceId: race.id ?? raceId,
+        sourceId: race.id_race ?? raceId,
       }, { merge: true });
 
-      // Runners are nested inside each race object
-      const raceRunners: any[] = race.runners ?? race.horses ?? race.entries ?? [];
+      // Runners are under "horses" key, filter out non-runners
+      const raceRunners: any[] = (race.horses ?? []).filter((h: any) => h.non_runner !== "1");
       if (raceRunners.length > 0) {
         const batch = writeBatch(db);
         raceRunners.forEach((runner, idx) => {
           const horseId = `${raceId}-h${idx + 1}`;
+          const bestOdds = Array.isArray(runner.odds) && runner.odds.length > 0
+            ? runner.odds[0].odd
+            : (runner.sp || null);
           batch.set(doc(db, "horses", horseId), {
             raceId,
-            number: runner.number ?? runner.saddle_number ?? runner.cloth ?? idx + 1,
-            name: runner.horse ?? runner.name ?? runner.horse_name ?? "Unknown",
-            jockey: runner.jockey ?? runner.jockey_name ?? null,
-            odds: runner.odds ?? runner.sp ?? null,
+            number: Number(runner.number) || idx + 1,
+            name: runner.horse ?? "Unknown",
+            jockey: runner.jockey ?? null,
+            odds: bestOdds,
+            sourceId: runner.id_horse ?? null,
           }, { merge: true });
         });
         await batch.commit();
