@@ -3,6 +3,17 @@ import {
   collection, doc, setDoc, getDocs, query, where, updateDoc, writeBatch,
 } from "firebase/firestore";
 
+// OurHub times are 12-hour UK local (e.g. "01:50" = 1:50 PM BST)
+// Convert to proper UTC ISO string for storage
+function raceTimeToISO(dateStr: string, time12h: string): string {
+  const [h, m] = (time12h ?? "12:00").split(":").map(Number);
+  const h24 = h < 12 ? h + 12 : h; // UK racing is always afternoon
+  const month = parseInt(dateStr.split("-")[1]);
+  const isBST = month >= 4 && month <= 10; // Apr–Oct = BST (UTC+1)
+  const utcH = h24 - (isBST ? 1 : 0);
+  return `${dateStr}T${String(utcH).padStart(2, "0")}:${String(m).padStart(2, "0")}:00Z`;
+}
+
 async function apiFetch(path: string) {
   const res = await fetch(`/api${path}`);
   if (!res.ok) throw new Error(`Racing API error ${res.status}: ${await res.text()}`);
@@ -30,7 +41,7 @@ export async function syncCards(): Promise<string> {
     await setDoc(doc(db, "cards", cardId), {
       trackName,
       raceDate: today,
-      postTime: `${today}T${firstRaceTime}:00Z`,
+      postTime: raceTimeToISO(today, firstRaceTime),
       status: "upcoming",
       sourceId: cardId,
       raceCount: races.length,
@@ -48,7 +59,7 @@ export async function syncCards(): Promise<string> {
         cardId,
         raceNumber: raceNum,
         name: race.race_name ?? null,
-        offTime: `${today}T${raceTime}:00Z`,
+        offTime: raceTimeToISO(today, raceTime),
         status: "upcoming",
         winners: null,
         sourceId: raceId,
