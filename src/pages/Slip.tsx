@@ -63,9 +63,6 @@ const Slip = () => {
   const [lines, setLines] = useState<Line[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const serial = id
-    ? `${id.slice(0, 3).toUpperCase()} ${id.slice(3, 6).toUpperCase()}`
-    : "--- ---";
 
   async function buildLines() {
     if (!id) return;
@@ -164,7 +161,7 @@ const Slip = () => {
             {scrum?.name ?? "—"}
           </span>
           <div className="bg-primary text-primary-foreground px-4 py-2 font-mono tracking-widest text-data-mono">
-            {serial}
+            {scrum?.joinCode ?? "----"}
           </div>
         </div>
 
