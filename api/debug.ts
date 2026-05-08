@@ -8,18 +8,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const date = new Date().toISOString().slice(0, 10);
 
-  const runnerRes = await fetch(`${BASE}/api/runner-info/${date}`, {
-    headers: { "X-API-Key": API_KEY },
-  });
+  const [courseRes, runnerRes] = await Promise.all([
+    fetch(`${BASE}/api/course-info/${date}`, { headers: { "X-API-Key": API_KEY } }),
+    fetch(`${BASE}/api/runner-info/${date}`, { headers: { "X-API-Key": API_KEY } }),
+  ]);
 
-  const raw = runnerRes.ok ? await runnerRes.json() : { error: runnerRes.status };
-  const keys = Object.keys(raw);
+  const courses = await courseRes.json();
+  const runners = await runnerRes.json();
+
+  // Show first track from course-info and its race_time values
+  const firstTrack = Object.keys(courses)[0];
+  const firstTrackRaces = courses[firstTrack] ?? [];
+
+  // Show first 3 runner keys
+  const runnerKeys = Object.keys(runners).slice(0, 3);
 
   res.json({
-    status: runnerRes.status,
-    totalKeys: keys.length,
-    first3Keys: keys.slice(0, 3),
-    firstEntry: raw[keys[0]],
-    secondEntry: raw[keys[1]],
+    courseFirstTrack: firstTrack,
+    courseRaceTimes: firstTrackRaces.map((r: any) => r.race_time),
+    courseFirstRace: firstTrackRaces[0],
+    runnerFirst3Keys: runnerKeys,
   });
 }
