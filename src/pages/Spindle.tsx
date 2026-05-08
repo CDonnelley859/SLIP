@@ -64,24 +64,33 @@ const Spindle = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!userId) return;
     (async () => {
+      const today = new Date().toISOString().slice(0, 10);
+
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("userId", "==", userId))
       );
 
-      const today = new Date().toISOString().slice(0, 10);
-      const completed: CompletedSlip[] = [];
-
-      for (const m of membersSnap.docs) {
+      // Process all scrums in parallel
+      const results = await Promise.all(membersSnap.docs.map(async (m) => {
         const scrumId = m.data().scrumId;
+
+        // Scrum must be fetched first to get cardId
         const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
-        if (!scrumDoc.exists()) continue;
+        if (!scrumDoc.exists()) return null;
         const scrum = scrumDoc.data();
 
-        const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
-        const cardData = cardDoc.data();
+        // Fetch card, my picks, and all picks in parallel
+        const [cardDocReal, myPicksSnap, allPicksSnap] = await Promise.all([
+          getDoc(doc(db, "cards", scrum.cardId)),
+          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))),
+          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId))),
+        ]);
 
-        // Show previous-day games always; today's games only once fully settled
+        const cardData = cardDocReal?.data();
+
+        // Show previous-day games always; today's only when fully settled
         const isPreviousDay = cardData?.raceDate && cardData.raceDate < today;
         if (!isPreviousDay) {
           const racesSnap = await getDocs(
@@ -89,34 +98,41 @@ const Spindle = () => {
           );
           const total = racesSnap.size;
           const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-          if (total === 0 || settled < total) continue;
+          if (total === 0 || settled < total) return null;
         }
 
-        // Build full lines for this slip
-        const myPicksSnap = await getDocs(
-          query(collection(db, "picks"),
-            where("scrumId", "==", scrumId),
-            where("userId", "==", userId))
-        );
+        const pickData = myPicksSnap.docs.map(p => p.data());
 
-        const lines: Line[] = [];
-        for (const pickDoc of myPicksSnap.docs) {
-          const pick = pickDoc.data();
-          const raceDoc = await getDoc(doc(db, "races", pick.raceId));
-          const horseDoc = await getDoc(doc(db, "horses", pick.horseId));
-          const race = raceDoc.data();
-          const horse = horseDoc.data();
+        // Fetch all races and my horses in parallel
+        const [raceDocs, horseDocs] = await Promise.all([
+          Promise.all(pickData.map(p => getDoc(doc(db, "races", p.raceId)))),
+          Promise.all(pickData.map(p => getDoc(doc(db, "horses", p.horseId)))),
+        ]);
+
+        // Collect unique winner horse IDs across all races
+        const winnerIdSet = new Set<string>();
+        raceDocs.forEach(rd => {
+          const w = rd.data()?.winners;
+          if (w?.first) winnerIdSet.add(w.first);
+          if (w?.second) winnerIdSet.add(w.second);
+          if (w?.third) winnerIdSet.add(w.third);
+        });
+
+        // Fetch all winner horses in parallel (deduplicated)
+        const winnerIdArr = [...winnerIdSet];
+        const winnerDocs = await Promise.all(winnerIdArr.map(id => getDoc(doc(db, "horses", id))));
+        const winnerMap: Record<string, { number: number; name: string }> = {};
+        winnerDocs.forEach((d, i) => {
+          if (d.exists()) winnerMap[winnerIdArr[i]] = { number: d.data().number, name: d.data().name };
+        });
+
+        // Build lines
+        const lines: Line[] = pickData.map((pick, i) => {
+          const race = raceDocs[i].data();
+          const horse = horseDocs[i].data();
           const winners = race?.winners;
           const status = statusFor(winners, pick.horseId);
-
-          const fetchWinner = async (horseId: string | undefined) => {
-            if (!horseId) return null;
-            const d = await getDoc(doc(db, "horses", horseId));
-            if (!d.exists()) return null;
-            return { number: d.data().number, name: d.data().name };
-          };
-
-          lines.push({
+          return {
             raceNumber: race?.raceNumber ?? 0,
             horseName: horse?.name ?? "—",
             horseNumber: horse?.number ?? 0,
@@ -124,41 +140,39 @@ const Spindle = () => {
             status,
             points: pointsFor(status),
             podium: {
-              first: await fetchWinner(winners?.first),
-              second: await fetchWinner(winners?.second),
-              third: await fetchWinner(winners?.third),
+              first: winners?.first ? (winnerMap[winners.first] ?? null) : null,
+              second: winners?.second ? (winnerMap[winners.second] ?? null) : null,
+              third: winners?.third ? (winnerMap[winners.third] ?? null) : null,
             },
-          });
-        }
+          };
+        });
 
         lines.sort((a, b) => a.raceNumber - b.raceNumber);
         const totalPoints = lines.reduce((a, l) => a + l.points, 0);
 
         // Rank
-        const allPicksSnap = await getDocs(
-          query(collection(db, "picks"), where("scrumId", "==", scrumId))
-        );
         const pointsByUser: Record<string, number> = {};
         allPicksSnap.docs.forEach(p => {
           const uid = p.data().userId;
           pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
         });
-        const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
-        const rank = sorted.indexOf(totalPoints) + 1;
+        const sortedPoints = Object.values(pointsByUser).sort((a, b) => b - a);
+        const rank = sortedPoints.indexOf(totalPoints) + 1;
 
-        completed.push({
+        return {
           scrumId,
           scrumName: scrum.name,
           trackName: cardData?.trackName ?? "—",
           date: cardData?.raceDate ?? "",
           totalPoints,
           rank,
-          totalMembers: sorted.length,
+          totalMembers: sortedPoints.length,
           lines,
-        });
-      }
+        } as CompletedSlip;
+      }));
 
-      setSlips(completed.sort((a, b) => b.date.localeCompare(a.date)));
+      const valid = results.filter((r): r is CompletedSlip => r !== null);
+      setSlips(valid.sort((a, b) => b.date.localeCompare(a.date)));
       setLoading(false);
     })();
   }, [userId]);
