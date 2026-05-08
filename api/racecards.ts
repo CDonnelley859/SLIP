@@ -1,30 +1,32 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const RAPID_KEY = "d64a3b4038mshc5b238284ed0135p132fefjsn86b9763cc3cf";
-const RAPID_HOST = "horse-racing.p.rapidapi.com";
-const BASE = `https://${RAPID_HOST}`;
-const HEADERS = { "x-rapidapi-key": RAPID_KEY, "x-rapidapi-host": RAPID_HOST };
+const API_KEY = "oh_C2xOzhL0KOZPyGVtDjwq-ySdZYYwMwvQ";
+const BASE = "https://api.ourhub.site";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
   const date = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
 
-  const racecardsRes = await fetch(`${BASE}/racecards?date=${date}`, { headers: HEADERS });
-  if (!racecardsRes.ok) {
-    const text = await racecardsRes.text();
-    return res.status(racecardsRes.status).json({ error: `RapidAPI error ${racecardsRes.status}: ${text}` });
+  const [courseRes, runnerRes] = await Promise.all([
+    fetch(`${BASE}/api/course-info/${date}`, { headers: { "X-API-Key": API_KEY } }),
+    fetch(`${BASE}/api/runner-info/${date}`, { headers: { "X-API-Key": API_KEY } }),
+  ]);
+
+  if (!courseRes.ok) {
+    const text = await courseRes.text();
+    return res.status(courseRes.status).json({ error: `OurHub error ${courseRes.status}: ${text}` });
   }
 
-  const rawRaces: any[] = await racecardsRes.json();
+  const courses = await courseRes.json();
+  const rawRunners = runnerRes.ok ? await runnerRes.json() : {};
 
-  // Group by course — no runner detail fetching here, keep it fast
-  const courses: Record<string, any[]> = {};
-  for (const race of rawRaces) {
-    const course = race.course ?? "Unknown";
-    if (!courses[course]) courses[course] = [];
-    courses[course].push(race);
-  }
+  // Log the exact runner structure so we can see the format
+  const keys = Object.keys(rawRunners);
+  console.log("RUNNER_KEY_COUNT:", keys.length);
+  console.log("RUNNER_KEY_0:", JSON.stringify(keys[0]));
+  console.log("RUNNER_KEY_1:", JSON.stringify(keys[1]));
+  console.log("RUNNER_ENTRY_0:", JSON.stringify((rawRunners[keys[0]] ?? []).slice(0, 1)));
 
-  res.json({ courses });
+  res.json({ courses, runners: rawRunners });
 }
