@@ -82,46 +82,68 @@ const Spindle = () => {
         <div className="w-20" />
       </header>
 
-      <main className="px-4 pt-6 pb-16">
+      <main className="pt-8 pb-16">
         {loading ? (
           <p className="text-label-caps uppercase text-muted-foreground text-center pt-10">Loading…</p>
         ) : slips.length === 0 ? (
-          <div className="border-brutalist p-8 text-center">
+          <div className="mx-4 border-brutalist p-8 text-center">
             <p className="text-body-md text-muted-foreground">No completed slips yet.</p>
             <p className="text-label-caps text-muted-foreground uppercase mt-2">
               Finish a Daily Gallop to see it here.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {slips.map((s, i) => (
-              <Link
-                key={s.scrumId}
-                to={`/scrum/${s.scrumId}/slip`}
-                className={`border-brutalist p-4 bg-background flex justify-between items-start ${i > 0 ? "mt-[-2.67px]" : ""}`}
-              >
-                <div>
-                  <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
-                  <span className="text-headline-md uppercase">{s.trackName}</span>
-                  <div className="mt-1">
-                    <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
-                    <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
+          <>
+            {/* Carousel */}
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-0 gap-4 px-4 scroll-px-4 pb-4" style={{ scrollbarWidth: "none" }}>
+              {slips.map((s) => (
+                <Link
+                  key={s.scrumId}
+                  to={`/scrum/${s.scrumId}/slip`}
+                  className="flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist bg-white overflow-hidden block"
+                >
+                  {/* Ticket header */}
+                  <div className="p-6 pb-4 border-b-[2.67px] border-dashed border-primary">
+                    <span className="text-label-caps text-muted-foreground uppercase block">{s.date}</span>
+                    <span className="text-headline-lg uppercase leading-tight block mt-1">{s.trackName}</span>
+                    <span className="text-label-caps text-muted-foreground uppercase block mt-1">{s.scrumName}</span>
                   </div>
-                  <span className="text-label-caps text-muted-foreground uppercase block mt-2">{s.date}</span>
-                </div>
-                <div className="text-right flex flex-col items-end gap-1">
-                  <span className="text-headline-lg font-black">{s.totalPoints}</span>
-                  <span className="text-label-caps text-muted-foreground">PTS</span>
-                  {s.rank && (
-                    <span className="text-label-caps text-muted-foreground">
-                      #{s.rank} OF {s.totalMembers}
-                    </span>
-                  )}
-                  <div className="text-label-caps border-brutalist px-2 py-1 mt-1 uppercase">SETTLED</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+
+                  {/* Score block */}
+                  <div className="p-6 flex justify-between items-end">
+                    <div>
+                      <span className="text-label-caps text-muted-foreground uppercase block">YOUR SCORE</span>
+                      <span className="text-[56px] font-black leading-none">{s.totalPoints}</span>
+                      <span className="text-label-caps text-muted-foreground uppercase block">PTS</span>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      {s.rank && (
+                        <div className="text-right">
+                          <span className="text-label-caps text-muted-foreground uppercase block">RANK</span>
+                          <span className="text-headline-md font-black">#{s.rank} <span className="text-label-caps font-normal text-muted-foreground">OF {s.totalMembers}</span></span>
+                        </div>
+                      )}
+                      <div className="text-label-caps border-brutalist px-2 py-1 uppercase">SETTLED ✓</div>
+                    </div>
+                  </div>
+
+                  {/* Tap prompt */}
+                  <div className="px-6 pb-5">
+                    <span className="text-label-caps text-muted-foreground uppercase underline underline-offset-2">TAP TO VIEW SLIP →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Dot indicators */}
+            {slips.length > 1 && (
+              <div className="flex justify-center gap-1.5 mt-2">
+                {slips.map((s, i) => (
+                  <div key={s.scrumId} className="w-1.5 h-1.5 rounded-full bg-primary opacity-30" />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
