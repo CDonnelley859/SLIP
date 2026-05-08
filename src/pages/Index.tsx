@@ -45,9 +45,23 @@ const Index = () => {
 
   async function loadData() {
     const today = new Date().toISOString().slice(0, 10);
-    const cardsSnap = await getDocs(
+    let cardsSnap = await getDocs(
       query(collection(db, "cards"), where("raceDate", "==", today))
     );
+
+    // No cards yet — auto-sync from TRA instead of asking the user to refresh
+    if (cardsSnap.empty) {
+      setSyncing(true);
+      try {
+        await syncCards();
+        cardsSnap = await getDocs(
+          query(collection(db, "cards"), where("raceDate", "==", today))
+        );
+      } catch { /* silent — cards stay empty */ } finally {
+        setSyncing(false);
+      }
+    }
+
     const cardList: Card[] = cardsSnap.docs.map(d => ({
       id: d.id,
       trackName: d.data().trackName,
@@ -180,20 +194,12 @@ const Index = () => {
         <section className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-label-caps uppercase">Top Tracks</h2>
-            <button
-              onClick={handleRefresh}
-              disabled={syncing}
-              className="text-label-caps uppercase underline underline-offset-2 disabled:opacity-40"
-            >
-              {syncing ? "LOADING…" : "REFRESH"}
-            </button>
+            {syncing && <span className="text-label-caps text-muted-foreground uppercase">Loading…</span>}
           </div>
 
-          {cards.length === 0 ? (
+          {cards.length === 0 && !syncing ? (
             <div className="border-brutalist p-6 text-center">
-              <p className="text-body-md text-muted-foreground">
-                No cards loaded. Hit Refresh to pull today's racecards.
-              </p>
+              <p className="text-body-md text-muted-foreground">No races today.</p>
             </div>
           ) : (
             <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 pb-2 gap-3 px-4 scroll-px-4">
