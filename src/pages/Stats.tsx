@@ -2,107 +2,132 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from "firebase/firestore";
-import { Trophy, BarChart3, Ticket } from "lucide-react";
+import {
+  collection, query, where, getDocs, doc, getDoc,
+} from "firebase/firestore";
 
-type StatsData = {
-  totalSlips: number;
+type StatSummary = {
+  gamesPlayed: number;
   totalPoints: number;
   bestScore: number;
-  podiums: number;
   wins: number;
+  places: number;
+  shows: number;
+  bestRank: number | null;
+  avgPoints: number;
 };
 
 const Stats = () => {
   const { userId } = useAuth();
-  const [stats, setStats] = useState<StatsData>({ totalSlips: 0, totalPoints: 0, bestScore: 0, podiums: 0, wins: 0 });
+  const [stats, setStats] = useState<StatSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!userId) return;
     (async () => {
-      const membersSnap = await getDocs(query(
-        collectionGroup(db, "members"),
-        where("userId", "==", userId)
-      ));
+      const membersSnap = await getDocs(
+        query(collection(db, "scrumMembers"), where("userId", "==", userId))
+      );
 
-      let totalSlips = 0, totalPoints = 0, bestScore = 0, podiums = 0, wins = 0;
+      const results = await Promise.all(membersSnap.docs.map(async (m) => {
+        const scrumId = m.data().scrumId;
+        const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
+        if (!scrumDoc.exists()) return null;
+        const scrum = scrumDoc.data();
 
-      for (const m of membersSnap.docs) {
-        const scrumId = m.ref.parent.parent!.id;
-        const scrumSnap = await getDoc(doc(db, "scrums", scrumId));
-        if (!scrumSnap.exists()) continue;
-        const scrum = scrumSnap.data();
+        const [myPicksSnap, allPicksSnap] = await Promise.all([
+          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))),
+          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId))),
+        ]);
 
-        const racesSnap = await getDocs(collection(db, "cards", scrum.cardId, "races"));
-        const total = racesSnap.size;
-        const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        if (settled < total || total === 0) continue;
+        if (myPicksSnap.empty) return null;
 
-        const picksSnap = await getDocs(query(
-          collection(db, "scrums", scrumId, "picks"),
-          where("userId", "==", userId)
-        ));
-        const score = picksSnap.docs.reduce((a, p) => a + (p.data().points ?? 0), 0);
+        const myTotal = myPicksSnap.docs.reduce((sum, p) => sum + (p.data().points ?? 0), 0);
+        const wins = myPicksSnap.docs.filter(p => p.data().points === 5).length;
+        const places = myPicksSnap.docs.filter(p => p.data().points === 3).length;
+        const shows = myPicksSnap.docs.filter(p => p.data().points === 1).length;
 
-        const allPicksSnap = await getDocs(collection(db, "scrums", scrumId, "picks"));
         const pointsByUser: Record<string, number> = {};
         allPicksSnap.docs.forEach(p => {
-          const d = p.data();
-          pointsByUser[d.userId] = (pointsByUser[d.userId] ?? 0) + (d.points ?? 0);
+          const uid = p.data().userId;
+          pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
         });
         const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
-        const rank = sorted.indexOf(score) + 1;
+        const rank = sorted.indexOf(myTotal) + 1;
 
-        totalSlips++;
-        totalPoints += score;
-        if (score > bestScore) bestScore = score;
-        if (rank <= 3) podiums++;
-        if (rank === 1) wins++;
+        return { myTotal, wins, places, shows, rank, members: sorted.length };
+      }));
+
+      const valid = results.filter(Boolean) as NonNullable<typeof results[0]>[];
+
+      if (valid.length === 0) {
+        setStats({ gamesPlayed: 0, totalPoints: 0, bestScore: 0, wins: 0, places: 0, shows: 0, bestRank: null, avgPoints: 0 });
+      } else {
+        const rankedGames = valid.filter(r => r.members > 1);
+        setStats({
+          gamesPlayed: valid.length,
+          totalPoints: valid.reduce((s, r) => s + r.myTotal, 0),
+          bestScore: Math.max(...valid.map(r => r.myTotal)),
+          wins: valid.reduce((s, r) => s + r.wins, 0),
+          places: valid.reduce((s, r) => s + r.places, 0),
+          shows: valid.reduce((s, r) => s + r.shows, 0),
+          bestRank: rankedGames.length > 0 ? Math.min(...rankedGames.map(r => r.rank)) : null,
+          avgPoints: Math.round(valid.reduce((s, r) => s + r.myTotal, 0) / valid.length),
+        });
       }
 
-      setStats({ totalSlips, totalPoints, bestScore, podiums, wins });
+      setLoading(false);
     })();
-  }, []);
-
-  const tiles = [
-    { label: "Slips Filed", value: stats.totalSlips },
-    { label: "Total Points", value: stats.totalPoints },
-    { label: "Best Score", value: stats.bestScore },
-    { label: "Podiums", value: stats.podiums },
-    { label: "Wins", value: stats.wins },
-    { label: "Win Rate", value: stats.totalSlips > 0 ? `${Math.round((stats.wins / stats.totalSlips) * 100)}%` : "—" },
-  ];
+  }, [userId]);
 
   return (
-    <div className="min-h-screen pb-24">
-      <div className="px-6 pt-8 pb-4">
-        <h1 className="font-display text-3xl brass-text font-black">Stats</h1>
-        <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] mt-1">Your record</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
+        <Link to="/" className="text-label-caps uppercase hover:underline">← PADDOCK</Link>
+        <h1 className="text-headline-md uppercase">THE FORM</h1>
+        <div className="w-20" />
+      </header>
 
-      <div className="px-6">
-        {stats.totalSlips === 0 ? (
-          <div className="border border-dashed border-border rounded-lg p-8 text-center">
-            <p className="text-sm text-muted-foreground">No completed slips yet.</p>
+      <main className="px-4 pt-6 pb-16 max-w-sm mx-auto">
+        {loading ? (
+          <div className="space-y-[-2.67px] animate-pulse">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="border-brutalist px-4 py-4 flex justify-between items-center mt-[-2.67px] first:mt-0">
+                <div className="h-3 w-24 bg-primary/10 rounded" />
+                <div className="h-7 w-10 bg-primary/10 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : !stats || stats.gamesPlayed === 0 ? (
+          <div className="border-brutalist p-8 text-center">
+            <p className="text-body-md text-muted-foreground">No stats yet.</p>
+            <p className="text-label-caps text-muted-foreground uppercase mt-2">
+              Finish a Daily Gallop to see your form.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {tiles.map((t) => (
-              <div key={t.label} className="bg-card rounded-lg p-4 border border-border">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">{t.label}</div>
-                <div className="font-display text-3xl brass-text mt-1">{t.value}</div>
+          <div className="flex flex-col">
+            {[
+              { label: "Games Played", value: stats.gamesPlayed },
+              { label: "Total Points", value: stats.totalPoints },
+              { label: "Avg Points / Game", value: stats.avgPoints },
+              { label: "Best Score", value: stats.bestScore },
+              { label: "Best Finish", value: stats.bestRank ? `#${stats.bestRank}` : "—" },
+              { label: "Wins (1st)", value: stats.wins },
+              { label: "Places (2nd)", value: stats.places },
+              { label: "Shows (3rd)", value: stats.shows },
+            ].map((row, i) => (
+              <div
+                key={i}
+                className={`border-brutalist px-4 py-4 flex justify-between items-center ${i > 0 ? "mt-[-2.67px]" : ""}`}
+              >
+                <span className="text-label-caps uppercase text-muted-foreground">{row.label}</span>
+                <span className="text-headline-md font-black">{row.value}</span>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-md mx-auto flex justify-around py-3">
-          <Link to="/" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><Ticket className="h-5 w-5" /> Paddock</Link>
-          <Link to="/spindle" className="flex flex-col items-center gap-1 text-muted-foreground text-xs"><Trophy className="h-5 w-5" /> Spindle</Link>
-          <Link to="/stats" className="flex flex-col items-center gap-1 text-primary text-xs"><BarChart3 className="h-5 w-5" /> Stats</Link>
-        </div>
-      </nav>
+      </main>
     </div>
   );
 };

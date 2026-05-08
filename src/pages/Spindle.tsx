@@ -187,7 +187,31 @@ const Spindle = () => {
 
       <main className="pt-8 pb-16">
         {loading ? (
-          <p className="text-label-caps uppercase text-muted-foreground text-center pt-10">Loading…</p>
+          <div className="flex overflow-x-hidden px-4">
+            <div className="w-full max-w-md mx-auto space-y-3 animate-pulse">
+              <div className="border-brutalist p-6 pt-8">
+                <div className="flex flex-col items-center gap-2 mb-5">
+                  <div className="h-7 w-40 bg-primary/10 rounded" />
+                  <div className="h-4 w-24 bg-primary/10 rounded" />
+                  <div className="h-4 w-20 bg-primary/10 rounded" />
+                </div>
+                <div className="border-t border-primary/20 pt-4 flex justify-between">
+                  <div className="h-10 w-16 bg-primary/10 rounded" />
+                  <div className="h-10 w-16 bg-primary/10 rounded" />
+                </div>
+              </div>
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex gap-3 border-b border-primary/10 pb-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-24 bg-primary/10 rounded" />
+                    <div className="h-5 w-40 bg-primary/10 rounded" />
+                    <div className="h-3 w-16 bg-primary/10 rounded" />
+                  </div>
+                  <div className="h-8 w-12 bg-primary/10 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : slips.length === 0 ? (
           <div className="mx-4 border-brutalist p-8 text-center">
             <p className="text-body-md text-muted-foreground">No completed slips yet.</p>

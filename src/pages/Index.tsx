@@ -394,12 +394,18 @@ const Index = () => {
           )}
         </section>
 
-        <footer className="mt-10 text-center pb-8">
+        <footer className="mt-10 flex justify-center gap-8 pb-8">
           <Link
             to="/spindle"
             className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
           >
-            View The Spindle
+            The Spindle
+          </Link>
+          <Link
+            to="/stats"
+            className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
+          >
+            The Form
           </Link>
         </footer>
       </main>

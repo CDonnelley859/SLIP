@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -16,6 +16,26 @@ const Lobby = () => {
   const [members, setMembers] = useState<{ handle: string; userId: string; submitted: boolean }[]>([]);
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [countdown, setCountdown] = useState<string | null>(null);
+
+  // Countdown to first race
+  useEffect(() => {
+    if (!card?.postTime) return;
+    const target = new Date(card.postTime).getTime();
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) { setCountdown("PICKS LOCKED"); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(h > 0
+        ? `${h}H ${String(m).padStart(2, "0")}M`
+        : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    }
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [card?.postTime]);
 
   useEffect(() => {
     if (!id) return;
@@ -62,6 +82,16 @@ const Lobby = () => {
     });
   }
 
+  function handleShare() {
+    if (!scrum?.joinCode) return;
+    const text = `Join my SLIP group! Code: ${scrum.joinCode} — slip-racing.vercel.app`;
+    if (navigator.share) {
+      navigator.share({ title: "SLIP", text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text).then(() => toast.success("Link copied!"));
+    }
+  }
+
   if (!scrum) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <p className="text-label-caps uppercase text-muted-foreground">Loading…</p>
@@ -84,17 +114,27 @@ const Lobby = () => {
           <span className="text-body-lg font-bold uppercase">{scrum.name}</span>
         </div>
 
-        {/* Join code with copy button */}
+        {/* Join code with copy + share */}
         <div className="border-brutalist p-6 flex flex-col items-center gap-2">
           <span className="text-label-caps text-muted-foreground uppercase">JOIN CODE</span>
           <span className="text-[56px] font-black tracking-[0.2em] font-mono leading-none">{scrum.joinCode}</span>
-          <button
-            onClick={handleCopyCode}
-            className="text-label-caps uppercase underline underline-offset-2 mt-1"
-          >
-            COPY CODE
-          </button>
+          <div className="flex gap-4 mt-1">
+            <button onClick={handleCopyCode} className="text-label-caps uppercase underline underline-offset-2">
+              COPY
+            </button>
+            <button onClick={handleShare} className="text-label-caps uppercase underline underline-offset-2">
+              SHARE
+            </button>
+          </div>
         </div>
+
+        {/* Countdown to first race */}
+        {countdown && (
+          <div className="border-brutalist p-4 flex flex-col items-center gap-1">
+            <span className="text-label-caps text-muted-foreground uppercase">First Race In</span>
+            <span className="text-[40px] font-black font-mono leading-none tracking-tight">{countdown}</span>
+          </div>
+        )}
 
         {/* Players with submitted indicator */}
         <div className="border-brutalist">

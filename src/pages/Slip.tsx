@@ -66,49 +66,59 @@ const Slip = () => {
 
   async function buildLines() {
     if (!id) return;
-    const picksSnap = await getDocs(
-      query(collection(db, "picks"),
-        where("scrumId", "==", id),
-        where("userId", "==", userId))
-    );
-    const built: Line[] = [];
-    for (const pickDoc of picksSnap.docs) {
-      const pick = pickDoc.data();
-      const raceDoc = await getDoc(doc(db, "races", pick.raceId));
-      const horseDoc = await getDoc(doc(db, "horses", pick.horseId));
-      const race = raceDoc.data();
-      const horse = horseDoc.data();
-      const status = getStatus(race?.status ?? "upcoming", pick.horseId, race?.winners);
+    const [picksSnap, allPicksSnap] = await Promise.all([
+      getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", userId))),
+      getDocs(query(collection(db, "picks"), where("scrumId", "==", id))),
+    ]);
+
+    const pickData = picksSnap.docs.map(p => p.data());
+
+    // Fetch all races and horses in parallel
+    const [raceDocs, horseDocs] = await Promise.all([
+      Promise.all(pickData.map(p => getDoc(doc(db, "races", p.raceId)))),
+      Promise.all(pickData.map(p => getDoc(doc(db, "horses", p.horseId)))),
+    ]);
+
+    // Collect unique winner horse IDs and fetch in parallel
+    const winnerIdSet = new Set<string>();
+    raceDocs.forEach(rd => {
+      const w = rd.data()?.winners;
+      if (w?.first) winnerIdSet.add(w.first);
+      if (w?.second) winnerIdSet.add(w.second);
+      if (w?.third) winnerIdSet.add(w.third);
+    });
+    const winnerIdArr = [...winnerIdSet];
+    const winnerDocs = await Promise.all(winnerIdArr.map(id => getDoc(doc(db, "horses", id))));
+    const winnerMap: Record<string, { number: number; name: string }> = {};
+    winnerDocs.forEach((d, i) => {
+      if (d.exists()) winnerMap[winnerIdArr[i]] = { number: d.data().number, name: d.data().name };
+    });
+
+    const built: Line[] = pickData.map((pick, i) => {
+      const race = raceDocs[i].data();
+      const horse = horseDocs[i].data();
       const winners = race?.winners;
-      const fetchWinner = async (horseId: string | undefined) => {
-        if (!horseId) return null;
-        const d = await getDoc(doc(db, "horses", horseId));
-        if (!d.exists()) return null;
-        return { number: d.data().number, name: d.data().name };
-      };
-      const podium = {
-        first: await fetchWinner(winners?.first),
-        second: await fetchWinner(winners?.second),
-        third: await fetchWinner(winners?.third),
-      };
-      built.push({
+      const status = getStatus(race?.status ?? "upcoming", pick.horseId, winners);
+      return {
         raceNumber: race?.raceNumber ?? 0,
         horseName: horse?.name ?? "—",
         horseNumber: horse?.number ?? 0,
         offTime: race?.offTime ?? null,
         status,
         points: pointsFor(status),
-        podium,
-      });
-    }
+        podium: {
+          first: winners?.first ? (winnerMap[winners.first] ?? null) : null,
+          second: winners?.second ? (winnerMap[winners.second] ?? null) : null,
+          third: winners?.third ? (winnerMap[winners.third] ?? null) : null,
+        },
+      };
+    });
+
     const sorted = built.sort((a, b) => a.raceNumber - b.raceNumber);
     setLines(sorted);
 
-    // Calculate rank across all players in this scrum
+    // Calculate rank
     const myTotal = sorted.reduce((sum, l) => sum + l.points, 0);
-    const allPicksSnap = await getDocs(
-      query(collection(db, "picks"), where("scrumId", "==", id))
-    );
     const pointsByUser: Record<string, number> = {};
     allPicksSnap.docs.forEach(p => {
       const uid = p.data().userId;
