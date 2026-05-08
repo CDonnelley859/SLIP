@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards } from "@/lib/racingApi";
 import {
-  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
+  collection, getDocs, query, where, doc, getDoc, deleteDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -19,7 +19,6 @@ const Index = () => {
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
   const [trackSearch, setTrackSearch] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [joining, setJoining] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -86,25 +85,10 @@ const Index = () => {
     }
   }
 
-  async function handleJoin(e: React.FormEvent) {
+  function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     if (!joinCode.trim()) return;
-    setJoining(true);
-    try {
-      const snap = await getDocs(
-        query(collection(db, "scrums"), where("joinCode", "==", joinCode.toUpperCase().trim()))
-      );
-      if (snap.empty) throw new Error("Code not found");
-      const scrumId = snap.docs[0].id;
-      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId,
-      });
-      navigate(`/scrum/${scrumId}/lobby`);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setJoining(false);
-    }
+    navigate(`/scrum/join?code=${joinCode.toUpperCase().trim()}`);
   }
 
   async function handleLeave(scrumId: string) {
@@ -231,7 +215,7 @@ const Index = () => {
               />
               <button
                 type="submit"
-                disabled={joining || joinCode.length < 4}
+                disabled={joinCode.length < 4}
                 className="bg-primary text-primary-foreground px-6 text-headline-md uppercase border-l-brutalist disabled:opacity-40 transition-none"
               >
                 JOIN

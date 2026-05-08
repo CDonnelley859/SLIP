@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
@@ -7,7 +7,9 @@ import { toast } from "sonner";
 
 const JoinScrum = () => {
   const { userId, handle } = useAuth();
-  const [code, setCode] = useState("");
+  const [params] = useSearchParams();
+  const [code, setCode] = useState(params.get("code") ?? "");
+  const [playerName, setPlayerName] = useState(handle);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -21,7 +23,7 @@ const JoinScrum = () => {
       if (snap.empty) throw new Error("Code not found");
       const scrumId = snap.docs[0].id;
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId, handle,
+        scrumId, userId, handle: playerName.trim() || handle,
       });
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
@@ -59,9 +61,22 @@ const JoinScrum = () => {
               className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest text-center"
             />
           </div>
+          <div className="relative border-brutalist border-t-0">
+            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              YOUR_NAME
+            </label>
+            <input
+              required
+              value={playerName}
+              onChange={e => setPlayerName(e.target.value)}
+              placeholder="YOUR NAME IN THIS GROUP"
+              maxLength={30}
+              className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+            />
+          </div>
           <button
             type="submit"
-            disabled={busy || code.length < 4}
+            disabled={busy || code.length < 4 || !playerName.trim()}
             className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist border-t-0 disabled:opacity-40 transition-none"
           >
             {busy ? "JOINING…" : "JOIN"}

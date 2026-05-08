@@ -12,6 +12,7 @@ const NewScrum = () => {
   const [params] = useSearchParams();
   const cardId = params.get("card");
   const [name, setName] = useState("");
+  const [playerName, setPlayerName] = useState(handle);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -33,7 +34,7 @@ const NewScrum = () => {
       });
 
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId, handle,
+        scrumId, userId, handle: playerName.trim() || handle,
       });
 
       toast.success(`Group code: ${joinCode}`);
@@ -73,9 +74,22 @@ const NewScrum = () => {
               className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none"
             />
           </div>
+          <div className="relative border-brutalist border-t-0">
+            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              YOUR_NAME
+            </label>
+            <input
+              required
+              value={playerName}
+              onChange={e => setPlayerName(e.target.value)}
+              placeholder="YOUR NAME IN THIS GROUP"
+              maxLength={30}
+              className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+            />
+          </div>
           <button
             type="submit"
-            disabled={busy || !name.trim()}
+            disabled={busy || !name.trim() || !playerName.trim()}
             className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist border-t-0 disabled:opacity-40 transition-none"
           >
             {busy ? "CREATING…" : "CREATE GROUP"}
