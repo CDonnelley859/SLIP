@@ -61,6 +61,13 @@ const Gallop = () => {
 
       await loadRaces();
 
+      // DEBUG — remove once horses are confirmed working
+      const firstRaceId = racesSnap.docs[0]?.id ?? "none";
+      const firstHorsesSnap = racesSnap.docs[0]
+        ? await getDocs(query(collection(db, "horses"), where("raceId", "==", racesSnap.docs[0].id)))
+        : null;
+      toast.info(`cardId: ${scrum.cardId} | races: ${racesSnap.size} | horses[0]: ${firstHorsesSnap?.size ?? 0} | raceId: ${firstRaceId}`);
+
       const picksSnap = await getDocs(
         query(collection(db, "picks"),
           where("scrumId", "==", id),
