@@ -170,8 +170,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-background border-b-brutalist flex justify-center items-center w-full h-16 px-4 sticky top-0 z-50">
+      <header className="bg-background border-b-brutalist flex justify-between items-center w-full h-16 px-4 sticky top-0 z-50">
+        <div className="w-20" />
         <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
+        <Link to="/slip-designs" className="text-label-caps uppercase underline underline-offset-2 w-20 text-right">
+          DESIGNS
+        </Link>
       </header>
 
       <main className="px-4">
