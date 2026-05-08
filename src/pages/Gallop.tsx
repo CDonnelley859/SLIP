@@ -90,7 +90,7 @@ const picksSnap = await getDocs(
         batch.set(pickRef, { scrumId: id, raceId, horseId, userId, points: null });
       });
       await batch.commit();
-      navigate("/");
+      navigate(`/scrum/${id}/slip`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
