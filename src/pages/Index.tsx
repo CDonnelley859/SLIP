@@ -384,12 +384,18 @@ const Index = () => {
           )}
         </section>
 
-        <footer className="mt-10 text-center pb-8">
+        <footer className="mt-10 text-center pb-8 flex flex-col gap-3">
           <Link
             to="/spindle"
             className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
           >
             View The Spindle
+          </Link>
+          <Link
+            to="/slip-designs"
+            className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
+          >
+            Slip Designs
           </Link>
         </footer>
       </main>
