@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards } from "@/lib/racingApi";
 import {
-  collection, getDocs, query, where, doc, getDoc, setDoc,
+  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -102,6 +102,15 @@ const Index = () => {
       toast.error(err.message);
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function handleLeave(scrumId: string) {
+    try {
+      await deleteDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`));
+      setActiveSlips(prev => prev.filter(s => s.scrumId !== scrumId));
+    } catch (err: any) {
+      toast.error(err.message);
     }
   }
 
@@ -203,32 +212,44 @@ const Index = () => {
           ) : (
             <div className="flex flex-col">
               {activeSlips.map((s, i) => (
-                <Link
+                <div
                   key={s.scrumId}
-                  to={`/scrum/${s.scrumId}/lobby`}
-                  className={`border-brutalist p-4 flex flex-col gap-3 bg-background ${i > 0 ? "mt-[-2.67px]" : ""}`}
+                  className={`border-brutalist bg-background ${i > 0 ? "mt-[-2.67px]" : ""}`}
                 >
-                  <div>
-                    <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
-                    <span className="text-headline-md uppercase">{s.trackName}</span>
-                    <div className="mt-1">
-                      <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
-                      <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
+                  <Link
+                    to={`/scrum/${s.scrumId}/lobby`}
+                    className="p-4 flex flex-col gap-3 block"
+                  >
+                    <div>
+                      <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
+                      <span className="text-headline-md uppercase">{s.trackName}</span>
+                      <div className="mt-1">
+                        <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
+                        <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
+                      </div>
                     </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex justify-between text-label-caps uppercase">
+                        <span>PROGRESS</span>
+                        <span>{s.completed}/{s.total || 6}</span>
+                      </div>
+                      <div className="h-3 w-full border border-primary p-[1px]">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="border-t border-primary/20 px-4 py-2 flex justify-end">
+                    <button
+                      onClick={() => handleLeave(s.scrumId)}
+                      className="text-label-caps uppercase text-destructive underline underline-offset-2"
+                    >
+                      LEAVE
+                    </button>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-label-caps uppercase">
-                      <span>PROGRESS</span>
-                      <span>{s.completed}/{s.total || 6}</span>
-                    </div>
-                    <div className="h-3 w-full border border-primary p-[1px]">
-                      <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
