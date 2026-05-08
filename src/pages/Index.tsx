@@ -1,29 +1,51 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards } from "@/lib/racingApi";
 import {
-  collection, getDocs, query, where, doc, getDoc, deleteDoc,
+  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number };
 type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number };
+
+const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 const Index = () => {
   const { userId, handle, setHandle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [cards, setCards] = useState<Card[]>([]);
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
   const [trackSearch, setTrackSearch] = useState("");
-  const [joinCode, setJoinCode] = useState("");
   const [syncing, setSyncing] = useState(false);
+
+  // Name editing
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
 
+  // Create group (inline)
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [groupName, setGroupName] = useState("");
+  const [createName, setCreateName] = useState(handle);
+  const [creating, setCreating] = useState(false);
+
+  // Join group (inline)
+  const [joinCode, setJoinCode] = useState("");
+  const [joinName, setJoinName] = useState(handle);
+  const [joining, setJoining] = useState(false);
+
   useEffect(() => { loadData(); }, [userId, location.key]);
+
+  // Keep name fields in sync with handle when handle changes
+  useEffect(() => {
+    setCreateName(h => h || handle);
+    setJoinName(h => h || handle);
+  }, [handle]);
 
   async function loadData() {
     const today = new Date().toISOString().slice(0, 10);
@@ -85,10 +107,56 @@ const Index = () => {
     }
   }
 
-  function handleJoin(e: React.FormEvent) {
+  function handleSelectCard(card: Card) {
+    setSelectedCard(card);
+    setGroupName("");
+    setCreateName(handle);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!joinCode.trim()) return;
-    navigate(`/scrum/join?code=${joinCode.toUpperCase().trim()}`);
+    if (!selectedCard || !groupName.trim()) return;
+    setCreating(true);
+    try {
+      const joinCode = genCode();
+      const scrumId = crypto.randomUUID();
+      await setDoc(doc(db, "scrums", scrumId), {
+        cardId: selectedCard.id,
+        hostId: userId,
+        name: groupName.trim(),
+        joinCode,
+      });
+      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+        scrumId, userId, handle: createName.trim() || handle,
+      });
+      toast.success(`Group code: ${joinCode}`);
+      navigate(`/scrum/${scrumId}/lobby`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleJoin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!joinCode.trim() || joinCode.length < 4) return;
+    setJoining(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db, "scrums"), where("joinCode", "==", joinCode.toUpperCase().trim()))
+      );
+      if (snap.empty) throw new Error("Code not found");
+      const scrumId = snap.docs[0].id;
+      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+        scrumId, userId, handle: joinName.trim() || handle,
+      });
+      navigate(`/scrum/${scrumId}/lobby`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setJoining(false);
+    }
   }
 
   async function handleLeave(scrumId: string) {
@@ -148,6 +216,7 @@ const Index = () => {
       </header>
 
       <main className="px-4">
+        {/* Track tiles */}
         <section className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-label-caps uppercase">Top Tracks</h2>
@@ -168,25 +237,31 @@ const Index = () => {
             </div>
           ) : (
             <div className="flex overflow-x-auto gap-0 -mx-4 px-4 pb-2">
-              {filteredCards.map((c, i) => (
-                <Link
-                  key={c.id}
-                  to={`/scrum/new?card=${c.id}`}
-                  className={`flex-shrink-0 w-40 border-brutalist p-4 bg-background flex flex-col justify-between h-28 ${i > 0 ? "ml-[-2.67px]" : ""}`}
-                >
-                  <span className="text-headline-md uppercase leading-tight line-clamp-2">
-                    {c.trackName}
-                  </span>
-                  <span className="text-label-caps text-muted-foreground uppercase">
-                    {c.raceCount} RACES
-                  </span>
-                </Link>
-              ))}
+              {filteredCards.map((c, i) => {
+                const isSelected = selectedCard?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(c)}
+                    className={`flex-shrink-0 w-40 border-brutalist p-4 flex flex-col justify-between h-28 text-left transition-none
+                      ${isSelected ? "bg-primary text-primary-foreground" : "bg-background"}
+                      ${i > 0 ? "ml-[-2.67px]" : ""}`}
+                  >
+                    <span className="text-headline-md uppercase leading-tight line-clamp-2">
+                      {c.trackName}
+                    </span>
+                    <span className={`text-label-caps uppercase ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
+                      {c.raceCount} RACES
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </section>
 
-        <section className="mt-6">
+        {/* Search */}
+        <section className="mt-4">
           <div className="relative flex border-brutalist h-14">
             <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
               SEARCH_TRACKS
@@ -200,30 +275,99 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Create group (shown when track selected) */}
+        {selectedCard && (
+          <section className="mt-4">
+            <div className="border-brutalist">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-primary/20">
+                <span className="text-label-caps uppercase">
+                  CREATE GROUP · <span className="text-primary">{selectedCard.trackName}</span>
+                </span>
+                <button
+                  onClick={() => setSelectedCard(null)}
+                  className="text-label-caps uppercase opacity-40"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleCreate}>
+                <div className="relative border-b border-primary/20 h-14 flex items-center">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                    GROUP_NAME
+                  </label>
+                  <input
+                    autoFocus
+                    value={groupName}
+                    onChange={e => setGroupName(e.target.value)}
+                    placeholder="THE SATURDAY CREW"
+                    maxLength={40}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <div className="relative border-b border-primary/20 h-14 flex items-center">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                    YOUR_NAME
+                  </label>
+                  <input
+                    value={createName}
+                    onChange={e => setCreateName(e.target.value)}
+                    placeholder="YOUR NAME IN THIS GROUP"
+                    maxLength={30}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={creating || !groupName.trim() || !createName.trim()}
+                  className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
+                >
+                  {creating ? "CREATING…" : "CREATE GROUP"}
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
+
+        {/* Join group */}
         <section className="mt-4">
-          <form onSubmit={handleJoin}>
-            <div className="relative flex border-brutalist h-14">
-              <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                GROUP_CODE
-              </label>
-              <input
-                value={joinCode}
-                onChange={e => setJoinCode(e.target.value)}
-                placeholder="ENTER JOIN CODE"
-                maxLength={4}
-                className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
-              />
+          <div className="border-brutalist">
+            <form onSubmit={handleJoin}>
+              <div className="relative flex border-b border-primary/20 h-14">
+                <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                  GROUP_CODE
+                </label>
+                <input
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value)}
+                  placeholder="ENTER JOIN CODE"
+                  maxLength={4}
+                  className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
+                />
+              </div>
+              <div className="relative flex border-b border-primary/20 h-14">
+                <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                  YOUR_NAME
+                </label>
+                <input
+                  value={joinName}
+                  onChange={e => setJoinName(e.target.value)}
+                  placeholder="YOUR NAME IN THIS GROUP"
+                  maxLength={30}
+                  className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                />
+              </div>
               <button
                 type="submit"
-                disabled={joinCode.length < 4}
-                className="bg-primary text-primary-foreground px-6 text-headline-md uppercase border-l-brutalist disabled:opacity-40 transition-none"
+                disabled={joining || joinCode.length < 4 || !joinName.trim()}
+                className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
               >
-                JOIN
+                {joining ? "JOINING…" : "JOIN GROUP"}
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </section>
 
+        {/* Active slips */}
         <section className="mt-8">
           <h2 className="text-label-caps uppercase mb-2">Active Slips</h2>
           {activeSlips.length === 0 ? (
