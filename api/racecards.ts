@@ -19,7 +19,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const courses = await courseRes.json();
   const runners = runnerRes.ok ? await runnerRes.json() : {};
 
-  console.log("OurHub runners sample:", JSON.stringify(runners).slice(0, 500));
+  const runnerKeys = Object.keys(runners);
+  const firstTrack = runnerKeys[0];
+  const firstTrackData = firstTrack ? runners[firstTrack] : null;
+  console.log("RUNNER_KEYS:", JSON.stringify(runnerKeys));
+  console.log("RUNNER_FIRST_TRACK:", JSON.stringify(firstTrackData).slice(0, 1000));
 
   res.json({ courses, runners });
 }
