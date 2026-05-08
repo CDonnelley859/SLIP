@@ -15,7 +15,7 @@ type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; compl
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 const Index = () => {
-  const { userId, handle, setHandle } = useAuth();
+  const { userId, handle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,10 +23,6 @@ const Index = () => {
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
   const [trackSearch, setTrackSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
-
-  // Name editing
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
 
   // Create group (inline)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -174,45 +170,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-background border-b-brutalist w-full px-4 sticky top-0 z-50">
-        <div className="flex justify-center items-center h-16">
-          <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
-        </div>
-        <div className="border-t border-primary/20 py-2 flex items-center justify-between">
-          {editingName ? (
-            <form
-              className="flex w-full gap-2"
-              onSubmit={e => {
-                e.preventDefault();
-                if (nameInput.trim()) { setHandle(nameInput.trim()); }
-                setEditingName(false);
-              }}
-            >
-              <input
-                autoFocus
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                maxLength={30}
-                placeholder={handle}
-                className="flex-1 bg-transparent text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono border-b border-primary"
-              />
-              <button type="submit" className="text-label-caps uppercase">SAVE</button>
-              <button type="button" onClick={() => setEditingName(false)} className="text-label-caps uppercase opacity-40">✕</button>
-            </form>
-          ) : (
-            <>
-              <span className="text-label-caps text-muted-foreground uppercase">
-                PLAYING AS <span className="text-primary">{handle}</span>
-              </span>
-              <button
-                onClick={() => { setNameInput(handle); setEditingName(true); }}
-                className="text-label-caps uppercase underline underline-offset-2"
-              >
-                CHANGE
-              </button>
-            </>
-          )}
-        </div>
+      <header className="bg-background border-b-brutalist flex justify-center items-center w-full h-16 px-4 sticky top-0 z-50">
+        <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
       </header>
 
       <main className="px-4">
