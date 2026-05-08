@@ -181,9 +181,9 @@ const Slip = () => {
             return (
               <div
                 key={i}
-                className={`flex justify-between items-center border-b border-primary/10 pb-3 last:border-0 ${isOut ? "opacity-50" : ""}`}
+                className={`flex items-start gap-3 border-b border-primary/10 pb-3 last:border-0 ${isOut ? "opacity-50" : ""}`}
               >
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-label-caps text-muted-foreground">
                     RACE {String(l.raceNumber).padStart(2, "0")}
                     {l.offTime && ` · ${new Date(l.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
@@ -212,7 +212,9 @@ const Slip = () => {
                     })}
                   </div>
                 </div>
-                <StatusBadge status={l.status} />
+                <div className="shrink-0 pt-1 pr-1">
+                  <StatusBadge status={l.status} />
+                </div>
               </div>
             );
           })}
