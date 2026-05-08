@@ -8,8 +8,8 @@ const TRA_AUTH = "Basic " + Buffer.from(`${TRA_USER}:${TRA_PASS}`).toString("bas
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
-  // /results/today is available on Basic plan and above
-  const upstream = await fetch(`${TRA_BASE}/results/today`, {
+  // /results/today/free is available on the free plan
+  const upstream = await fetch(`${TRA_BASE}/results/today/free`, {
     headers: { Authorization: TRA_AUTH },
   });
 
