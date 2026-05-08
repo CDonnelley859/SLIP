@@ -278,23 +278,23 @@ const Index = () => {
         {/* Create group (shown when track selected) */}
         {selectedCard && (
           <section className="mt-4">
-            <div className="border-brutalist">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-primary/20">
-                <span className="text-label-caps uppercase">
-                  CREATE GROUP · <span className="text-primary">{selectedCard.trackName}</span>
+            <div className="border-brutalist relative">
+              <div className="flex items-center justify-between px-4 pt-2 pb-0">
+                <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+                  CREATE GROUP
+                </span>
+                <span className="text-label-caps text-muted-foreground uppercase pt-2 text-[10px]">
+                  {selectedCard.trackName}
                 </span>
                 <button
                   onClick={() => setSelectedCard(null)}
-                  className="text-label-caps uppercase opacity-40"
+                  className="text-label-caps uppercase opacity-40 pt-2"
                 >
                   ✕
                 </button>
               </div>
               <form onSubmit={handleCreate}>
-                <div className="relative border-b border-primary/20 h-14 flex items-center">
-                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                    GROUP_NAME
-                  </label>
+                <div className="border-b border-primary/20 h-14 flex items-center">
                   <input
                     autoFocus
                     value={groupName}
@@ -330,12 +330,12 @@ const Index = () => {
 
         {/* Join group */}
         <section className="mt-4">
-          <div className="border-brutalist">
+          <div className="border-brutalist relative">
+            <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              JOIN GROUP
+            </span>
             <form onSubmit={handleJoin}>
-              <div className="relative flex border-b border-primary/20 h-14">
-                <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                  GROUP_CODE
-                </label>
+              <div className="flex border-b border-primary/20 h-14">
                 <input
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value)}
