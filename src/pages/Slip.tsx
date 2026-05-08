@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
+import { syncResults } from "@/lib/racingApi";
 import {
   doc, getDoc, getDocs, collection, query, where, onSnapshot,
 } from "firebase/firestore";
@@ -129,10 +130,15 @@ const Slip = () => {
   const total = lines.reduce((sum, l) => sum + l.points, 0);
 
   async function handleRefresh() {
+    if (!scrum?.cardId) return;
     setRefreshing(true);
     try {
+      await syncResults(scrum.cardId);
       await buildLines();
-      toast.success("Refreshed");
+      toast.success("Results updated");
+    } catch (err: any) {
+      // Sync may fail on free plan — still refresh the display
+      await buildLines();
     } finally {
       setRefreshing(false);
     }

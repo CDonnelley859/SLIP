@@ -149,23 +149,37 @@ export async function syncRunners(cardId: string): Promise<number> {
   return horseCount;
 }
 
+// Strip country suffix: "Rubellite (IRE)" → "RUBELLITE"
+function normaliseName(name: string): string {
+  return name.replace(/\s*\([A-Z]+\)\s*$/, "").trim().toUpperCase();
+}
+
+// Strip surface suffix: "Wolverhampton (AW)" → "wolverhampton"
+function normaliseCourse(course: string): string {
+  return course.replace(/\s*\(AW\)\s*$/, "").trim().toLowerCase();
+}
+
 export async function syncResults(cardId: string): Promise<void> {
-  // Get card to find the date and track name
   const cardDoc = await getDoc(doc(db, "cards", cardId));
   if (!cardDoc.exists()) return;
-  const card = cardDoc.data();
-  const { raceDate, trackName } = card;
+  const { trackName } = cardDoc.data();
+  const normTrack = normaliseCourse(trackName);
 
-  // Fetch all results for today from OurHub
-  let allResults: Record<string, any[]> = {};
+  // Fetch today's results from The Racing API (requires Basic plan or above)
+  let traRaces: any[] = [];
   try {
-    const data = await apiFetch(`/results?date=${raceDate}`);
-    // OurHub result-info format mirrors runner-info:
-    // { "Ascot 13:50 Race Name": [...runners with position] }
-    allResults = data ?? {};
+    const data = await apiFetch(`/results`);
+    // TRA format: { results: [ { course, off_dt, runners: [{ horse, position }] } ] }
+    traRaces = data?.results ?? [];
   } catch {
     return; // Results not available yet
   }
+
+  // Filter to races at this track
+  const trackRaces = traRaces.filter(
+    (r: any) => normaliseCourse(r.course ?? "") === normTrack
+  );
+  if (trackRaces.length === 0) return;
 
   // Get all races for this card
   const racesSnap = await getDocs(
@@ -175,42 +189,35 @@ export async function syncResults(cardId: string): Promise<void> {
   for (const raceDoc of racesSnap.docs) {
     const race = raceDoc.data();
     if (race.status === "settled") continue;
+    if (!race.offTime) continue;
 
-    // Convert stored UTC offTime back to local race time string to match OurHub key
-    const offDate = new Date(race.offTime);
-    const localH = offDate.getUTCHours() + (raceDate >= "2026-04" && raceDate <= "2026-10" ? 1 : 0);
-    const localM = offDate.getUTCMinutes();
-    const timeStr = `${String(localH).padStart(2, "0")}:${String(localM).padStart(2, "0")}`;
+    const raceUTC = new Date(race.offTime).getTime();
 
-    // Find the matching result entry by track name + time
-    const resultKey = Object.keys(allResults).find(
-      k => k.startsWith(trackName) && k.includes(timeStr)
-    );
-    if (!resultKey) continue;
+    // Find the TRA race whose off_dt is closest to our stored offTime (within 5 min)
+    const match = trackRaces.find((r: any) => {
+      const traTime = new Date(r.off_dt).getTime();
+      return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
+    });
+    if (!match) continue;
 
-    const runners: any[] = allResults[resultKey] ?? [];
-    const getAt = (pos: number) =>
-      runners.find((r: any) => Number(r.position) === pos || r.finishing_position === String(pos));
-    const first = getAt(1);
-    const second = getAt(2);
-    const third = getAt(3);
+    const runners: any[] = match.runners ?? [];
+    const atPos = (pos: string) => runners.find((r: any) => String(r.position) === pos);
+    const first = atPos("1");
+    const second = atPos("2");
+    const third = atPos("3");
     if (!first) continue;
 
-    // Look up Firestore horse IDs by name so picks can be matched correctly
+    // Look up Firestore horse IDs by normalised name
     const horsesSnap = await getDocs(
       query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
     );
     const nameToId: Record<string, string> = {};
     horsesSnap.docs.forEach(h => {
-      const name = (h.data().name ?? "").toUpperCase();
-      nameToId[name] = h.id;
+      nameToId[normaliseName(h.data().name ?? "")] = h.id;
     });
 
-    const toId = (runner: any) => {
-      if (!runner) return null;
-      const name = (runner.horse_name ?? runner.horse ?? "").toUpperCase();
-      return nameToId[name] ?? null;
-    };
+    const toId = (runner: any) =>
+      runner ? (nameToId[normaliseName(runner.horse ?? "")] ?? null) : null;
 
     const winners = {
       first: toId(first),
@@ -218,20 +225,22 @@ export async function syncResults(cardId: string): Promise<void> {
       third: toId(third),
     };
 
-    if (!winners.first) continue; // Couldn't match winner — skip
+    if (!winners.first) continue;
 
     await updateDoc(raceDoc.ref, { status: "settled", winners });
 
     const picksSnap = await getDocs(
       query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
     );
+    const batch = writeBatch(db);
     for (const pickDoc of picksSnap.docs) {
-      const pick = pickDoc.data();
+      const { horseId } = pickDoc.data();
       let points = 0;
-      if (pick.horseId === winners.first) points = 5;
-      else if (pick.horseId === winners.second) points = 3;
-      else if (pick.horseId === winners.third) points = 1;
-      await updateDoc(pickDoc.ref, { points });
+      if (horseId === winners.first) points = 5;
+      else if (horseId === winners.second) points = 3;
+      else if (horseId === winners.third) points = 1;
+      batch.update(pickDoc.ref, { points });
     }
+    await batch.commit();
   }
 }
