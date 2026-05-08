@@ -160,9 +160,6 @@ const Slip = () => {
           <span className="text-label-caps text-muted-foreground uppercase">
             {scrum?.name ?? "—"}
           </span>
-          <div className="bg-primary text-primary-foreground px-4 py-2 font-mono tracking-widest text-data-mono">
-            {scrum?.joinCode ?? "----"}
-          </div>
         </div>
 
         <div className="p-6 space-y-4">
