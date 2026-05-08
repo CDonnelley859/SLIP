@@ -4,6 +4,8 @@ const API_KEY = "oh_C2xOzhL0KOZPyGVtDjwq-ySdZYYwMwvQ";
 const BASE = "https://api.ourhub.site";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Cache-Control", "no-store");
+
   const date = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
 
   const [courseRes, runnerRes] = await Promise.all([
@@ -17,14 +19,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const courses = await courseRes.json();
-  const runners = runnerRes.ok ? await runnerRes.json() : {};
+  const rawRunners: Record<string, any[]> = runnerRes.ok ? await runnerRes.json() : {};
 
-  const runnerKeys = Object.keys(runners);
-  console.log("RUNNER_KEYS_ALL:", JSON.stringify(runnerKeys).slice(0, 2000));
-  const firstTrack = runnerKeys[0];
-  const firstTrackData = firstTrack ? runners[firstTrack] : null;
-  console.log("RUNNER_FIRST_KEY:", JSON.stringify(firstTrack));
-  console.log("RUNNER_FIRST_ENTRY:", JSON.stringify(firstTrackData).slice(0, 500));
+  // OurHub runner-info keys are "TrackName HH:MM" format.
+  // Transform into { TrackName: [ { race_time: "HH:MM", ...runnerFields }, ... ] }
+  const runners: Record<string, any[]> = {};
+  for (const [key, entries] of Object.entries(rawRunners)) {
+    const timeMatch = key.match(/(\d{1,2}:\d{2})$/);
+    if (!timeMatch) continue;
+    const raceTime = timeMatch[1];
+    const trackName = key.slice(0, key.length - raceTime.length).trim();
+    if (!runners[trackName]) runners[trackName] = [];
+    const list = Array.isArray(entries) ? entries : [];
+    runners[trackName].push(...list.map(r => ({ ...r, race_time: raceTime })));
+  }
+
+  // Debug: log first track and a sample runner
+  const firstKey = Object.keys(runners)[0];
+  console.log("TRANSFORMED_KEYS:", JSON.stringify(Object.keys(runners)));
+  console.log("FIRST_TRACK_SAMPLE:", JSON.stringify((runners[firstKey] ?? []).slice(0, 2)));
 
   res.json({ courses, runners });
 }
