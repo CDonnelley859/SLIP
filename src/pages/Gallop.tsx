@@ -90,7 +90,7 @@ const picksSnap = await getDocs(
         batch.set(pickRef, { scrumId: id, raceId, horseId, userId, points: null });
       });
       await batch.commit();
-      navigate(`/scrum/${id}/slip`);
+      navigate("/");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -182,26 +182,6 @@ const picksSnap = await getDocs(
           })}
         </div>
 
-        {allPicked && (
-          <div className="mt-6 border-brutalist p-4 bg-background">
-            <div className="flex justify-between items-center mb-3 border-b border-primary/20 pb-2">
-              <h4 className="text-label-caps uppercase">Selection Slip</h4>
-              <span className="text-label-caps text-muted-foreground">
-                R1–R{races.length} COMPLETE
-              </span>
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist disabled:opacity-40 transition-none"
-            >
-              {submitting ? "PRINTING…" : "SEND TO PRINT"}
-            </button>
-            <p className="text-center text-label-caps text-muted-foreground mt-2 uppercase">
-              Confirmation generates your official slip
-            </p>
-          </div>
-        )}
       </main>
 
       <div className="fixed bottom-0 left-0 w-full h-[60px] z-50 flex items-center justify-between border-t-brutalist bg-background px-4">
@@ -215,13 +195,22 @@ const picksSnap = await getDocs(
         <div className="text-data-mono font-bold tracking-widest">
           {String(currentIdx + 1).padStart(2, "0")} / {String(races.length).padStart(2, "0")}
         </div>
-        <button
-          onClick={() => setCurrentIdx(i => Math.min(races.length - 1, i + 1))}
-          disabled={isLastRace}
-          className="text-label-caps uppercase disabled:opacity-30 transition-none"
-        >
-          NEXT →
-        </button>
+        {isLastRace ? (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !allPicked}
+            className="text-label-caps uppercase disabled:opacity-30 transition-none"
+          >
+            {submitting ? "PRINTING…" : "PRINT →"}
+          </button>
+        ) : (
+          <button
+            onClick={() => setCurrentIdx(i => Math.min(races.length - 1, i + 1))}
+            className="text-label-caps uppercase transition-none"
+          >
+            NEXT →
+          </button>
+        )}
       </div>
     </div>
   );
