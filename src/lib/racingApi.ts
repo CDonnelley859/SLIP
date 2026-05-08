@@ -9,13 +9,14 @@ async function apiFetch(path: string) {
   return res.json();
 }
 
-export async function syncCards(): Promise<number> {
+export async function syncCards(): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
   const data = await apiFetch(`/racecards?date=${today}`);
 
   // RapidAPI returns races grouped by course
   const courses: Record<string, any[]> = data.courses ?? {};
-  let count = 0;
+  let raceCount = 0;
+  let horseCount = 0;
 
   for (const [trackName, races] of Object.entries(courses)) {
     if (!Array.isArray(races) || races.length === 0) continue;
@@ -70,15 +71,16 @@ export async function syncCards(): Promise<number> {
             odds: bestOdds,
             sourceId: runner.id_horse ?? null,
           }, { merge: true });
+          horseCount++;
         });
         await batch.commit();
       }
 
-      count++;
+      raceCount++;
     }
   }
 
-  return count;
+  return `${raceCount} races, ${horseCount} horses`;
 }
 
 export async function syncResults(cardId: string): Promise<void> {

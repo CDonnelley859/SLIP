@@ -72,8 +72,8 @@ const Index = () => {
   async function handleRefresh() {
     setSyncing(true);
     try {
-      const count = await syncCards();
-      toast.success(`${count} races loaded`);
+      const result = await syncCards();
+      toast.success(result);
       loadData();
     } catch (err: any) {
       toast.error(err.message ?? "Sync failed");
