@@ -275,39 +275,42 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Create group (shown when track selected) */}
-        {selectedCard && (
-          <section className="mt-4">
-            <div className="border-brutalist relative">
-              <div className="flex items-center justify-between px-4 pt-2 pb-0">
-                <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                  CREATE GROUP
-                </span>
-                <span className="text-label-caps text-muted-foreground uppercase pt-2 text-[10px]">
+        {/* Single box: JOIN GROUP or CREATE GROUP depending on track selection */}
+        <section className="mt-4">
+          <div className="border-brutalist relative">
+            {/* Label + cancel (create mode only) */}
+            <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              {selectedCard ? "CREATE GROUP" : "JOIN GROUP"}
+            </span>
+            {selectedCard && (
+              <div className="flex items-center justify-between px-4 h-8 border-b border-primary/20">
+                <span className="text-label-caps text-muted-foreground uppercase text-[10px]">
                   {selectedCard.trackName}
                 </span>
                 <button
                   onClick={() => setSelectedCard(null)}
-                  className="text-label-caps uppercase opacity-40 pt-2"
+                  className="text-label-caps uppercase opacity-40"
                 >
                   ✕
                 </button>
               </div>
+            )}
+
+            {selectedCard ? (
+              /* CREATE mode */
               <form onSubmit={handleCreate}>
-                <div className="border-b border-primary/20 h-14 flex items-center">
+                <div className="flex border-b border-primary/20 h-14">
                   <input
                     autoFocus
                     value={groupName}
                     onChange={e => setGroupName(e.target.value)}
-                    placeholder="THE SATURDAY CREW"
+                    placeholder="GROUP NAME"
                     maxLength={40}
                     className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
                   />
                 </div>
-                <div className="relative border-b border-primary/20 h-14 flex items-center">
-                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                    YOUR_NAME
-                  </label>
+                <div className="relative flex border-b border-primary/20 h-14">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">YOUR_NAME</label>
                   <input
                     value={createName}
                     onChange={e => setCreateName(e.target.value)}
@@ -324,46 +327,37 @@ const Index = () => {
                   {creating ? "CREATING…" : "CREATE GROUP"}
                 </button>
               </form>
-            </div>
-          </section>
-        )}
-
-        {/* Join group */}
-        <section className="mt-4">
-          <div className="border-brutalist relative">
-            <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-              JOIN GROUP
-            </span>
-            <form onSubmit={handleJoin}>
-              <div className="flex border-b border-primary/20 h-14">
-                <input
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value)}
-                  placeholder="ENTER JOIN CODE"
-                  maxLength={4}
-                  className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
-                />
-              </div>
-              <div className="relative flex border-b border-primary/20 h-14">
-                <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-                  YOUR_NAME
-                </label>
-                <input
-                  value={joinName}
-                  onChange={e => setJoinName(e.target.value)}
-                  placeholder="YOUR NAME IN THIS GROUP"
-                  maxLength={30}
-                  className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={joining || joinCode.length < 4 || !joinName.trim()}
-                className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
-              >
-                {joining ? "JOINING…" : "JOIN GROUP"}
-              </button>
-            </form>
+            ) : (
+              /* JOIN mode */
+              <form onSubmit={handleJoin}>
+                <div className="flex border-b border-primary/20 h-14">
+                  <input
+                    value={joinCode}
+                    onChange={e => setJoinCode(e.target.value)}
+                    placeholder="ENTER JOIN CODE"
+                    maxLength={4}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
+                  />
+                </div>
+                <div className="relative flex border-b border-primary/20 h-14">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">YOUR_NAME</label>
+                  <input
+                    value={joinName}
+                    onChange={e => setJoinName(e.target.value)}
+                    placeholder="YOUR NAME IN THIS GROUP"
+                    maxLength={30}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={joining || joinCode.length < 4 || !joinName.trim()}
+                  className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
+                >
+                  {joining ? "JOINING…" : "JOIN GROUP"}
+                </button>
+              </form>
+            )}
           </div>
         </section>
 
