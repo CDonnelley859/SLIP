@@ -69,6 +69,7 @@ const Spindle = () => {
         query(collection(db, "scrumMembers"), where("userId", "==", userId))
       );
 
+      const today = new Date().toISOString().slice(0, 10);
       const completed: CompletedSlip[] = [];
 
       for (const m of membersSnap.docs) {
@@ -77,15 +78,18 @@ const Spindle = () => {
         if (!scrumDoc.exists()) continue;
         const scrum = scrumDoc.data();
 
-        const racesSnap = await getDocs(
-          query(collection(db, "races"), where("cardId", "==", scrum.cardId))
-        );
-        const total = racesSnap.size;
-        const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        if (total === 0 || settled < total) continue;
-
-        const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
         const cardData = cardDoc.data();
+
+        // Show previous-day games always; today's games only once fully settled
+        const isPreviousDay = cardData?.raceDate && cardData.raceDate < today;
+        if (!isPreviousDay) {
+          const racesSnap = await getDocs(
+            query(collection(db, "races"), where("cardId", "==", scrum.cardId))
+          );
+          const total = racesSnap.size;
+          const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
+          if (total === 0 || settled < total) continue;
+        }
 
         // Build full lines for this slip
         const myPicksSnap = await getDocs(
