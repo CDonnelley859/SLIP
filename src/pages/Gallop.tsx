@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
+import { syncRunners } from "@/lib/racingApi";
 import {
   doc, getDoc, getDocs, collection, query, where, setDoc, writeBatch,
 } from "firebase/firestore";
@@ -59,6 +60,8 @@ const Gallop = () => {
         setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
       }
 
+      // Sync runners from TRA if any race has no horses yet, then load
+      try { await syncRunners(scrum.cardId); } catch { /* silent */ }
       await loadRaces();
 
       const picksSnap = await getDocs(

@@ -89,57 +89,65 @@ export async function syncCards(): Promise<string> {
   return `${raceCount} races, ${horseCount} horses`;
 }
 
-// Syncs runners for a specific card — called when Gallop page opens
+// Syncs runners for a specific card using TRA /racecards/free
 export async function syncRunners(cardId: string): Promise<number> {
+  const cardDoc = await getDoc(doc(db, "cards", cardId));
+  if (!cardDoc.exists()) return 0;
+  const { trackName } = cardDoc.data();
+  const normTrack = normaliseCourse(trackName);
+
   // Get all races for this card
   const racesSnap = await getDocs(
     query(collection(db, "races"), where("cardId", "==", cardId))
   );
   if (racesSnap.empty) return 0;
 
-  // Only fetch races that don't already have horses in Firestore
+  // Only sync races that have no horses yet
   const racesNeedingRunners: typeof racesSnap.docs = [];
   for (const raceDoc of racesSnap.docs) {
-    const existingHorses = await getDocs(
+    const existing = await getDocs(
       query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
     );
-    if (existingHorses.empty) racesNeedingRunners.push(raceDoc);
+    if (existing.empty) racesNeedingRunners.push(raceDoc);
   }
+  if (racesNeedingRunners.length === 0) return 0;
 
-  if (racesNeedingRunners.length === 0) return 0; // Already have all horses
+  // Fetch TRA free racecards
+  const data = await apiFetch(`/tra-racecards`);
+  const traCards: any[] = data?.racecards ?? [];
 
-  // Collect the RapidAPI race IDs for races that need runners
-  const raceIds = racesNeedingRunners
-    .map(d => d.data().sourceId)
-    .filter(Boolean)
-    .join(",");
-
-  const data = await apiFetch(`/runners?ids=${raceIds}`);
-  const byId: Record<string, any> = data ?? {};
+  // Filter to this track
+  const trackCards = traCards.filter(
+    (rc: any) => normaliseCourse(rc.course ?? "") === normTrack
+  );
+  if (trackCards.length === 0) return 0;
 
   let horseCount = 0;
 
   for (const raceDoc of racesNeedingRunners) {
-    const sourceId = raceDoc.data().sourceId;
-    const detail = byId[sourceId];
-    if (!detail) continue;
+    const race = raceDoc.data();
+    if (!race.offTime) continue;
+    const raceUTC = new Date(race.offTime).getTime();
 
-    const raceRunners: any[] = (detail.horses ?? []).filter((h: any) => h.non_runner !== "1");
-    if (raceRunners.length === 0) continue;
+    // Match by off time within 5 minutes
+    const match = trackCards.find((rc: any) => {
+      const traTime = new Date(rc.off_dt).getTime();
+      return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
+    });
+    if (!match) continue;
+
+    const runners: any[] = match.runners ?? [];
+    if (runners.length === 0) continue;
 
     const batch = writeBatch(db);
-    raceRunners.forEach((runner, idx) => {
+    runners.forEach((runner, idx) => {
       const horseId = `${raceDoc.id}-h${idx + 1}`;
-      const bestOdds = Array.isArray(runner.odds) && runner.odds.length > 0
-        ? runner.odds[0].odd
-        : (runner.sp || null);
       batch.set(doc(db, "horses", horseId), {
         raceId: raceDoc.id,
         number: Number(runner.number) || idx + 1,
         name: runner.horse ?? "Unknown",
         jockey: runner.jockey ?? null,
-        odds: bestOdds,
-        sourceId: runner.id_horse ?? null,
+        odds: null,
       }, { merge: true });
       horseCount++;
     });
