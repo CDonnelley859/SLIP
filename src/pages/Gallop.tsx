@@ -32,7 +32,12 @@ const Gallop = () => {
       setCard(cardDoc.data());
 
       // Fetch & write runners for this card (only a handful of API calls)
-      await syncRunners(scrum.cardId).catch(() => {});
+      try {
+        const horseCount = await syncRunners(scrum.cardId);
+        toast.info(`${horseCount} horses synced`);
+      } catch (err: any) {
+        toast.error(`Runner sync failed: ${err.message}`);
+      }
 
       const racesSnap = await getDocs(
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
