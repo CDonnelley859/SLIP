@@ -8,19 +8,11 @@ const TRA_AUTH = "Basic " + Buffer.from(`${TRA_USER}:${TRA_PASS}`).toString("bas
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");
 
-  const date = (req.query.date as string) ?? new Date().toISOString().slice(0, 10);
-
   const endpoints = [
-    `/racecards/${date}`,
-    `/racecards?date=${date}`,
-    `/racecards/results/${date}`,
-    `/racecards/${date}/results`,
-    `/results/racecards`,
-    `/results/racecards/${date}`,
-    `/racecards?date=${date}&results=true`,
-    `/racecards/pro?date=${date}`,
-    `/racecards/standard?date=${date}`,
-    `/racecards/free?date=${date}`,
+    `/racecards/free`,
+    `/racecards/free?region=gb`,
+    `/racecards/free?region=gb&limit=1`,
+    `/racecards/free?course=Ascot`,
   ];
 
   const out: Record<string, any> = {};
@@ -33,7 +25,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const text = await r.text();
       let body: any;
       try { body = JSON.parse(text); } catch { body = text; }
-      out[path] = { status: r.status, sample: JSON.stringify(body).slice(0, 500) };
+      // Show top-level keys and first race sample
+      const keys = typeof body === "object" ? Object.keys(body) : [];
+      const firstRace = Array.isArray(body?.racecards) ? body.racecards[0] : null;
+      const firstRunner = firstRace?.runners?.[0];
+      out[path] = {
+        status: r.status,
+        topKeys: keys,
+        raceCount: body?.racecards?.length,
+        firstRaceCourse: firstRace?.course,
+        firstRaceOff: firstRace?.off,
+        firstRaceStatus: firstRace?.status,
+        firstRunnerKeys: firstRunner ? Object.keys(firstRunner) : null,
+        firstRunnerSample: firstRunner,
+      };
     } catch (e: any) {
       out[path] = { error: e.message };
     }
