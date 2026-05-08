@@ -106,7 +106,7 @@ export async function syncCards(): Promise<string> {
 }
 
 // Syncs runners for a specific card from TRA /racecards/free
-// Called when Gallop opens and a race has no horses
+// Called when Gallop opens — always re-syncs all non-settled races by time matching
 export async function syncRunners(cardId: string): Promise<number> {
   const cardDoc = await getDoc(doc(db, "cards", cardId));
   if (!cardDoc.exists()) return 0;
@@ -118,16 +118,6 @@ export async function syncRunners(cardId: string): Promise<number> {
   );
   if (racesSnap.empty) return 0;
 
-  // Only process races that have no horses yet
-  const racesNeedingRunners: typeof racesSnap.docs = [];
-  for (const raceDoc of racesSnap.docs) {
-    const existing = await getDocs(
-      query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
-    );
-    if (existing.empty) racesNeedingRunners.push(raceDoc);
-  }
-  if (racesNeedingRunners.length === 0) return 0;
-
   const data = await apiFetch(`/tra-racecards`);
   const traCards: any[] = data?.racecards ?? [];
 
@@ -138,17 +128,21 @@ export async function syncRunners(cardId: string): Promise<number> {
 
   if (trackCards.length === 0) return 0;
 
-  // All races for this card sorted by race number
-  const allRacesSorted = racesSnap.docs
-    .slice()
-    .sort((a, b) => (a.data().raceNumber ?? 0) - (b.data().raceNumber ?? 0));
-
   let horseCount = 0;
 
-  for (const raceDoc of racesNeedingRunners) {
-    const raceNumber: number = raceDoc.data().raceNumber ?? 0;
-    // Match by position: raceNumber 1 → trackCards[0], raceNumber 2 → trackCards[1], etc.
-    const match = trackCards[raceNumber - 1];
+  for (const raceDoc of racesSnap.docs) {
+    const race = raceDoc.data();
+    // Skip already-settled races
+    if (race.status === "settled") continue;
+    if (!race.offTime) continue;
+
+    const raceUTC = new Date(race.offTime).getTime();
+
+    // Match by off time (within 5 minutes) — robust even when TRA drops finished races
+    const match = trackCards.find((rc: any) => {
+      const traTime = new Date(rc.off_dt).getTime();
+      return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
+    });
     if (!match) continue;
 
     const runners: any[] = match.runners ?? [];
