@@ -86,6 +86,9 @@ const Index = () => {
       const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
       const cardData = cardDoc.data();
 
+      // Hide games from previous days or fully settled games
+      if (cardData?.raceDate && cardData.raceDate < today) continue;
+
       const racesSnap = await getDocs(
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
       );
