@@ -239,6 +239,9 @@ const Index = () => {
             <div className="flex overflow-x-auto gap-0 -mx-4 px-4 pb-2">
               {filteredCards.map((c, i) => {
                 const isSelected = selectedCard?.id === c.id;
+                const firstRace = c.postTime
+                  ? new Date(c.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  : "—";
                 return (
                   <button
                     key={c.id}
@@ -250,9 +253,10 @@ const Index = () => {
                     <span className="text-headline-md uppercase leading-tight line-clamp-2">
                       {c.trackName}
                     </span>
-                    <span className={`text-label-caps uppercase ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
-                      {c.raceCount} RACES
-                    </span>
+                    <div className={`flex flex-col ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
+                      <span className="text-label-caps uppercase">{firstRace}</span>
+                      <span className="text-label-caps uppercase">{c.raceCount} RACES</span>
+                    </div>
                   </button>
                 );
               })}
