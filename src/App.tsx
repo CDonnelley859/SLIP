@@ -12,7 +12,6 @@ import Gallop from "./pages/Gallop";
 import Lobby from "./pages/Lobby";
 import Slip from "./pages/Slip";
 import Spindle from "./pages/Spindle";
-import SlipDesigns from "./pages/SlipDesigns";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +29,6 @@ const AppRoutes = () => {
       <Route path="/scrum/:id/gallop" element={<Gallop />} />
       <Route path="/scrum/:id/slip" element={<Slip />} />
       <Route path="/spindle" element={<Spindle />} />
-      <Route path="/slip-designs" element={<SlipDesigns />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
