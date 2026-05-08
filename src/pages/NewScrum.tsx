@@ -5,10 +5,10 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
-const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 const NewScrum = () => {
-  const { userId } = useAuth();
+  const { userId, handle } = useAuth();
   const [params] = useSearchParams();
   const cardId = params.get("card");
   const [name, setName] = useState("");
@@ -33,12 +33,11 @@ const NewScrum = () => {
       });
 
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId,
-        userId,
+        scrumId, userId, handle,
       });
 
       toast.success(`Group code: ${joinCode}`);
-      navigate(`/scrum/${scrumId}/gallop`);
+      navigate(`/scrum/${scrumId}/lobby`);
     } catch (e: any) {
       toast.error(e.message);
     } finally {

@@ -11,7 +11,13 @@ import { toast } from "sonner";
 type LineStatus = "WIN" | "PLACE" | "SHOW" | "OUT" | "RUNNING" | "PENDING";
 type Line = {
   raceNumber: number; horseName: string; horseNumber: number;
+  offTime: string | null;
   status: LineStatus; points: number;
+  podium: {
+    first: { number: number; name: string } | null;
+    second: { number: number; name: string } | null;
+    third: { number: number; name: string } | null;
+  };
 };
 
 function getStatus(raceStatus: string, horseId: string, winners: any): LineStatus {
@@ -76,12 +82,26 @@ const Slip = () => {
       const race = raceDoc.data();
       const horse = horseDoc.data();
       const status = getStatus(race?.status ?? "upcoming", pick.horseId, race?.winners);
+      const winners = race?.winners;
+      const fetchWinner = async (horseId: string | undefined) => {
+        if (!horseId) return null;
+        const d = await getDoc(doc(db, "horses", horseId));
+        if (!d.exists()) return null;
+        return { number: d.data().number, name: d.data().name };
+      };
+      const podium = {
+        first: await fetchWinner(winners?.first),
+        second: await fetchWinner(winners?.second),
+        third: await fetchWinner(winners?.third),
+      };
       built.push({
         raceNumber: race?.raceNumber ?? 0,
         horseName: horse?.name ?? "—",
         horseNumber: horse?.number ?? 0,
+        offTime: race?.offTime ?? null,
         status,
         points: pointsFor(status),
+        podium,
       });
     }
     setLines(built.sort((a, b) => a.raceNumber - b.raceNumber));
@@ -167,6 +187,7 @@ const Slip = () => {
                 <div className="flex flex-col">
                   <span className="text-label-caps text-muted-foreground">
                     RACE {String(l.raceNumber).padStart(2, "0")}
+                    {l.offTime && ` · ${new Date(l.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                   </span>
                   <span className={`text-body-lg ${isOut ? "line-through" : ""}`}>
                     {l.horseNumber}. {l.horseName}
@@ -177,6 +198,20 @@ const Slip = () => {
                     {isOut && "+0 PTS"}
                     {isSettled && `+${l.points} PTS`}
                   </span>
+                  <div className="flex gap-2 mt-2">
+                    {(["first","second","third"] as const).map((pos, pi) => {
+                      const horse = l.podium[pos];
+                      const label = ["1ST","2ND","3RD"][pi];
+                      return (
+                        <div key={pos} className="flex-1 border border-primary/30 p-1 text-center">
+                          <div className="text-[9px] text-muted-foreground font-mono uppercase">{label}</div>
+                          <div className="text-[11px] font-bold uppercase leading-tight mt-0.5 truncate">
+                            {horse ? `${horse.number}. ${horse.name}` : "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <StatusBadge status={l.status} />
               </div>

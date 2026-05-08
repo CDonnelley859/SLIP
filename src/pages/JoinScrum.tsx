@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, doc, setDoc } from "firebase/firesto
 import { toast } from "sonner";
 
 const JoinScrum = () => {
-  const { userId } = useAuth();
+  const { userId, handle } = useAuth();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -21,9 +21,9 @@ const JoinScrum = () => {
       if (snap.empty) throw new Error("Code not found");
       const scrumId = snap.docs[0].id;
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId,
+        scrumId, userId, handle,
       });
-      navigate(`/scrum/${scrumId}/gallop`);
+      navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -54,14 +54,14 @@ const JoinScrum = () => {
               required
               value={code}
               onChange={e => setCode(e.target.value)}
-              placeholder="XXXXXX"
-              maxLength={6}
+              placeholder="XXXX"
+              maxLength={4}
               className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest text-center"
             />
           </div>
           <button
             type="submit"
-            disabled={busy || code.length < 6}
+            disabled={busy || code.length < 4}
             className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist border-t-0 disabled:opacity-40 transition-none"
           >
             {busy ? "JOINING…" : "JOIN"}

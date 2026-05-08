@@ -96,7 +96,7 @@ const Index = () => {
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId,
       });
-      navigate(`/scrum/${scrumId}/gallop`);
+      navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -177,12 +177,12 @@ const Index = () => {
                 value={joinCode}
                 onChange={e => setJoinCode(e.target.value)}
                 placeholder="ENTER JOIN CODE"
-                maxLength={6}
+                maxLength={4}
                 className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
               />
               <button
                 type="submit"
-                disabled={joining || joinCode.length < 6}
+                disabled={joining || joinCode.length < 4}
                 className="bg-primary text-primary-foreground px-6 text-headline-md uppercase border-l-brutalist disabled:opacity-40 transition-none"
               >
                 JOIN
@@ -204,7 +204,7 @@ const Index = () => {
               {activeSlips.map((s, i) => (
                 <Link
                   key={s.scrumId}
-                  to={`/scrum/${s.scrumId}/slip`}
+                  to={`/scrum/${s.scrumId}/lobby`}
                   className={`border-brutalist p-4 flex flex-col gap-3 bg-background ${i > 0 ? "mt-[-2.67px]" : ""}`}
                 >
                   <div>

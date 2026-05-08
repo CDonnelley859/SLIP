@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NewScrum from "./pages/NewScrum";
 import JoinScrum from "./pages/JoinScrum";
 import Gallop from "./pages/Gallop";
+import Lobby from "./pages/Lobby";
 import Slip from "./pages/Slip";
 import Spindle from "./pages/Spindle";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/scrum/new" element={<NewScrum />} />
       <Route path="/scrum/join" element={<JoinScrum />} />
+      <Route path="/scrum/:id/lobby" element={<Lobby />} />
       <Route path="/scrum/:id/gallop" element={<Gallop />} />
       <Route path="/scrum/:id/slip" element={<Slip />} />
       <Route path="/spindle" element={<Spindle />} />
