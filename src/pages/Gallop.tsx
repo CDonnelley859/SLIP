@@ -35,22 +35,24 @@ const Gallop = () => {
       if (!scrumDoc.exists()) return;
       const scrum = scrumDoc.data();
 
-      const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
+      // Fetch card and races in parallel
+      const [cardDoc, racesSnap] = await Promise.all([
+        getDoc(doc(db, "cards", scrum.cardId)),
+        getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
+      ]);
       setCard(cardDoc.data());
       setShowDetails(scrum.showDetails ?? true);
 
-      const racesSnap = await getDocs(
-        query(collection(db, "races"), where("cardId", "==", scrum.cardId))
-      );
-
       async function loadRaces(): Promise<Race[]> {
-        const raceList: Race[] = [];
-        for (const raceDoc of racesSnap.docs) {
+        // Fetch all races' horses in parallel
+        const horseSnaps = await Promise.all(
+          racesSnap.docs.map(raceDoc =>
+            getDocs(query(collection(db, "horses"), where("raceId", "==", raceDoc.id)))
+          )
+        );
+        const raceList: Race[] = racesSnap.docs.map((raceDoc, i) => {
           const r = raceDoc.data();
-          const horsesSnap = await getDocs(
-            query(collection(db, "horses"), where("raceId", "==", raceDoc.id))
-          );
-          const horses: Horse[] = horsesSnap.docs.map(h => ({
+          const horses: Horse[] = horseSnaps[i].docs.map(h => ({
             id: h.id,
             number: h.data().number,
             name: h.data().name,
@@ -61,14 +63,14 @@ const Gallop = () => {
             lbs: h.data().lbs ?? null,
             odds: h.data().odds ?? null,
           })).sort((a, b) => a.number - b.number);
-          raceList.push({
+          return {
             id: raceDoc.id,
             raceNumber: r.raceNumber,
             name: r.name ?? null,
             offTime: r.offTime,
             horses,
-          });
-        }
+          };
+        });
         const sorted = raceList.sort((a, b) => a.raceNumber - b.raceNumber);
         setRaces(sorted);
         return sorted;

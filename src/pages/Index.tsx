@@ -76,45 +76,46 @@ const Index = () => {
       query(collection(db, "scrumMembers"), where("userId", "==", userId))
     );
 
-    const slips: ActiveSlip[] = [];
-    for (const m of membersSnap.docs) {
-      const scrumId = m.data().scrumId;
-      const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
-      if (!scrumDoc.exists()) continue;
-      const scrum = scrumDoc.data();
+    // Fetch all scrums in parallel
+    const scrumDocs = await Promise.all(
+      membersSnap.docs.map(m => getDoc(doc(db, "scrums", m.data().scrumId)))
+    );
 
-      const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
-      const cardData = cardDoc.data();
+    // For each valid scrum, fetch card + races + picks in parallel
+    const slipResults = await Promise.all(
+      membersSnap.docs.map(async (m, i) => {
+        const scrumId = m.data().scrumId;
+        const scrumDoc = scrumDocs[i];
+        if (!scrumDoc.exists()) return null;
+        const scrum = scrumDoc.data();
 
-      // Hide games from previous days or fully settled games
-      if (cardData?.raceDate && cardData.raceDate < today) continue;
+        const [cardDoc, racesSnap, picksSnap] = await Promise.all([
+          getDoc(doc(db, "cards", scrum.cardId)),
+          getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
+          getDocs(query(collection(db, "picks"),
+            where("scrumId", "==", scrumId),
+            where("userId", "==", userId))),
+        ]);
 
-      const racesSnap = await getDocs(
-        query(collection(db, "races"), where("cardId", "==", scrum.cardId))
-      );
-      const total = racesSnap.size;
-      const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-      const allSettled = settled === total && total > 0;
-      if (allSettled) continue;
+        const cardData = cardDoc.data();
+        if (cardData?.raceDate && cardData.raceDate < today) return null;
 
-      // Count how many picks this user has submitted for this scrum
-      const picksSnap = await getDocs(
-        query(collection(db, "picks"),
-          where("scrumId", "==", scrumId),
-          where("userId", "==", userId))
-      );
-      const completed = picksSnap.size;
+        const total = racesSnap.size;
+        const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
+        if (settled === total && total > 0) return null;
 
-      slips.push({
-        scrumId,
-        scrumName: scrum.name,
-        trackName: cardData?.trackName ?? "—",
-        completed,
-        total,
-        settled,
-      });
-    }
-    setActiveSlips(slips);
+        return {
+          scrumId,
+          scrumName: scrum.name,
+          trackName: cardData?.trackName ?? "—",
+          completed: picksSnap.size,
+          total,
+          settled,
+        };
+      })
+    );
+
+    setActiveSlips(slipResults.filter(Boolean) as ActiveSlip[]);
   }
 
   async function handleRefresh() {
