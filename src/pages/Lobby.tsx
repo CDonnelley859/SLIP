@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
-  doc, getDoc, getDocs, collection, query, where, deleteDoc, onSnapshot,
+  doc, getDoc, getDocs, collection, query, where, deleteDoc, onSnapshot, updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ const Lobby = () => {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [countdown, setCountdown] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<{ handle: string; points: number; userId: string }[]>([]);
+  const [togglingDetails, setTogglingDetails] = useState(false);
 
   // Countdown to first race
   useEffect(() => {
@@ -95,6 +96,20 @@ const Lobby = () => {
       await deleteDoc(doc(db, "scrumMembers", `${id}_${userId}`));
       navigate("/");
     } catch { setLeaving(false); }
+  }
+
+  async function handleToggleDetails() {
+    if (!id || !scrum) return;
+    setTogglingDetails(true);
+    const next = !(scrum.showDetails ?? true);
+    try {
+      await updateDoc(doc(db, "scrums", id), { showDetails: next });
+      setScrum((s: any) => ({ ...s, showDetails: next }));
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setTogglingDetails(false);
+    }
   }
 
   function handleCopyCode() {
@@ -198,6 +213,24 @@ const Lobby = () => {
             ))}
           </div>
         )}
+
+        {/* Horse data mode — host can toggle, members see current setting */}
+        <div className="border-brutalist flex items-center justify-between px-4 h-14">
+          <span className="text-label-caps uppercase">Horse Data</span>
+          {userId === scrum.hostId ? (
+            <button
+              onClick={handleToggleDetails}
+              disabled={togglingDetails}
+              className={`text-label-caps uppercase px-3 py-1.5 border transition-none disabled:opacity-40 ${(scrum.showDetails ?? true) ? "bg-primary text-primary-foreground border-primary" : "border-primary/40 text-muted-foreground"}`}
+            >
+              {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
+            </button>
+          ) : (
+            <span className="text-label-caps uppercase text-muted-foreground">
+              {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
+            </span>
+          )}
+        </div>
 
         <button
           onClick={() => navigate(`/scrum/${id}/gallop`)}

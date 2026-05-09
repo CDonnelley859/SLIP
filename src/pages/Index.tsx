@@ -28,7 +28,6 @@ const Index = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
-  const [showDetails, setShowDetails] = useState(true);
   const [creating, setCreating] = useState(false);
 
   // Join group (inline)
@@ -135,7 +134,6 @@ const Index = () => {
     setSelectedCard(card);
     setGroupName("");
     setCreateName(handle);
-    setShowDetails(true);
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -150,7 +148,7 @@ const Index = () => {
         hostId: userId,
         name: groupName.trim(),
         joinCode,
-        showDetails,
+        showDetails: true,
       });
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId, handle: createName.trim() || handle,
@@ -316,16 +314,6 @@ const Index = () => {
                     className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDetails(v => !v)}
-                  className="w-full h-14 border-b border-primary/20 flex items-center justify-between px-4 transition-none"
-                >
-                  <span className="text-label-caps uppercase">Horse Data</span>
-                  <span className={`text-label-caps uppercase px-2 py-1 border ${showDetails ? "bg-primary text-primary-foreground border-primary" : "border-primary/40 text-muted-foreground"}`}>
-                    {showDetails ? "FULL CARD" : "NAME ONLY"}
-                  </span>
-                </button>
                 <button
                   type="submit"
                   disabled={creating || !groupName.trim() || !createName.trim()}
