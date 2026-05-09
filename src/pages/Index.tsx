@@ -203,7 +203,13 @@ const Index = () => {
         <section className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-label-caps uppercase">Top Tracks</h2>
-            {syncing && <span className="text-label-caps text-muted-foreground uppercase">Loading…</span>}
+            <button
+              onClick={handleRefresh}
+              disabled={syncing}
+              className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] disabled:opacity-40"
+            >
+              {syncing ? "SYNCING…" : "REFRESH"}
+            </button>
           </div>
 
           {cards.length === 0 && !syncing ? (
