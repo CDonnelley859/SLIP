@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { syncCards } from "@/lib/racingApi";
+import { syncCards, syncResults } from "@/lib/racingApi";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number };
-type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number };
+type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null };
 
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
@@ -24,6 +24,12 @@ const Index = () => {
   const [trackSearch, setTrackSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [slipsLoading, setSlipsLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Create group (inline)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -82,6 +88,14 @@ const Index = () => {
       membersSnap.docs.map(m => getDoc(doc(db, "scrums", m.data().scrumId)))
     );
 
+    // Sync results for all unique active cards so progress bars are fresh
+    const uniqueCardIds = [...new Set(
+      membersSnap.docs
+        .map((m, i) => scrumDocs[i].exists() ? scrumDocs[i].data().cardId : null)
+        .filter(Boolean) as string[]
+    )];
+    await Promise.all(uniqueCardIds.map(cid => syncResults(cid).catch(() => {})));
+
     // For each valid scrum, fetch card + races + picks in parallel
     const slipResults = await Promise.all(
       membersSnap.docs.map(async (m, i) => {
@@ -105,6 +119,14 @@ const Index = () => {
         const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
         if (settled === total && total > 0) return null;
 
+        // Next unsettled race by off time
+        const now = Date.now();
+        const nextRace = racesSnap.docs
+          .filter(r => r.data().status !== "settled" && r.data().offTime)
+          .map(r => r.data().offTime as string)
+          .filter(t => new Date(t).getTime() > now)
+          .sort()[0] ?? null;
+
         return {
           scrumId,
           scrumName: scrum.name,
@@ -112,6 +134,7 @@ const Index = () => {
           completed: picksSnap.size,
           total,
           settled,
+          nextRaceTime: nextRace,
         };
       })
     );
@@ -409,6 +432,22 @@ const Index = () => {
                         <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
                       </div>
                     </div>
+                    {s.nextRaceTime && (() => {
+                      const diff = new Date(s.nextRaceTime).getTime() - now;
+                      if (diff <= 0) return null;
+                      const h = Math.floor(diff / 3600000);
+                      const m = Math.floor((diff % 3600000) / 60000);
+                      const sec = Math.floor((diff % 60000) / 1000);
+                      const label = h > 0
+                        ? `${h}H ${String(m).padStart(2, "0")}M`
+                        : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+                      return (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-label-caps text-muted-foreground uppercase">NEXT RACE</span>
+                          <span className="text-body-md font-black font-mono">{label}</span>
+                        </div>
+                      );
+                    })()}
                     {s.settled > 0 && (
                       <div className="flex flex-col gap-1">
                         <div className="flex justify-between text-label-caps uppercase">
@@ -435,7 +474,7 @@ const Index = () => {
                       to={`/scrum/${s.scrumId}/slip`}
                       className="text-label-caps uppercase underline underline-offset-2"
                     >
-                      SHOW SLIP
+                      SHOW SLIPS
                     </Link>
                   </div>
                 </div>

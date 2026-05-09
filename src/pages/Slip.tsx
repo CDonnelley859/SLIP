@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -59,34 +59,38 @@ const StatusBadge = ({ status }: { status: LineStatus }) => {
 const Slip = () => {
   const { id } = useParams();
   const { userId } = useAuth();
-  const [searchParams] = useSearchParams();
-  const viewUserId = searchParams.get("player") ?? userId;
-  const isOwnSlip = viewUserId === userId;
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
-  const [viewHandle, setViewHandle] = useState<string | null>(null);
+  const [players, setPlayers] = useState<{ userId: string; handle: string }[]>([]);
+  const [playerIdx, setPlayerIdx] = useState(0);
   const [lines, setLines] = useState<Line[]>([]);
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [slideDir, setSlideDir] = useState<"forward" | "back">("forward");
+  const [slideKey, setSlideKey] = useState(0);
 
-  async function buildLines() {
+  const touchStartX = useRef<number | null>(null);
+
+  const currentPlayer = players[playerIdx];
+  const viewUserId = currentPlayer?.userId ?? userId;
+  const isOwnSlip = viewUserId === userId;
+
+  async function buildLines(forUserId: string) {
     if (!id) return;
     const [picksSnap, allPicksSnap] = await Promise.all([
-      getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", viewUserId))),
+      getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", forUserId))),
       getDocs(query(collection(db, "picks"), where("scrumId", "==", id))),
     ]);
 
     const pickData = picksSnap.docs.map(p => p.data());
 
-    // Fetch all races and horses in parallel
     const [raceDocs, horseDocs] = await Promise.all([
       Promise.all(pickData.map(p => getDoc(doc(db, "races", p.raceId)))),
       Promise.all(pickData.map(p => getDoc(doc(db, "horses", p.horseId)))),
     ]);
 
-    // Collect unique winner horse IDs and fetch in parallel
     const winnerIdSet = new Set<string>();
     raceDocs.forEach(rd => {
       const w = rd.data()?.winners;
@@ -95,7 +99,7 @@ const Slip = () => {
       if (w?.third) winnerIdSet.add(w.third);
     });
     const winnerIdArr = [...winnerIdSet];
-    const winnerDocs = await Promise.all(winnerIdArr.map(id => getDoc(doc(db, "horses", id))));
+    const winnerDocs = await Promise.all(winnerIdArr.map(wid => getDoc(doc(db, "horses", wid))));
     const winnerMap: Record<string, { number: number; name: string }> = {};
     winnerDocs.forEach((d, i) => {
       if (d.exists()) winnerMap[winnerIdArr[i]] = { number: d.data().number, name: d.data().name };
@@ -124,21 +128,37 @@ const Slip = () => {
     const sorted = built.sort((a, b) => a.raceNumber - b.raceNumber);
     setLines(sorted);
 
-    // Calculate rank
     const myTotal = sorted.reduce((sum, l) => sum + l.points, 0);
-    const pointsByUser: Record<string, number> = {};
+    const myWins = sorted.filter(l => l.status === "WIN").length;
+    const myPlaces = sorted.filter(l => l.status === "PLACE").length;
+    const myShows = sorted.filter(l => l.status === "SHOW").length;
+
+    const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
     allPicksSnap.docs.forEach(p => {
       const uid = p.data().userId;
-      pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
+      const pts = p.data().points ?? 0;
+      if (!statsByUser[uid]) statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
+      statsByUser[uid].points += pts;
+      if (pts === 5) statsByUser[uid].wins++;
+      else if (pts === 3) statsByUser[uid].places++;
+      else if (pts === 1) statsByUser[uid].shows++;
     });
-    const allTotals = Object.values(pointsByUser).sort((a, b) => b - a);
-    const position = allTotals.indexOf(myTotal) + 1;
-    if (position > 0 && allTotals.length > 1) {
-      setRank({ position, total: allTotals.length });
+    const allStats = Object.values(statsByUser).sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.places !== a.places) return b.places - a.places;
+      return b.shows - a.shows;
+    });
+    const position = allStats.findIndex(
+      s => s.points === myTotal && s.wins === myWins && s.places === myPlaces && s.shows === myShows
+    ) + 1;
+    if (position > 0 && allStats.length > 1) {
+      setRank({ position, total: allStats.length });
+    } else {
+      setRank(null);
     }
   }
 
-  // Check whether push is already registered on mount
   useEffect(() => {
     isPushRegistered().then(setNotifEnabled).catch(() => {});
   }, []);
@@ -153,33 +173,97 @@ const Slip = () => {
       const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
       setCard(cardDoc.data());
 
-      // If viewing someone else's slip, fetch their handle from scrumMembers
-      if (!isOwnSlip) {
-        const memberSnap = await getDocs(
-          query(collection(db, "scrumMembers"),
-            where("scrumId", "==", id), where("userId", "==", viewUserId))
-        );
-        if (!memberSnap.empty) setViewHandle(memberSnap.docs[0].data().handle ?? null);
-      }
+      // Load all members, own first
+      const membersSnap = await getDocs(
+        query(collection(db, "scrumMembers"), where("scrumId", "==", id))
+      );
+      const allMembers = membersSnap.docs.map(d => ({
+        userId: d.data().userId,
+        handle: d.data().handle ?? "Anonymous",
+      }));
+      // Put own user at index 0
+      const sorted = [
+        ...allMembers.filter(m => m.userId === userId),
+        ...allMembers.filter(m => m.userId !== userId),
+      ];
+      setPlayers(sorted);
 
-      await buildLines();
+      // Auto-sync results on open so the slip is always fresh
+      try { await syncResults(scrumData.cardId); } catch { /* silent */ }
+      await buildLines(sorted[0]?.userId ?? userId ?? "");
     })();
 
     const unsub = onSnapshot(
       query(collection(db, "picks"), where("scrumId", "==", id)),
-      () => buildLines()
+      () => {
+        if (viewUserId) buildLines(viewUserId);
+      }
     );
 
-    const interval = setInterval(() => buildLines(), 30000);
+    const interval = setInterval(() => {
+      if (viewUserId) buildLines(viewUserId);
+    }, 30000);
+
     return () => { unsub(); clearInterval(interval); };
   }, [id]);
+
+  // Reload lines when player changes
+  useEffect(() => {
+    if (viewUserId) buildLines(viewUserId);
+  }, [playerIdx]);
+
+  function goToPlayer(dir: "forward" | "back") {
+    setSlideDir(dir);
+    setSlideKey(k => k + 1);
+    setPlayerIdx(i =>
+      dir === "forward"
+        ? Math.min(players.length - 1, i + 1)
+        : Math.max(0, i - 1)
+    );
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 50) return;
+    if (dx < 0 && playerIdx < players.length - 1) goToPlayer("forward");
+    if (dx > 0 && playerIdx > 0) goToPlayer("back");
+  }
 
   const total = lines.reduce((sum, l) => sum + l.points, 0);
   const isFullyPending = lines.length > 0 && lines.every(l => l.status === "PENDING");
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center py-10 px-4">
-      <div className="animate-print relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
+
+      {/* Player dots */}
+      {players.length > 1 && (
+        <div className="flex gap-2 mb-4">
+          {players.map((p, i) => (
+            <button
+              key={p.userId}
+              onClick={() => {
+                setSlideDir(i > playerIdx ? "forward" : "back");
+                setSlideKey(k => k + 1);
+                setPlayerIdx(i);
+              }}
+              className={`w-2.5 h-2.5 rounded-full border border-primary transition-none ${i === playerIdx ? "bg-primary" : "bg-transparent"}`}
+            />
+          ))}
+        </div>
+      )}
+
+      <div
+        key={slideKey}
+        className={`relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden ${slideKey === 0 ? "animate-print" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}`}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         {/* Punch holes */}
         <div style={{
           position: "absolute", left: -10, top: "15%",
@@ -194,11 +278,10 @@ const Slip = () => {
 
         {/* ── STUB ── track, group, date, total, rank */}
         <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary">
-          {/* Venue + group centred at top */}
           <div className="flex flex-col items-center gap-1 mb-5">
-            {!isOwnSlip && viewHandle && (
+            {currentPlayer && (
               <span className="text-label-caps uppercase border border-primary px-2 py-0.5 mb-1">
-                {viewHandle}'S SLIP
+                {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
               </span>
             )}
             <span className="text-headline-lg uppercase text-center leading-tight">
@@ -214,7 +297,6 @@ const Slip = () => {
             )}
           </div>
 
-          {/* Points + rank row */}
           <div className="flex justify-between items-end border-t border-primary/20 pt-4">
             <div>
               <span className="text-label-caps text-muted-foreground uppercase block">TOTAL</span>
@@ -286,14 +368,23 @@ const Slip = () => {
         </div>
       </div>
 
+      {/* Swipe hint */}
+      {players.length > 1 && (
+        <p className="text-label-caps text-muted-foreground uppercase mt-3 opacity-50">
+          ← SWIPE TO SEE OTHER SLIPS →
+        </p>
+      )}
+
       <div className="w-full max-w-md mt-6 flex flex-col gap-3">
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="w-full h-12 border-brutalist text-label-caps uppercase disabled:opacity-40 transition-none"
-        >
-          {refreshing ? "REFRESHING…" : "REFRESH RESULTS"}
-        </button>
+        {isOwnSlip && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="w-full h-12 border-brutalist text-label-caps uppercase disabled:opacity-40 transition-none"
+          >
+            {refreshing ? "REFRESHING…" : "REFRESH RESULTS"}
+          </button>
+        )}
 
         {isOwnSlip && "Notification" in window && (
           <button
@@ -313,10 +404,10 @@ const Slip = () => {
         )}
 
         <Link
-          to={isOwnSlip ? "/" : `/scrum/${id}/lobby`}
+          to={`/scrum/${id}/lobby`}
           className="w-full h-12 flex items-center justify-center text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
         >
-          {isOwnSlip ? "BACK TO PADDOCK" : "BACK TO THE PEN"}
+          BACK TO THE PEN
         </Link>
       </div>
     </div>
@@ -351,10 +442,10 @@ const Slip = () => {
     setRefreshing(true);
     try {
       await syncResults(scrum.cardId);
-      await buildLines();
+      await buildLines(viewUserId ?? userId ?? "");
       toast.success("Results updated");
     } catch {
-      await buildLines();
+      await buildLines(viewUserId ?? userId ?? "");
     } finally {
       setRefreshing(false);
     }

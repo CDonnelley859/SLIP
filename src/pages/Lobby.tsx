@@ -74,14 +74,24 @@ const Lobby = () => {
       const unsub = onSnapshot(
         query(collection(db, "picks"), where("scrumId", "==", id)),
         (snap) => {
-          const pointsByUser: Record<string, number> = {};
+          const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
           snap.docs.forEach(p => {
             const uid = p.data().userId;
-            pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
+            const pts = p.data().points ?? 0;
+            if (!statsByUser[uid]) statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
+            statsByUser[uid].points += pts;
+            if (pts === 5) statsByUser[uid].wins++;
+            else if (pts === 3) statsByUser[uid].places++;
+            else if (pts === 1) statsByUser[uid].shows++;
           });
-          const board = Object.entries(pointsByUser)
-            .map(([uid, points]) => ({ userId: uid, handle: handleMap[uid] ?? "—", points }))
-            .sort((a, b) => b.points - a.points);
+          const board = Object.entries(statsByUser)
+            .map(([uid, s]) => ({ userId: uid, handle: handleMap[uid] ?? "—", ...s }))
+            .sort((a, b) => {
+              if (b.points !== a.points) return b.points - a.points;
+              if (b.wins !== a.wins) return b.wins - a.wins;
+              if (b.places !== a.places) return b.places - a.places;
+              return b.shows - a.shows;
+            });
           setLeaderboard(board);
         }
       );
@@ -200,17 +210,16 @@ const Lobby = () => {
               <span className="text-label-caps uppercase">Leaderboard</span>
             </div>
             {leaderboard.map((r, i) => (
-              <Link
+              <div
                 key={r.userId}
-                to={`/scrum/${id}/slip?player=${r.userId}`}
                 className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""} ${r.userId === userId ? "bg-primary/5" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-label-caps text-muted-foreground w-5">#{i + 1}</span>
-                  <span className="text-body-md font-bold uppercase underline underline-offset-2 decoration-[1.5px]">{r.handle}</span>
+                  <span className="text-body-md font-bold uppercase">{r.handle}</span>
                 </div>
                 <span className="text-headline-md font-black">{r.points}</span>
-              </Link>
+              </div>
             ))}
           </div>
         )}
@@ -244,7 +253,7 @@ const Lobby = () => {
           to={`/scrum/${id}/slip`}
           className="w-full h-12 border-brutalist text-label-caps uppercase flex items-center justify-center opacity-60 hover:opacity-100 transition-none"
         >
-          SHOW SLIP
+          SHOW SLIPS
         </Link>
 
         {/* Host-only results entry */}

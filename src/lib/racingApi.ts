@@ -204,17 +204,21 @@ export async function syncResults(cardId: string): Promise<void> {
 
     const raceUTC = new Date(race.offTime).getTime();
 
+    // Try both off_dt and off field names — TRA uses different keys across endpoints
     const match = trackRaces.find((r: any) => {
-      const traTime = new Date(r.off_dt).getTime();
-      return Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
+      const traTime = new Date(r.off_dt ?? r.off ?? "").getTime();
+      return !isNaN(traTime) && Math.abs(traTime - raceUTC) < 5 * 60 * 1000;
     });
     if (!match) continue;
 
     const runners: any[] = match.runners ?? [];
-    const atPos = (pos: string) => runners.find((r: any) => String(r.position) === pos);
+    // Strip non-numeric chars so "1st", "1", 1 all normalise to "1"
+    const normPos = (pos: any) => String(pos).replace(/\D/g, "");
+    const atPos = (pos: string) => runners.find((r: any) => normPos(r.position) === pos);
     const first = atPos("1");
     const second = atPos("2");
     const third = atPos("3");
+    // No first-place runner means race hasn't finished yet — skip
     if (!first) continue;
 
     const horsesSnap = await getDocs(
@@ -233,8 +237,8 @@ export async function syncResults(cardId: string): Promise<void> {
       second: toId(second),
       third: toId(third),
     };
-    if (!winners.first) continue;
-
+    // Settle the race regardless of whether we could map the winner horse —
+    // a null ID just means all picks score 0 (correct behaviour)
     await updateDoc(raceDoc.ref, { status: "settled", winners });
 
     const picksSnap = await getDocs(
@@ -245,9 +249,9 @@ export async function syncResults(cardId: string): Promise<void> {
     for (const pickDoc of picksSnap.docs) {
       const { horseId, scrumId } = pickDoc.data();
       let points = 0;
-      if (horseId === winners.first) points = 5;
-      else if (horseId === winners.second) points = 3;
-      else if (horseId === winners.third) points = 1;
+      if (winners.first && horseId === winners.first) points = 5;
+      else if (winners.second && horseId === winners.second) points = 3;
+      else if (winners.third && horseId === winners.third) points = 1;
       batch.update(pickDoc.ref, { points });
       if (scrumId) uniqueScrumIds.add(scrumId);
     }
@@ -260,6 +264,27 @@ export async function syncResults(cardId: string): Promise<void> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scrumId, raceId: raceDoc.id, winners }),
       }).catch(() => {});
+    }
+  }
+
+  // Fallback: if a race ran 2+ hours ago but still has no result from TRA
+  // (abandoned, voided, or free-plan gap) — settle it as OUT so it never stays PENDING
+  const now = Date.now();
+  for (const raceDoc of racesSnap.docs) {
+    const race = raceDoc.data();
+    if (race.status !== "upcoming") continue;
+    if (!race.offTime) continue;
+    const raceUTC = new Date(race.offTime).getTime();
+    if (now - raceUTC < 2 * 60 * 60 * 1000) continue; // not old enough yet
+
+    await updateDoc(raceDoc.ref, { status: "settled", winners: null });
+    const stalePicksSnap = await getDocs(
+      query(collection(db, "picks"), where("raceId", "==", raceDoc.id))
+    );
+    if (!stalePicksSnap.empty) {
+      const batch = writeBatch(db);
+      stalePicksSnap.docs.forEach(p => batch.update(p.ref, { points: 0 }));
+      await batch.commit();
     }
   }
 }
