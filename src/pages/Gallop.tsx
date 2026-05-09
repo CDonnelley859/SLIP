@@ -256,9 +256,10 @@ const Gallop = () => {
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-body-lg uppercase font-bold leading-tight">{h.name}</div>
                   {h.jockey && (
-                    <div className="text-label-caps opacity-60 mt-0.5">
-                      J: {h.jockey}{h.lbs ? ` · ${formatWeight(h.lbs)}` : ""}
-                    </div>
+                    <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
+                  )}
+                  {h.lbs && (
+                    <div className="text-label-caps opacity-60">WT: {formatWeight(h.lbs)}</div>
                   )}
                   {h.trainer && (
                     <div className="text-label-caps opacity-60">T: {h.trainer}</div>
