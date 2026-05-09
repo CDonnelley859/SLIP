@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number };
-type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number };
+type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number };
 
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
@@ -93,8 +93,9 @@ const Index = () => {
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
       );
       const total = racesSnap.size;
-      const allSettled = racesSnap.docs.every(r => r.data().status === "settled");
-      if (total > 0 && allSettled) continue;
+      const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
+      const allSettled = settled === total && total > 0;
+      if (allSettled) continue;
 
       // Count how many picks this user has submitted for this scrum
       const picksSnap = await getDocs(
@@ -110,6 +111,7 @@ const Index = () => {
         trackName: cardData?.trackName ?? "—",
         completed,
         total,
+        settled,
       });
     }
     setActiveSlips(slips);
@@ -382,16 +384,33 @@ const Index = () => {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <div className="flex justify-between text-label-caps uppercase">
-                        <span>PROGRESS</span>
-                        <span>{s.completed}/{s.total || 6}</span>
-                      </div>
-                      <div className="h-3 w-full border border-primary p-[1px]">
-                        <div
-                          className="h-full bg-primary transition-all"
-                          style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
-                        />
-                      </div>
+                      {s.settled > 0 ? (
+                        <>
+                          <div className="flex justify-between text-label-caps uppercase">
+                            <span>RESULTS</span>
+                            <span>{s.settled}/{s.total}</span>
+                          </div>
+                          <div className="h-3 w-full border border-primary p-[1px]">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between text-label-caps uppercase">
+                            <span>PICKS</span>
+                            <span>{s.completed}/{s.total}</span>
+                          </div>
+                          <div className="h-3 w-full border border-primary p-[1px]">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </Link>
                   <div className="border-t border-primary/20 px-4 py-2 flex justify-between">
