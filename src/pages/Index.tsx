@@ -23,6 +23,7 @@ const Index = () => {
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
   const [trackSearch, setTrackSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [slipsLoading, setSlipsLoading] = useState(true);
 
   // Create group (inline)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -116,6 +117,7 @@ const Index = () => {
     );
 
     setActiveSlips(slipResults.filter(Boolean) as ActiveSlip[]);
+    setSlipsLoading(false);
   }
 
   async function handleRefresh() {
@@ -225,12 +227,23 @@ const Index = () => {
           </div>
 
           {cards.length === 0 && !syncing ? (
-            <div className="border-brutalist p-6 text-center">
+            <div className="border-brutalist p-6 text-center animate-fade-in">
               <p className="text-body-md text-muted-foreground">No races today.</p>
             </div>
           ) : (
             <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 pb-2 gap-3 px-4 scroll-px-4">
-              {filteredCards.map((c) => {
+              {syncing && cards.length === 0 ? (
+                /* Skeleton track tiles */
+                [0, 1, 2].map(i => (
+                  <div key={i} className="flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32">
+                    <div className="h-7 w-48 bg-muted animate-pulse" />
+                    <div className="flex gap-4">
+                      <div className="h-3 w-16 bg-muted animate-pulse" />
+                      <div className="h-3 w-16 bg-muted animate-pulse" />
+                    </div>
+                  </div>
+                ))
+              ) : filteredCards.map((c) => {
                 const isSelected = selectedCard?.id === c.id;
                 const firstRace = c.postTime
                   ? new Date(c.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -239,7 +252,7 @@ const Index = () => {
                   <button
                     key={c.id}
                     onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(c)}
-                    className={`flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32 text-left transition-none
+                    className={`flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32 text-left transition-none animate-fade-in
                       ${isSelected ? "bg-primary text-primary-foreground" : "bg-background"}`}
                   >
                     <span className="text-headline-md uppercase leading-tight">
@@ -360,8 +373,19 @@ const Index = () => {
         {/* Active slips */}
         <section className="mt-8">
           <h2 className="text-label-caps uppercase mb-2">Active Slips</h2>
-          {activeSlips.length === 0 ? (
-            <div className="border-brutalist p-6 text-center">
+          {slipsLoading ? (
+            <div className="flex flex-col gap-[-2.67px]">
+              {[0, 1].map(i => (
+                <div key={i} className={`border-brutalist p-4 ${i > 0 ? "mt-[-2.67px]" : ""}`}>
+                  <div className="h-3 w-12 bg-muted animate-pulse mb-1" />
+                  <div className="h-6 w-36 bg-muted animate-pulse mb-3" />
+                  <div className="h-3 w-20 bg-muted animate-pulse mb-1" />
+                  <div className="h-5 w-28 bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : activeSlips.length === 0 ? (
+            <div className="border-brutalist p-6 text-center animate-fade-in">
               <p className="text-body-md text-muted-foreground">
                 No active slips. Pick a track above or enter a group code.
               </p>
@@ -371,7 +395,7 @@ const Index = () => {
               {activeSlips.map((s, i) => (
                 <div
                   key={s.scrumId}
-                  className={`border-brutalist bg-background ${i > 0 ? "mt-[-2.67px]" : ""}`}
+                  className={`border-brutalist bg-background animate-fade-in ${i > 0 ? "mt-[-2.67px]" : ""}`}
                 >
                   <Link
                     to={`/scrum/${s.scrumId}/lobby`}

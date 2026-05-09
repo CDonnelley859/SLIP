@@ -96,6 +96,12 @@ const Gallop = () => {
     })();
   }, [id]);
 
+  // Slide direction for animation
+  const slideDir = useRef<"forward" | "back">("forward");
+
+  function goNext() { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); }
+  function goPrev() { slideDir.current = "back";    setCurrentIdx(i => Math.max(0, i - 1)); }
+
   // Swipe to navigate between races
   const touchStartX = useRef<number | null>(null);
   function onTouchStart(e: React.TouchEvent) {
@@ -106,8 +112,8 @@ const Gallop = () => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) < 50) return; // too short, ignore
-    if (dx < 0) setCurrentIdx(i => Math.min(races.length - 1, i + 1)); // swipe left → next
-    else setCurrentIdx(i => Math.max(0, i - 1));                        // swipe right → prev
+    if (dx < 0) { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); } // swipe left → next
+    else { slideDir.current = "back"; setCurrentIdx(i => Math.max(0, i - 1)); } // swipe right → prev
   }
 
   const currentRace = races[currentIdx];
@@ -235,11 +241,23 @@ const Gallop = () => {
           </div>
         </div>
 
-        <div className="border-brutalist divide-y divide-primary/20 bg-background">
+        <div
+          key={currentIdx}
+          className={`border-brutalist divide-y divide-primary/20 bg-background ${slideDir.current === "forward" ? "animate-slide-forward" : "animate-slide-back"}`}
+        >
           {currentRace.horses.length === 0 && (
-            <p className="text-label-caps text-muted-foreground uppercase text-center py-6">
-              No runners loaded
-            </p>
+            /* Skeleton runners while loading */
+            <>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-start gap-4 px-4 py-3">
+                  <div className="w-8 h-6 bg-muted animate-pulse shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <div className="h-5 w-40 bg-muted animate-pulse mb-2" />
+                    <div className="h-3 w-28 bg-muted animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </>
           )}
           {currentRace.horses.map((h) => {
             const selected = currentPick === h.id;
@@ -292,7 +310,7 @@ const Gallop = () => {
 
       <div className="fixed bottom-0 left-0 w-full h-[60px] z-50 flex items-center justify-between border-t-brutalist bg-background px-4">
         <button
-          onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}
+          onClick={goPrev}
           disabled={currentIdx === 0}
           className="text-label-caps uppercase disabled:opacity-30 transition-none"
         >
@@ -309,7 +327,7 @@ const Gallop = () => {
           </button>
         ) : (
           <button
-            onClick={() => setCurrentIdx(i => Math.min(races.length - 1, i + 1))}
+            onClick={goNext}
             className="text-label-caps uppercase transition-none"
           >
             NEXT →
