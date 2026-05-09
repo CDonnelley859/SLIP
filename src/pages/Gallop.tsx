@@ -35,7 +35,7 @@ const Gallop = () => {
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
       );
 
-      async function loadRaces() {
+      async function loadRaces(): Promise<Race[]> {
         const raceList: Race[] = [];
         for (const raceDoc of racesSnap.docs) {
           const r = raceDoc.data();
@@ -57,12 +57,19 @@ const Gallop = () => {
             horses,
           });
         }
-        setRaces(raceList.sort((a, b) => a.raceNumber - b.raceNumber));
+        const sorted = raceList.sort((a, b) => a.raceNumber - b.raceNumber);
+        setRaces(sorted);
+        return sorted;
       }
 
       // Sync runners from TRA if any race has no horses yet, then load
       try { await syncRunners(scrum.cardId); } catch { /* silent */ }
-      await loadRaces();
+      const loadedRaces = await loadRaces();
+
+      // Jump to the first race that hasn't started yet
+      const now = Date.now();
+      const firstOpen = loadedRaces.findIndex(r => new Date(r.offTime).getTime() > now);
+      if (firstOpen > 0) setCurrentIdx(firstOpen);
 
       const picksSnap = await getDocs(
         query(collection(db, "picks"),
@@ -77,11 +84,17 @@ const Gallop = () => {
 
   const currentRace = races[currentIdx];
   const isLastRace = currentIdx === races.length - 1;
-  const allPicked = races.length > 0 && races.every(r => picks[r.id]);
+
+  // A race is locked if its off time has passed
+  const raceIsLocked = (r: Race) => new Date(r.offTime).getTime() <= Date.now();
+
+  // Only races that haven't started yet require a pick
+  const pickableRaces = races.filter(r => !raceIsLocked(r));
+  const allPicked = pickableRaces.length > 0 && pickableRaces.every(r => picks[r.id]);
+  const pickedCount = pickableRaces.filter(r => picks[r.id]).length;
+
   const currentPick = currentRace ? picks[currentRace.id] : undefined;
-  const isLocked = currentRace
-    ? new Date(currentRace.offTime).getTime() <= Date.now()
-    : false;
+  const isLocked = currentRace ? raceIsLocked(currentRace) : false;
 
   // Save pick immediately to Firestore as well as local state
   async function handlePick(raceId: string, horseId: string) {
@@ -146,21 +159,26 @@ const Gallop = () => {
         {/* Race progress dots */}
         {races.length > 0 && (
           <div className="flex gap-1 pb-2 flex-wrap">
-            {races.map((r, i) => (
-              <button
-                key={r.id}
-                onClick={() => setCurrentIdx(i)}
-                className={`w-5 h-5 flex items-center justify-center text-[9px] font-mono border transition-none
-                  ${i === currentIdx
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : picks[r.id]
-                      ? "bg-primary/20 border-primary/40 text-primary"
-                      : "bg-background border-primary/20 text-muted-foreground"
-                  }`}
-              >
-                {r.raceNumber}
-              </button>
-            ))}
+            {races.map((r, i) => {
+              const locked = raceIsLocked(r);
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setCurrentIdx(i)}
+                  className={`w-5 h-5 flex items-center justify-center text-[9px] font-mono border transition-none
+                    ${i === currentIdx
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : locked
+                        ? "bg-muted border-muted-foreground/20 text-muted-foreground/40 line-through"
+                        : picks[r.id]
+                          ? "bg-primary/20 border-primary/40 text-primary"
+                          : "bg-background border-primary/20 text-muted-foreground"
+                    }`}
+                >
+                  {r.raceNumber}
+                </button>
+              );
+            })}
           </div>
         )}
       </header>
@@ -230,7 +248,7 @@ const Gallop = () => {
           ← PREV
         </button>
         <div className="text-data-mono font-bold tracking-widest">
-          {Object.keys(picks).length}/{races.length} PICKED
+          {pickedCount}/{pickableRaces.length} PICKED
         </div>
         {isLastRace ? (
           <button
