@@ -94,6 +94,7 @@ export async function syncCards(): Promise<string> {
             trainer: runner.trainer ?? null,
             owner: runner.owner ?? null,
             form: runner.form ?? null,
+            lbs: runner.lbs ? Number(runner.lbs) : null,
             odds: null,
           }, { merge: true });
           horseCount++;

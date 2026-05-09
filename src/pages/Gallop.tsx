@@ -8,7 +8,13 @@ import {
 } from "firebase/firestore";
 import { toast } from "sonner";
 
-type Horse = { id: string; number: number; name: string; jockey: string | null; trainer: string | null; owner: string | null; form: string | null; odds: string | null };
+type Horse = { id: string; number: number; name: string; jockey: string | null; trainer: string | null; owner: string | null; form: string | null; lbs: number | null; odds: string | null };
+
+function formatWeight(lbs: number): string {
+  const st = Math.floor(lbs / 14);
+  const lb = lbs % 14;
+  return `${st}-${lb}`;
+}
 type Race = { id: string; raceNumber: number; name: string | null; offTime: string; horses: Horse[] };
 
 const Gallop = () => {
@@ -50,6 +56,7 @@ const Gallop = () => {
             trainer: h.data().trainer ?? null,
             owner: h.data().owner ?? null,
             form: h.data().form ?? null,
+            lbs: h.data().lbs ?? null,
             odds: h.data().odds ?? null,
           })).sort((a, b) => a.number - b.number);
           raceList.push({
@@ -249,7 +256,9 @@ const Gallop = () => {
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-body-lg uppercase font-bold leading-tight">{h.name}</div>
                   {h.jockey && (
-                    <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
+                    <div className="text-label-caps opacity-60 mt-0.5">
+                      J: {h.jockey}{h.lbs ? ` · ${formatWeight(h.lbs)}` : ""}
+                    </div>
                   )}
                   {h.trainer && (
                     <div className="text-label-caps opacity-60">T: {h.trainer}</div>
