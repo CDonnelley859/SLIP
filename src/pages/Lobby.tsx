@@ -200,16 +200,17 @@ const Lobby = () => {
               <span className="text-label-caps uppercase">Leaderboard</span>
             </div>
             {leaderboard.map((r, i) => (
-              <div
+              <Link
                 key={r.userId}
+                to={`/scrum/${id}/slip?player=${r.userId}`}
                 className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""} ${r.userId === userId ? "bg-primary/5" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-label-caps text-muted-foreground w-5">#{i + 1}</span>
-                  <span className="text-body-md font-bold uppercase">{r.handle}</span>
+                  <span className="text-body-md font-bold uppercase underline underline-offset-2 decoration-[1.5px]">{r.handle}</span>
                 </div>
                 <span className="text-headline-md font-black">{r.points}</span>
-              </div>
+              </Link>
             ))}
           </div>
         )}

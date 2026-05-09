@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -59,8 +59,12 @@ const StatusBadge = ({ status }: { status: LineStatus }) => {
 const Slip = () => {
   const { id } = useParams();
   const { userId } = useAuth();
+  const [searchParams] = useSearchParams();
+  const viewUserId = searchParams.get("player") ?? userId;
+  const isOwnSlip = viewUserId === userId;
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
+  const [viewHandle, setViewHandle] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,7 +74,7 @@ const Slip = () => {
   async function buildLines() {
     if (!id) return;
     const [picksSnap, allPicksSnap] = await Promise.all([
-      getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", userId))),
+      getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", viewUserId))),
       getDocs(query(collection(db, "picks"), where("scrumId", "==", id))),
     ]);
 
@@ -148,6 +152,16 @@ const Slip = () => {
       setScrum(scrumData);
       const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
       setCard(cardDoc.data());
+
+      // If viewing someone else's slip, fetch their handle from scrumMembers
+      if (!isOwnSlip) {
+        const memberSnap = await getDocs(
+          query(collection(db, "scrumMembers"),
+            where("scrumId", "==", id), where("userId", "==", viewUserId))
+        );
+        if (!memberSnap.empty) setViewHandle(memberSnap.docs[0].data().handle ?? null);
+      }
+
       await buildLines();
     })();
 
@@ -182,6 +196,11 @@ const Slip = () => {
         <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary">
           {/* Venue + group centred at top */}
           <div className="flex flex-col items-center gap-1 mb-5">
+            {!isOwnSlip && viewHandle && (
+              <span className="text-label-caps uppercase border border-primary px-2 py-0.5 mb-1">
+                {viewHandle}'S SLIP
+              </span>
+            )}
             <span className="text-headline-lg uppercase text-center leading-tight">
               {card?.trackName ?? "—"}
             </span>
@@ -276,7 +295,7 @@ const Slip = () => {
           {refreshing ? "REFRESHING…" : "REFRESH RESULTS"}
         </button>
 
-        {"Notification" in window && (
+        {isOwnSlip && "Notification" in window && (
           <button
             onClick={handleNotifToggle}
             disabled={notifLoading}
@@ -294,10 +313,10 @@ const Slip = () => {
         )}
 
         <Link
-          to="/"
+          to={isOwnSlip ? "/" : `/scrum/${id}/lobby`}
           className="w-full h-12 flex items-center justify-center text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
         >
-          BACK TO PADDOCK
+          {isOwnSlip ? "BACK TO PADDOCK" : "BACK TO THE PEN"}
         </Link>
       </div>
     </div>
