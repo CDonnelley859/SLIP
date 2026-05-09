@@ -93,8 +93,16 @@ const Index = () => {
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
       );
       const total = racesSnap.size;
-      const completed = racesSnap.docs.filter(r => r.data().status === "settled").length;
-      if (total > 0 && completed >= total) continue;
+      const allSettled = racesSnap.docs.every(r => r.data().status === "settled");
+      if (total > 0 && allSettled) continue;
+
+      // Count how many picks this user has submitted for this scrum
+      const picksSnap = await getDocs(
+        query(collection(db, "picks"),
+          where("scrumId", "==", scrumId),
+          where("userId", "==", userId))
+      );
+      const completed = picksSnap.size;
 
       slips.push({
         scrumId,
