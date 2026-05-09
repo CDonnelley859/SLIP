@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -81,6 +81,20 @@ const Gallop = () => {
       setPicks(map);
     })();
   }, [id]);
+
+  // Swipe to navigate between races
+  const touchStartX = useRef<number | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 50) return; // too short, ignore
+    if (dx < 0) setCurrentIdx(i => Math.min(races.length - 1, i + 1)); // swipe left → next
+    else setCurrentIdx(i => Math.max(0, i - 1));                        // swipe right → prev
+  }
 
   const currentRace = races[currentIdx];
   const isLastRace = currentIdx === races.length - 1;
@@ -183,7 +197,11 @@ const Gallop = () => {
         )}
       </header>
 
-      <main className="flex-grow px-4 pt-4 pb-[80px]">
+      <main
+        className="flex-grow px-4 pt-4 pb-[80px]"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="flex justify-between items-end border-b-brutalist mb-3 pb-2">
           <div>
             <span className="text-label-caps text-muted-foreground uppercase">
