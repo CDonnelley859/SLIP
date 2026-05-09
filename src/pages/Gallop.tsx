@@ -265,9 +265,7 @@ const Gallop = () => {
         >
           ← PREV
         </button>
-        <div className="text-data-mono font-bold tracking-widest">
-          {pickedCount}/{pickableRaces.length} PICKED
-        </div>
+        <div />
         {isLastRace ? (
           <button
             onClick={handleSubmit}

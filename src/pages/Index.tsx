@@ -383,20 +383,20 @@ const Index = () => {
                         <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between text-label-caps uppercase">
-                        <span>{s.settled > 0 ? "RESULTS" : "PICKS"}</span>
-                        <span>{s.settled > 0 ? `${s.settled}/${s.total}` : `${s.completed}/${s.total}`}</span>
-                      </div>
-                      {s.settled > 0 && (
+                    {s.settled > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between text-label-caps uppercase">
+                          <span>RESULTS</span>
+                          <span>{s.settled}/{s.total}</span>
+                        </div>
                         <div className="h-3 w-full border border-primary p-[1px]">
                           <div
                             className="h-full bg-primary transition-all"
                             style={{ width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }}
                           />
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Link>
                   <div className="border-t border-primary/20 px-4 py-2 flex justify-between">
                     <button
