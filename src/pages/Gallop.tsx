@@ -22,6 +22,7 @@ const Gallop = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
   const [card, setCard] = useState<any>(null);
+  const [showDetails, setShowDetails] = useState(true);
   const [races, setRaces] = useState<Race[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -36,6 +37,7 @@ const Gallop = () => {
 
       const cardDoc = await getDoc(doc(db, "cards", scrum.cardId));
       setCard(cardDoc.data());
+      setShowDetails(scrum.showDetails ?? true);
 
       const racesSnap = await getDocs(
         query(collection(db, "races"), where("cardId", "==", scrum.cardId))
@@ -255,21 +257,25 @@ const Gallop = () => {
                 <span className="text-headline-md w-8 text-center shrink-0 pt-1">{h.number}</span>
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-body-lg uppercase font-bold leading-tight">{h.name}</div>
-                  {h.jockey && (
-                    <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
-                  )}
-                  {h.lbs && (
-                    <div className="text-label-caps opacity-60">WT: {formatWeight(h.lbs)}</div>
-                  )}
-                  {h.trainer && (
-                    <div className="text-label-caps opacity-60">T: {h.trainer}</div>
-                  )}
-                  {h.owner && (
-                    <div className="text-label-caps opacity-60 truncate">O: {h.owner}</div>
+                  {showDetails && (
+                    <>
+                      {h.jockey && (
+                        <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
+                      )}
+                      {h.lbs && (
+                        <div className="text-label-caps opacity-60">WT: {formatWeight(h.lbs)}</div>
+                      )}
+                      {h.trainer && (
+                        <div className="text-label-caps opacity-60">T: {h.trainer}</div>
+                      )}
+                      {h.owner && (
+                        <div className="text-label-caps opacity-60 truncate">O: {h.owner}</div>
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-1 pt-1">
-                  {h.form && (
+                  {showDetails && h.form && (
                     <span className="text-data-mono text-xs tracking-wider opacity-80">{h.form}</span>
                   )}
                   {selected && (
