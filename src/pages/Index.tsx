@@ -384,32 +384,17 @@ const Index = () => {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {s.settled > 0 ? (
-                        <>
-                          <div className="flex justify-between text-label-caps uppercase">
-                            <span>RESULTS</span>
-                            <span>{s.settled}/{s.total}</span>
-                          </div>
-                          <div className="h-3 w-full border border-primary p-[1px]">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }}
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between text-label-caps uppercase">
-                            <span>PICKS</span>
-                            <span>{s.completed}/{s.total}</span>
-                          </div>
-                          <div className="h-3 w-full border border-primary p-[1px]">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${s.total ? (s.completed / s.total) * 100 : 0}%` }}
-                            />
-                          </div>
-                        </>
+                      <div className="flex justify-between text-label-caps uppercase">
+                        <span>{s.settled > 0 ? "RESULTS" : "PICKS"}</span>
+                        <span>{s.settled > 0 ? `${s.settled}/${s.total}` : `${s.completed}/${s.total}`}</span>
+                      </div>
+                      {s.settled > 0 && (
+                        <div className="h-3 w-full border border-primary p-[1px]">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }}
+                          />
+                        </div>
                       )}
                     </div>
                   </Link>
