@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { toast } from "sonner";
 
-type Horse = { id: string; number: number; name: string; jockey: string | null; odds: string | null };
+type Horse = { id: string; number: number; name: string; jockey: string | null; trainer: string | null; owner: string | null; form: string | null; odds: string | null };
 type Race = { id: string; raceNumber: number; name: string | null; offTime: string; horses: Horse[] };
 
 const Gallop = () => {
@@ -47,6 +47,9 @@ const Gallop = () => {
             number: h.data().number,
             name: h.data().name,
             jockey: h.data().jockey ?? null,
+            trainer: h.data().trainer ?? null,
+            owner: h.data().owner ?? null,
+            form: h.data().form ?? null,
             odds: h.data().odds ?? null,
           })).sort((a, b) => a.number - b.number);
           raceList.push({
@@ -235,22 +238,34 @@ const Gallop = () => {
                 type="button"
                 disabled={isLocked}
                 onClick={() => !isLocked && handlePick(currentRace.id, h.id)}
-                className={`w-full flex items-center gap-4 px-4 py-3 text-left relative transition-none
+                className={`w-full flex items-start gap-4 px-4 py-3 text-left relative transition-none
                   ${selected ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}
                   ${isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
               >
                 {selected && (
                   <div className="absolute inset-0 x-stamp opacity-10 pointer-events-none" />
                 )}
-                <span className="text-headline-md w-8 text-center shrink-0">{h.number}</span>
-                <div className="flex-1 text-left">
-                  <div className="text-body-lg uppercase">{h.name}</div>
-                  {h.jockey && <div className="text-label-caps opacity-60">{h.jockey}</div>}
+                <span className="text-headline-md w-8 text-center shrink-0 pt-1">{h.number}</span>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-body-lg uppercase font-bold leading-tight">{h.name}</div>
+                  {h.jockey && (
+                    <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
+                  )}
+                  {h.trainer && (
+                    <div className="text-label-caps opacity-60">T: {h.trainer}</div>
+                  )}
+                  {h.owner && (
+                    <div className="text-label-caps opacity-60 truncate">O: {h.owner}</div>
+                  )}
                 </div>
-                <span className="text-body-md font-mono shrink-0">{h.odds ?? "—"}</span>
-                {selected && (
-                  <span className="text-label-caps border border-current px-1 py-0.5 shrink-0">INKED</span>
-                )}
+                <div className="shrink-0 flex flex-col items-end gap-1 pt-1">
+                  {h.form && (
+                    <span className="text-data-mono text-xs tracking-wider opacity-80">{h.form}</span>
+                  )}
+                  {selected && (
+                    <span className="text-label-caps border border-current px-1 py-0.5">INKED</span>
+                  )}
+                </div>
               </button>
             );
           })}

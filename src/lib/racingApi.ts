@@ -91,6 +91,9 @@ export async function syncCards(): Promise<string> {
             number: Number(runner.number) || idx + 1,
             name: runner.horse ?? "Unknown",
             jockey: runner.jockey ?? null,
+            trainer: runner.trainer ?? null,
+            owner: runner.owner ?? null,
+            form: runner.form ?? null,
             odds: null,
           }, { merge: true });
           horseCount++;
@@ -156,6 +159,9 @@ export async function syncRunners(cardId: string): Promise<number> {
         number: Number(runner.number) || idx + 1,
         name: runner.horse ?? "Unknown",
         jockey: runner.jockey ?? null,
+        trainer: runner.trainer ?? null,
+        owner: runner.owner ?? null,
+        form: runner.form ?? null,
         odds: null,
       }, { merge: true });
       horseCount++;
