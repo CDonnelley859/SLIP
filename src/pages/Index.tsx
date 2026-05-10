@@ -272,11 +272,15 @@ const Index = () => {
               <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <div style={{
+              display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
+              paddingBottom: 4,
+            }}>
               {(syncing && cards.length === 0 ? [0, 1, 2] : filteredCards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
-                    <div key={i} style={{ border: "3px solid var(--cream)", borderBottom: i < 2 ? "1.5px solid var(--cream)" : "3px solid var(--cream)", padding: "18px 16px 16px", background: "var(--green)" }}>
+                    <div key={i} style={{ flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start", border: "3px solid var(--cream)", padding: "18px 16px 16px" }}>
                       <div style={{ height: 28, width: 160, background: "rgba(245,232,223,0.15)", marginBottom: 10 }} />
                       <div style={{ height: 11, width: 100, background: "rgba(245,232,223,0.1)" }} />
                     </div>
@@ -293,14 +297,12 @@ const Index = () => {
                     onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(card)}
                     className="animate-fade-in"
                     style={{
-                      textAlign: "left",
-                      padding: "18px 16px 16px",
+                      flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
+                      textAlign: "left", padding: "18px 16px 16px",
                       border: "3px solid var(--cream)",
-                      borderBottom: i < filteredCards.length - 1 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
                       background: isSelected ? "var(--cream)" : "var(--green)",
                       color: isSelected ? "var(--ink)" : "var(--cream)",
-                      cursor: "pointer",
-                      transition: "all 120ms",
+                      cursor: "pointer", transition: "all 120ms",
                     }}
                   >
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
