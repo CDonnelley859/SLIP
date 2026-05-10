@@ -41,9 +41,8 @@ export default {
         full: "9999px",
       },
       fontFamily: {
-        sans: ["Space Grotesk", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-        display: ["Bagel Fat One", "system-ui", "sans-serif"],
+        sans: ["Geist", "system-ui", "sans-serif"],
+        mono: ["Geist Mono", "monospace"],
       },
       fontSize: {
         "headline-xl": ["64px", { lineHeight: "1.0", letterSpacing: "-0.04em", fontWeight: "900" }],
