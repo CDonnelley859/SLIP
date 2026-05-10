@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
-import { seedVirtualTrack } from "@/lib/virtualTrack";
+import { seedVirtualTrack, settleVirtualRaces } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -85,6 +85,9 @@ const Index = () => {
     })();
     if (needsSeed) {
       seedVirtualTrack().then(() => loadData()).catch(() => {});
+    } else {
+      // Settle any finished races in the current card on every load
+      settleVirtualRaces().catch(() => {});
     }
 
     if (!userId) return;

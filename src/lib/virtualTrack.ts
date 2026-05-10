@@ -78,28 +78,9 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/**
- * Seeds or resets the Virtual Park test track.
- * Safe to call multiple times — skips if the card is still fresh.
- * Uses the authenticated Firebase client SDK, no credentials needed.
- */
-export async function seedVirtualTrack(): Promise<void> {
+/** Settle any finished races in the current Blotto Park card. Safe to call at any time. */
+async function settleFinishedRaces(): Promise<void> {
   const now = Date.now();
-  const today = new Date().toISOString().slice(0, 10);
-
-  // One-time migration: remove old "virtual-park" card if it still exists
-  try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
-
-  // Check if the existing card is still fresh
-  const cardRef = doc(db, "cards", CARD_ID);
-  const cardDoc = await getDoc(cardRef);
-  if (cardDoc.exists()) {
-    const postTime = new Date(cardDoc.data().postTime).getTime();
-    const lastRaceTime = postTime + (RACE_COUNT - 1) * RACE_GAP_MS;
-    if (now < lastRaceTime + 5 * 60 * 1000) return; // still running or just finished
-  }
-
-  // Settle any unsettled virtual races from the previous cycle
   for (let raceNum = 1; raceNum <= RACE_COUNT; raceNum++) {
     const raceId = `${CARD_ID}-r${raceNum}`;
     const raceRef = doc(db, "races", raceId);
@@ -135,6 +116,38 @@ export async function seedVirtualTrack(): Promise<void> {
       });
       await batch.commit();
     }
+  }
+}
+
+/**
+ * Call on every page load to settle any Blotto Park races whose off-time has passed.
+ * Lightweight — skips races already marked settled.
+ */
+export async function settleVirtualRaces(): Promise<void> {
+  try { await settleFinishedRaces(); } catch { }
+}
+
+/**
+ * Seeds or resets the Blotto Park test track.
+ * Safe to call multiple times — skips if the card is still fresh.
+ */
+export async function seedVirtualTrack(): Promise<void> {
+  const now = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
+
+  // One-time migration: remove old "virtual-park" card if it still exists
+  try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
+
+  // Settle any finished races in the current cycle before checking freshness
+  await settleFinishedRaces();
+
+  // Check if the existing card is still fresh
+  const cardRef = doc(db, "cards", CARD_ID);
+  const cardDoc = await getDoc(cardRef);
+  if (cardDoc.exists()) {
+    const postTime = new Date(cardDoc.data().postTime).getTime();
+    const lastRaceTime = postTime + (RACE_COUNT - 1) * RACE_GAP_MS;
+    if (now < lastRaceTime + 5 * 60 * 1000) return; // still running or just finished
   }
 
   // Write new virtual card
