@@ -66,7 +66,7 @@ const Stamp = ({ kind }: { kind: string }) => {
       display: "inline-block",
       border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
       color: s.color, padding: "3px 10px 2px",
-      fontFamily: "'Bagel Fat One', system-ui", fontSize: 14,
+      fontFamily: "'Bowlby One SC', system-ui", fontSize: 14,
       letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
       background: "transparent", opacity: s.dim ? 0.5 : 1, flexShrink: 0,
     }}>{s.label}</span>
@@ -293,7 +293,7 @@ const Slip = () => {
   return (
     <div
       className="min-h-screen halftone-bg halftone-loose flex flex-col items-center"
-      style={{ background: "var(--cream-2)", padding: "0 0 80px" }}
+      style={{ background: "var(--green)", padding: "0 0 80px" }}
     >
       {/* ── PAGE HEADER ── */}
       <div
@@ -305,15 +305,15 @@ const Slip = () => {
         <Link
           to={`/scrum/${id}/lobby`}
           className="label"
-          style={{ color: "var(--ink)", textDecoration: "none" }}
+          style={{ color: "var(--cream)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
-        <span className="display" style={{ fontSize: 22, color: "var(--ink)" }}>THE SLIP</span>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>THE SLIP</span>
         <button
           onClick={() => navigate("/spindle")}
           className="label"
-          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--ink)", textDecoration: "underline" }}
+          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
         >
           FLIP
         </button>
@@ -332,8 +332,8 @@ const Slip = () => {
               }}
               style={{
                 width: 10, height: 10, borderRadius: "50%",
-                border: "2px solid var(--ink)",
-                background: i === playerIdx ? "var(--ink)" : "transparent",
+                border: "2px solid var(--cream)",
+                background: i === playerIdx ? "var(--cream)" : "transparent",
                 cursor: "pointer",
               }}
             />
@@ -421,18 +421,18 @@ const Slip = () => {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lines.map(line => (
-                  <div key={line.raceNumber} style={{ border: "2px solid var(--ink)", background: "var(--cream)", padding: "10px 12px" }}>
+                  <div key={line.raceNumber} style={{ border: "1.5px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "10px 12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
                           <span style={{ background: "var(--ink)", color: "var(--cream)", padding: "2px 6px", fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: ".18em" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
-                          <span className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                          <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
                             {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </span>
                         </div>
-                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4,
+                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4, color: "var(--cream)",
                           textDecoration: line.status === "OUT" ? "line-through" : "none",
                           opacity: line.status === "OUT" ? 0.45 : 1 }}>
                           {line.horseNumber}. {line.horseName}
@@ -444,9 +444,9 @@ const Slip = () => {
                       {(["1ST", "2ND", "3RD"] as const).map((pos, idx) => {
                         const w = idx === 0 ? line.podium?.first : idx === 1 ? line.podium?.second : line.podium?.third;
                         return (
-                          <div key={pos} style={{ flex: 1, border: "1.5px solid var(--ink)", padding: "5px 6px", textAlign: "center", background: "var(--cream-2)", opacity: w ? 1 : 0.55 }}>
-                            <div className="label-sm">{pos}</div>
-                            <div className="display" style={{ fontSize: 12, marginTop: 1 }}>{w ? w.name : "—"}</div>
+                          <div key={pos} style={{ flex: 1, border: "1.5px solid rgba(245,232,223,0.25)", padding: "5px 6px", textAlign: "center", background: "rgba(245,232,223,0.08)", opacity: w ? 1 : 0.55 }}>
+                            <div className="label-sm" style={{ color: "var(--cream)" }}>{pos}</div>
+                            <div className="display" style={{ fontSize: 12, marginTop: 1, color: "var(--cream)" }}>{w ? w.name : "—"}</div>
                           </div>
                         );
                       })}
@@ -462,7 +462,7 @@ const Slip = () => {
 
       {/* swipe hint */}
       {players.length > 1 && (
-        <p className="label-sm" style={{ marginTop: 12, opacity: 0.4, color: "var(--ink)" }}>
+        <p className="label-sm" style={{ marginTop: 12, opacity: 0.4, color: "var(--cream)" }}>
           ← SWIPE TO SEE OTHER SLIPS →
         </p>
       )}
@@ -474,7 +474,7 @@ const Slip = () => {
             onClick={handleRefresh}
             disabled={refreshing}
             className="btn-retro"
-            style={{ opacity: refreshing ? 0.4 : 1 }}
+            style={{ opacity: refreshing ? 0.4 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
           >
             {refreshing ? "REFRESHING…" : "↻ REFRESH RESULTS"}
           </button>
@@ -485,7 +485,7 @@ const Slip = () => {
             onClick={handleNotifToggle}
             disabled={notifLoading}
             className="btn-retro"
-            style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink-pale)" : "var(--cream)" }}
+            style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink)" : "var(--green)", color: notifEnabled ? "var(--ink)" : "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
           >
             <span>{notifEnabled ? "🔔" : "🔕"}</span>
             <span>
@@ -499,7 +499,7 @@ const Slip = () => {
           className="label"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--ink)", textDecoration: "underline", padding: "12px",
+            color: "var(--cream)", textDecoration: "underline", padding: "12px",
           }}
         >
           BACK TO THE PEN

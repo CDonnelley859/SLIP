@@ -213,13 +213,13 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--cream)" }}>
+    <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header
         style={{
-          background: "var(--cream)",
-          borderBottom: "3px solid var(--ink)",
+          background: "var(--green)",
+          borderBottom: "3px solid rgba(245,232,223,0.3)",
           padding: "20px 18px 8px",
         }}
       >
@@ -227,20 +227,20 @@ const Index = () => {
           <Link
             to="/spindle"
             className="label"
-            style={{ color: "var(--ink)", textDecoration: "underline" }}
+            style={{ color: "var(--cream)", textDecoration: "underline" }}
           >
             SPINDLE
           </Link>
           <h1
             className="display"
-            style={{ fontSize: 56, color: "var(--ink)" }}
+            style={{ fontSize: 56, color: "var(--cream)" }}
           >
             SLIP
           </h1>
           <Link
             to="/stats"
             className="label"
-            style={{ color: "var(--ink)", textDecoration: "underline" }}
+            style={{ color: "var(--cream)", textDecoration: "underline" }}
           >
             THE FORM
           </Link>
@@ -252,13 +252,13 @@ const Index = () => {
         {/* ── TOP TRACKS ── */}
         <section style={{ padding: "16px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <span className="label" style={{ color: "var(--ink)" }}>Top Tracks</span>
+            <span className="label" style={{ color: "var(--cream)" }}>Top Tracks</span>
             <button
               onClick={handleRefresh}
               disabled={syncing}
               className="label"
               style={{
-                background: "transparent", border: 0, color: "var(--ink)",
+                background: "transparent", border: 0, color: "var(--cream)",
                 textDecoration: "underline", cursor: "pointer",
                 opacity: syncing ? 0.4 : 1,
               }}
@@ -271,11 +271,11 @@ const Index = () => {
             <div
               className="animate-fade-in"
               style={{
-                border: "3px solid var(--ink)", padding: "24px",
-                textAlign: "center", background: "var(--cream)",
+                border: "3px solid rgba(245,232,223,0.3)", padding: "24px",
+                textAlign: "center", background: "var(--green)",
               }}
             >
-              <p className="label" style={{ color: "var(--ink-soft)" }}>No races today.</p>
+              <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -285,12 +285,12 @@ const Index = () => {
                     <div
                       key={i}
                       style={{
-                        border: "3px solid var(--ink)", padding: "12px 12px 14px",
-                        background: "var(--cream)", height: 90,
+                        border: "3px solid rgba(245,232,223,0.3)", padding: "12px 12px 14px",
+                        background: "var(--green)", height: 90,
                       }}
                     >
-                      <div style={{ height: 8, width: 80, background: "var(--cream-2)", marginBottom: 8 }} />
-                      <div style={{ height: 20, width: 100, background: "var(--cream-2)" }} />
+                      <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.2)", marginBottom: 8 }} />
+                      <div style={{ height: 20, width: 100, background: "rgba(245,232,223,0.2)" }} />
                     </div>
                   );
                 }
@@ -308,9 +308,9 @@ const Index = () => {
                     style={{
                       textAlign: "left",
                       padding: "12px 12px 14px",
-                      border: "3px solid var(--ink)",
-                      background: isSelected ? "var(--green)" : "var(--cream)",
-                      color: isSelected ? "var(--cream)" : "var(--ink)",
+                      border: isFeatured ? "3px solid var(--ink)" : "2px solid rgba(245,232,223,0.3)",
+                      background: isSelected ? "var(--cream)" : isFeatured ? "var(--pink)" : "var(--green)",
+                      color: isSelected ? "var(--ink)" : isFeatured ? "var(--ink)" : "var(--cream)",
                       cursor: "pointer",
                       boxShadow: isSelected ? "4px 4px 0 var(--ink)" : "none",
                       transition: "all 120ms",
@@ -354,7 +354,7 @@ const Index = () => {
         <section style={{ padding: "14px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-            <span className="label" style={{ whiteSpace: "nowrap", color: "var(--ink)" }}>
+            <span className="label" style={{ whiteSpace: "nowrap", color: "var(--cream)" }}>
               {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "OR JOIN A CREW"}
             </span>
             <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
@@ -363,7 +363,7 @@ const Index = () => {
                 onClick={() => setSelectedCard(null)}
                 style={{
                   background: "transparent", border: 0, cursor: "pointer",
-                  fontSize: 14, color: "var(--ink)", opacity: 0.5,
+                  fontSize: 14, color: "var(--cream)", opacity: 0.5,
                 }}
               >✕</button>
             )}
@@ -455,7 +455,7 @@ const Index = () => {
 
         {/* ── ACTIVE SLIPS ── */}
         <section style={{ padding: "24px 18px 0" }}>
-          <span className="label" style={{ color: "var(--ink)", display: "block", marginBottom: 10 }}>
+          <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>
             Active Slips
           </span>
 
@@ -465,13 +465,13 @@ const Index = () => {
                 <div
                   key={i}
                   style={{
-                    border: "3px solid var(--ink)", padding: "14px 16px",
-                    background: "var(--pink-pale)",
+                    border: "2px dashed rgba(245,232,223,0.4)", padding: "14px 16px",
+                    background: "var(--green)",
                   }}
                 >
-                  <div style={{ height: 8, width: 60, background: "var(--cream-2)", marginBottom: 6 }} />
-                  <div style={{ height: 22, width: 140, background: "var(--cream-2)", marginBottom: 10 }} />
-                  <div style={{ height: 8, width: 80, background: "var(--cream-2)" }} />
+                  <div style={{ height: 8, width: 60, background: "rgba(245,232,223,0.2)", marginBottom: 6 }} />
+                  <div style={{ height: 22, width: 140, background: "rgba(245,232,223,0.2)", marginBottom: 10 }} />
+                  <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.2)" }} />
                 </div>
               ))}
             </div>
@@ -479,11 +479,11 @@ const Index = () => {
             <div
               className="animate-fade-in"
               style={{
-                border: "3px solid var(--ink)", padding: "24px",
-                textAlign: "center", background: "var(--cream)",
+                border: "2px dashed rgba(245,232,223,0.4)", padding: "24px",
+                textAlign: "center", background: "var(--green)",
               }}
             >
-              <p className="label" style={{ color: "var(--ink-soft)" }}>
+              <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
@@ -506,16 +506,15 @@ const Index = () => {
                 return (
                   <div
                     key={s.scrumId}
-                    className="halftone-bg halftone-pink animate-fade-in"
+                    className="halftone-bg animate-fade-in"
                     style={{
-                      border: "3px solid var(--ink)",
-                      background: "var(--pink-pale)",
-                      boxShadow: "5px 5px 0 var(--ink)",
+                      border: "2px dashed rgba(245,232,223,0.4)",
+                      background: "var(--green)",
                     }}
                   >
                     <div
                       onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
-                      style={{ display: "block", padding: "14px 16px", cursor: "pointer", color: "var(--ink)" }}
+                      style={{ display: "block", padding: "14px 16px", cursor: "pointer", color: "var(--cream)" }}
                     >
                       {/* Top row: venue + GO disc */}
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -526,7 +525,7 @@ const Index = () => {
                         {/* GO circle */}
                         <div style={{
                           width: 56, height: 56, borderRadius: "50%",
-                          background: "var(--green)", border: "3px solid var(--ink)",
+                          background: "var(--pink)", border: "3px solid var(--ink)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           position: "relative", overflow: "hidden", flexShrink: 0,
                         }}>
@@ -558,13 +557,13 @@ const Index = () => {
                     </div>
 
                     {/* leave button */}
-                    <div style={{ borderTop: "2px dashed var(--ink)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
+                    <div style={{ borderTop: "2px dashed rgba(245,232,223,0.4)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
                       <button
                         onClick={() => handleLeave(s.scrumId)}
                         className="label"
                         style={{
                           background: "transparent", border: 0, cursor: "pointer",
-                          color: "var(--ink)", opacity: 0.5, textDecoration: "underline",
+                          color: "var(--cream)", opacity: 0.5, textDecoration: "underline",
                         }}
                       >
                         LEAVE

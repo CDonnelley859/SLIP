@@ -149,13 +149,13 @@ const Lobby = () => {
   }
 
   if (!scrum) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-      <p className="label" style={{ color: "var(--ink-soft)" }}>Loading…</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header
@@ -168,26 +168,26 @@ const Lobby = () => {
         <Link
           to="/"
           className="label"
-          style={{ color: "var(--ink)", textDecoration: "none" }}
+          style={{ color: "var(--cream)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
-        <span className="display" style={{ fontSize: 22, color: "var(--ink)" }}>THE PEN</span>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>THE PEN</span>
         <div style={{ width: 60 }} />
       </header>
 
       <main style={{ padding: "0 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
 
         {/* venue + group */}
-        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "14px 16px" }}>
+        <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <div className="label-sm" style={{ opacity: 0.7 }}>VENUE</div>
-              <div className="display" style={{ fontSize: 30, marginTop: 2 }}>
+              <div className="label-sm" style={{ opacity: 0.7, color: "var(--cream)" }}>VENUE</div>
+              <div className="display" style={{ fontSize: 30, marginTop: 2, color: "var(--cream)" }}>
                 {card?.trackName ?? "—"}
               </div>
-              <div className="label-sm" style={{ opacity: 0.7, marginTop: 10 }}>GROUP</div>
-              <div className="display" style={{ fontSize: 22, marginTop: 2 }}>
+              <div className="label-sm" style={{ opacity: 0.7, marginTop: 10, color: "var(--cream)" }}>GROUP</div>
+              <div className="display" style={{ fontSize: 22, marginTop: 2, color: "var(--cream)" }}>
                 {scrum.name}
               </div>
             </div>
@@ -200,16 +200,16 @@ const Lobby = () => {
           className="halftone-bg halftone-loose"
           style={{
             border: "3px solid var(--ink)",
-            background: "var(--green)", color: "var(--cream)",
+            background: "var(--pink)", color: "var(--ink)",
             padding: "16px", marginBottom: 0,
             textAlign: "center",
             boxShadow: "5px 5px 0 var(--ink)",
           }}
         >
-          <div className="label-sm" style={{ opacity: 0.85, color: "var(--cream)" }}>JOIN CODE</div>
+          <div className="label-sm" style={{ opacity: 0.85, color: "var(--ink)" }}>JOIN CODE</div>
           <div
             className="display"
-            style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--cream)" }}
+            style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--ink)" }}
           >
             {scrum.joinCode}
           </div>
@@ -217,15 +217,15 @@ const Lobby = () => {
             <button
               onClick={handleCopyCode}
               className="label-sm"
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline" }}
+              style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}
             >
               COPY
             </button>
-            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>·</span>
+            <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.5 }}>·</span>
             <button
               onClick={handleShare}
               className="label-sm"
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline" }}
+              style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}
             >
               SHARE
             </button>
@@ -234,40 +234,40 @@ const Lobby = () => {
 
         {/* countdown */}
         {countdown && (
-          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "12px 14px", textAlign: "center" }}>
-            <div className="label-sm" style={{ opacity: 0.7 }}>FIRST RACE IN</div>
-            <div className="display" style={{ fontSize: 38, marginTop: 2, color: "var(--ink)" }}>
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "12px 14px", textAlign: "center" }}>
+            <div className="label-sm" style={{ opacity: 0.7, color: "var(--cream)" }}>FIRST RACE IN</div>
+            <div className="display" style={{ fontSize: 38, marginTop: 2, color: "var(--cream)" }}>
               {countdown}
             </div>
           </div>
         )}
 
         {/* players */}
-        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "10px 14px 4px" }}>
-          <div className="label" style={{ marginBottom: 8 }}>Players — {members.length}</div>
+        <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "10px 14px 4px" }}>
+          <div className="label" style={{ marginBottom: 8, color: "var(--cream)" }}>Players — {members.length}</div>
           {members.map((m, i) => (
             <div
               key={i}
               style={{
                 padding: "8px 0",
-                borderTop: "1px dashed var(--ink)",
+                borderTop: "1px dashed rgba(245,232,223,0.3)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{
                   width: 18, height: 18, borderRadius: "50%",
-                  background: m.userId === userId ? "var(--pink)" : "var(--green)",
-                  border: "2px solid var(--ink)", display: "inline-block", flexShrink: 0,
+                  background: m.userId === userId ? "var(--pink)" : "rgba(245,232,223,0.3)",
+                  border: "2px solid rgba(245,232,223,0.5)", display: "inline-block", flexShrink: 0,
                 }} />
-                <span className="display" style={{ fontSize: 16 }}>
+                <span className="display" style={{ fontSize: 16, color: "var(--cream)" }}>
                   {m.handle}
                   {m.userId === userId && (
-                    <span className="label-sm" style={{ opacity: 0.5, marginLeft: 6 }}>(YOU)</span>
+                    <span className="label-sm" style={{ opacity: 0.5, marginLeft: 6, color: "var(--cream)" }}>(YOU)</span>
                   )}
                 </span>
               </div>
-              <span className="label-sm" style={{ opacity: m.submitted ? 1 : 0.4 }}>
+              <span className="label-sm" style={{ opacity: m.submitted ? 1 : 0.4, color: "var(--cream)" }}>
                 {m.submitted ? "✓ PRINTED" : "PICKING…"}
               </span>
             </div>
@@ -275,8 +275,8 @@ const Lobby = () => {
         </div>
 
         {/* horse data toggle (host only) */}
-        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-          <span className="label">Horse Data</span>
+        <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+          <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
           {userId === scrum.hostId ? (
             <button
               onClick={handleToggleDetails}
@@ -293,7 +293,7 @@ const Lobby = () => {
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </button>
           ) : (
-            <span className="label-sm" style={{ opacity: 0.6 }}>
+            <span className="label-sm" style={{ opacity: 0.6, color: "var(--cream)" }}>
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </span>
           )}
@@ -302,7 +302,7 @@ const Lobby = () => {
         {/* CTA buttons */}
         <button
           onClick={() => navigate(`/scrum/${id}/gallop`)}
-          className="btn-retro btn-retro-green"
+          className="btn-retro btn-retro-pink"
         >
           START PICKING →
         </button>
@@ -311,10 +311,10 @@ const Lobby = () => {
           to={`/scrum/${id}/slip`}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            border: "3px solid var(--ink)", background: "var(--cream)",
-            fontFamily: "'Bagel Fat One', system-ui, sans-serif",
+            border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)",
+            fontFamily: "'Bowlby One SC', system-ui, sans-serif",
             fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-            color: "var(--ink)", textDecoration: "none",
+            color: "var(--cream)", textDecoration: "none",
             padding: "14px 18px", marginTop: 10,
           }}
         >
@@ -327,7 +327,7 @@ const Lobby = () => {
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "3px solid var(--ink)", background: "var(--green)", color: "var(--cream)",
-              fontFamily: "'Bagel Fat One', system-ui, sans-serif",
+              fontFamily: "'Bowlby One SC', system-ui, sans-serif",
               fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
               textDecoration: "none", padding: "14px 18px",
               boxShadow: "4px 4px 0 var(--ink)",
@@ -339,18 +339,18 @@ const Lobby = () => {
 
         {/* leave */}
         {confirmLeave ? (
-          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "14px" }}>
-            <p className="label" style={{ textAlign: "center", marginBottom: 12 }}>
+          <div style={{ border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)", padding: "14px" }}>
+            <p className="label" style={{ textAlign: "center", marginBottom: 12, color: "var(--cream)" }}>
               Are you sure you want to leave?
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => setConfirmLeave(false)}
                 style={{
-                  flex: 1, border: "3px solid var(--ink)", background: "var(--cream)",
-                  fontFamily: "'Bagel Fat One', system-ui, sans-serif", fontSize: 14,
+                  flex: 1, border: "3px solid rgba(245,232,223,0.35)", background: "transparent",
+                  fontFamily: "'Bowlby One SC', system-ui, sans-serif", fontSize: 14,
                   letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: "var(--ink)", padding: "10px", cursor: "pointer",
+                  color: "var(--cream)", padding: "10px", cursor: "pointer",
                 }}
               >
                 CANCEL
@@ -360,7 +360,7 @@ const Lobby = () => {
                 disabled={leaving}
                 style={{
                   flex: 1, border: "3px solid var(--ink)", background: "var(--pink)",
-                  fontFamily: "'Bagel Fat One', system-ui, sans-serif", fontSize: 14,
+                  fontFamily: "'Bowlby One SC', system-ui, sans-serif", fontSize: 14,
                   letterSpacing: "0.06em", textTransform: "uppercase",
                   color: "var(--cream)", padding: "10px", cursor: "pointer",
                   opacity: leaving ? 0.4 : 1,
@@ -375,8 +375,8 @@ const Lobby = () => {
             onClick={() => setConfirmLeave(true)}
             className="label"
             style={{
-              border: "2px dashed var(--ink)", background: "transparent",
-              color: "var(--ink)", padding: "12px", width: "100%",
+              border: "2px dashed rgba(245,232,223,0.35)", background: "transparent",
+              color: "var(--cream)", padding: "12px", width: "100%",
               cursor: "pointer", opacity: 0.55, marginTop: 10,
             }}
           >

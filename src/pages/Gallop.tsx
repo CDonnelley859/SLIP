@@ -144,8 +144,8 @@ const Gallop = () => {
 
   if (!currentRace) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-        <p className="label" style={{ color: "var(--ink-soft)" }}>Loading card…</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
+        <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading card…</p>
       </div>
     );
   }
@@ -155,13 +155,13 @@ const Gallop = () => {
     : "—";
 
   return (
-    <div className="min-h-screen flex flex-col halftone-bg" style={{ background: "var(--cream)" }}>
+    <div className="min-h-screen flex flex-col halftone-bg" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header
         style={{
-          background: "var(--cream)",
-          borderBottom: "3px solid var(--ink)",
+          background: "var(--green)",
+          borderBottom: "3px solid rgba(245,232,223,0.25)",
           padding: "16px 18px 10px",
         }}
       >
@@ -170,14 +170,14 @@ const Gallop = () => {
           <button
             onClick={() => navigate(`/scrum/${id}/lobby`)}
             className="label"
-            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--ink)" }}
+            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)" }}
           >
             ← PEN
           </button>
-          <span className="display" style={{ fontSize: 36, lineHeight: 0.9, color: "var(--ink)" }}>
+          <span className="display" style={{ fontSize: 36, lineHeight: 0.9, color: "var(--cream)" }}>
             {card?.trackName ?? "—"}
           </span>
-          <span className="label" style={{ fontSize: 10, color: "var(--ink)", opacity: 0.7 }}>
+          <span className="label" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.7 }}>
             {offTime}
           </span>
         </div>
@@ -195,12 +195,12 @@ const Gallop = () => {
                   className="display"
                   style={{
                     width: 36, height: 36,
-                    border: "2.5px solid var(--ink)",
-                    background: active ? "var(--ink)" : "var(--cream)",
-                    color: active ? "var(--cream)" : locked ? "rgba(26,20,16,0.3)" : "var(--ink)",
+                    border: active ? "2.5px solid var(--cream)" : "2.5px solid rgba(245,232,223,0.35)",
+                    background: active ? "var(--cream)" : "var(--green)",
+                    color: active ? "var(--ink)" : "var(--cream)",
                     fontSize: 16, cursor: "pointer",
                     textDecoration: locked ? "line-through" : "none",
-                    opacity: locked ? 0.5 : 1,
+                    opacity: locked ? 0.45 : 1,
                   }}
                 >
                   {r.raceNumber}
@@ -209,7 +209,7 @@ const Gallop = () => {
             })}
             <span
               className="label-sm"
-              style={{ marginLeft: "auto", opacity: 0.6 }}
+              style={{ marginLeft: "auto", opacity: 0.6, color: "var(--cream)" }}
             >
               ENTRY {String(currentIdx + 1).padStart(2, "0")}/{String(races.length).padStart(2, "0")}
             </span>
@@ -225,12 +225,12 @@ const Gallop = () => {
           </div>
           <div style={{ flex: 1, paddingTop: 4 }}>
             {currentRace.name && (
-              <div className="display" style={{ fontSize: 18, lineHeight: 1, color: "var(--ink)", textWrap: "balance" as any }}>
+              <div className="display" style={{ fontSize: 18, lineHeight: 1, color: "var(--cream)", textWrap: "balance" as any }}>
                 {currentRace.name}
               </div>
             )}
             <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-              <span className="label-sm" style={{ background: "var(--green)", color: "var(--cream)", padding: "3px 6px", border: "none" }}>
+              <span className="label-sm" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "3px 6px", border: "1px solid rgba(245,232,223,0.35)" }}>
                 {card?.raceDate ?? ""}
               </span>
               {isLocked && (
@@ -267,13 +267,13 @@ const Gallop = () => {
                 key={i}
                 style={{
                   display: "flex", gap: 14, padding: "12px 0",
-                  borderBottom: "1px solid rgba(26,20,16,0.12)",
+                  borderBottom: "1px solid rgba(245,232,223,0.12)",
                 }}
               >
-                <div style={{ width: 30, height: 20, background: "var(--cream-2)", flexShrink: 0, marginTop: 2 }} />
+                <div style={{ width: 30, height: 20, background: "rgba(245,232,223,0.15)", flexShrink: 0, marginTop: 2 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ height: 18, width: 160, background: "var(--cream-2)", marginBottom: 6 }} />
-                  <div style={{ height: 10, width: 110, background: "var(--cream-2)" }} />
+                  <div style={{ height: 18, width: 160, background: "rgba(245,232,223,0.15)", marginBottom: 6 }} />
+                  <div style={{ height: 10, width: 110, background: "rgba(245,232,223,0.15)" }} />
                 </div>
               </div>
             ))
@@ -289,9 +289,9 @@ const Gallop = () => {
                 style={{
                   width: "100%", display: "flex", alignItems: "flex-start", gap: 12,
                   padding: "12px", textAlign: "left", marginBottom: 10,
-                  border: "3px solid var(--ink)",
-                  background: selected ? "var(--ink)" : "var(--cream)",
-                  color: selected ? "var(--cream)" : "var(--ink)",
+                  border: selected ? "3px solid var(--cream)" : "2px solid rgba(245,232,223,0.25)",
+                  background: selected ? "var(--cream)" : "var(--green)",
+                  color: selected ? "var(--ink)" : "var(--cream)",
                   cursor: isLocked ? "not-allowed" : "pointer",
                   opacity: isLocked ? 0.6 : 1,
                   boxShadow: selected ? "5px 5px 0 var(--pink)" : "none",
@@ -323,7 +323,7 @@ const Gallop = () => {
                         border: "2px solid var(--pink)",
                         color: "var(--pink)",
                         padding: "2px 6px",
-                        fontFamily: "'Bagel Fat One', system-ui",
+                        fontFamily: "'Bowlby One SC', system-ui",
                         fontSize: 12, letterSpacing: "0.06em",
                         transform: "rotate(-6deg)",
                         background: "transparent",
@@ -344,8 +344,8 @@ const Gallop = () => {
         style={{
           position: "sticky", bottom: 0,
           padding: "12px 18px",
-          borderTop: "3px solid var(--ink)",
-          background: "var(--cream)",
+          borderTop: "3px solid rgba(245,232,223,0.25)",
+          background: "var(--green)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
@@ -355,7 +355,7 @@ const Gallop = () => {
           className="label"
           style={{
             background: "transparent", border: 0, cursor: "pointer",
-            color: "var(--ink)", opacity: currentIdx === 0 ? 0.25 : 1,
+            color: "var(--cream)", opacity: currentIdx === 0 ? 0.25 : 1,
           }}
         >
           ← PREV
@@ -379,7 +379,7 @@ const Gallop = () => {
             className="label"
             style={{
               background: "transparent", border: 0, cursor: "pointer",
-              color: "var(--ink)",
+              color: "var(--cream)",
             }}
           >
             NEXT →

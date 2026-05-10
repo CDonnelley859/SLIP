@@ -209,23 +209,23 @@ const Spindle = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--cream-2)" }}>
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header
         className="sticky top-0 z-50"
         style={{
-          background: "var(--cream)", borderBottom: "3px solid var(--ink)",
+          background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
           padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
         <Link
           to="/"
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "none" }}
+          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
-        <span className="font-display" style={{ fontSize: 24, color: "var(--ink)" }}>THE SPINDLE</span>
+        <span className="font-display" style={{ fontSize: 24, color: "var(--cream)" }}>THE SPINDLE</span>
         <div style={{ minWidth: 70, textAlign: "right" }}>
           {slips.length > 0 && (
             <button
@@ -233,7 +233,7 @@ const Spindle = () => {
               style={{
                 background: "transparent", border: 0, cursor: "pointer",
                 fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "var(--ink)",
+                textTransform: "uppercase", color: "var(--cream)",
                 textDecoration: "underline",
               }}
             >
@@ -258,14 +258,14 @@ const Spindle = () => {
         ) : slips.length === 0 ? (
           <div
             style={{
-              margin: "0 18px", border: "3px solid var(--ink)",
-              padding: "32px", textAlign: "center", background: "var(--cream)",
+              margin: "0 18px", border: "3px solid rgba(245,232,223,0.25)",
+              padding: "32px", textAlign: "center", background: "var(--green)",
             }}
           >
-            <p style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
+            <p style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--cream)" }}>
               No completed slips yet.
             </p>
-            <p style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 8, opacity: 0.5 }}>
+            <p style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 8, opacity: 0.5, color: "var(--cream)" }}>
               Finish a Daily Gallop to see it here.
             </p>
           </div>
@@ -341,7 +341,7 @@ const Spindle = () => {
                         {isFlipped ? (
                           /* STANDINGS */
                           <div style={{ padding: "14px 18px 20px" }} className="animate-fade-in">
-                            <div className="font-display" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.3em", marginBottom: 12, opacity: 0.65, textTransform: "uppercase" }}>
+                            <div className="font-display" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.3em", marginBottom: 12, opacity: 0.65, textTransform: "uppercase", color: "var(--ink)" }}>
                               FINAL STANDINGS
                             </div>
                             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -351,26 +351,26 @@ const Spindle = () => {
                                   style={{
                                     display: "flex", alignItems: "center", justifyContent: "space-between",
                                     padding: "10px 8px",
-                                    background: entry.isMe ? "var(--pink-pale)" : "transparent",
-                                    border: entry.isMe ? "2px dashed var(--ink)" : "none",
-                                    marginBottom: entry.isMe ? 4 : 0,
+                                    background: entry.isMe ? "var(--pink)" : "var(--green)",
+                                    border: entry.isMe ? "2px dashed var(--ink)" : "1px solid rgba(245,232,223,0.2)",
+                                    marginBottom: 4,
                                   }}
                                 >
                                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    <span className="font-display" style={{ fontSize: 16, opacity: 0.45 }}>#{i + 1}</span>
+                                    <span className="font-display" style={{ fontSize: 16, opacity: 0.45, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>#{i + 1}</span>
                                     <div>
-                                      <div className="font-display" style={{ fontSize: 20, lineHeight: 0.9 }}>
+                                      <div className="font-display" style={{ fontSize: 20, lineHeight: 0.9, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                         {entry.handle}
                                         {entry.isMe && <span style={{ fontFamily: "Space Grotesk", fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>}
                                       </div>
-                                      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 3, opacity: 0.6, display: "flex", gap: 6 }}>
+                                      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 3, opacity: 0.6, display: "flex", gap: 6, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                         {entry.wins > 0 && <span>{entry.wins}W</span>}
                                         {entry.places > 0 && <span>{entry.places}P</span>}
                                         {entry.shows > 0 && <span>{entry.shows}S</span>}
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--pink)" : "var(--ink)" }}>
+                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--pink)" : entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                     {entry.points}
                                   </div>
                                 </div>
@@ -389,8 +389,8 @@ const Spindle = () => {
                                 <div
                                   key={i}
                                   style={{
-                                    border: "2px solid var(--ink)",
-                                    background: "var(--cream)",
+                                    border: "1.5px solid rgba(245,232,223,0.25)",
+                                    background: "var(--green)",
                                     padding: "10px 12px",
                                     opacity: isOut ? 0.5 : 1,
                                   }}
@@ -406,17 +406,17 @@ const Spindle = () => {
                                           RACE {String(l.raceNumber).padStart(2, "0")}
                                         </span>
                                         {offTimeStr && (
-                                          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.6 }}>
+                                          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
                                             {offTimeStr}
                                           </span>
                                         )}
-                                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, marginLeft: "auto" }}>
+                                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, marginLeft: "auto", color: "var(--cream)" }}>
                                           +{l.points} PTS
                                         </span>
                                       </div>
                                       <div
                                         className="font-display"
-                                        style={{ fontSize: 16, lineHeight: 1, textDecoration: isOut ? "line-through" : "none" }}
+                                        style={{ fontSize: 16, lineHeight: 1, color: "var(--cream)", textDecoration: isOut ? "line-through" : "none" }}
                                       >
                                         {l.horseNumber}. {l.horseName}
                                       </div>
@@ -433,14 +433,14 @@ const Spindle = () => {
                                         <div
                                           key={pos}
                                           style={{
-                                            flex: 1, border: "1.5px solid var(--ink)", padding: "5px 6px",
-                                            textAlign: "center", background: "var(--cream-2)", opacity: 0.8,
+                                            flex: 1, border: "1.5px solid rgba(245,232,223,0.25)", padding: "5px 6px",
+                                            textAlign: "center", background: "rgba(245,232,223,0.08)", opacity: 0.8,
                                           }}
                                         >
-                                          <div style={{ fontWeight: 700, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                                          <div style={{ fontWeight: 700, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--cream)" }}>
                                             {["1ST", "2ND", "3RD"][pi]}
                                           </div>
-                                          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 2 }}>
+                                          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 2, color: "var(--cream)" }}>
                                             {horse ? `${horse.number}. ${horse.name.slice(0, 12)}` : "—"}
                                           </div>
                                         </div>
@@ -474,8 +474,8 @@ const Spindle = () => {
                     key={s.scrumId}
                     style={{
                       width: 8, height: 8, borderRadius: "50%",
-                      border: "2px solid var(--ink)",
-                      background: i === visibleIdx ? "var(--ink)" : "transparent",
+                      border: "2px solid var(--cream)",
+                      background: i === visibleIdx ? "var(--cream)" : "transparent",
                     }}
                   />
                 ))}
