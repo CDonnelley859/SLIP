@@ -20,6 +20,7 @@ const Lobby = () => {
   const [leaderboard, setLeaderboard] = useState<{ handle: string; points: number; userId: string }[]>([]);
   const [togglingDetails, setTogglingDetails] = useState(false);
 
+  // Countdown to first race
   useEffect(() => {
     if (!card?.postTime) return;
     const target = new Date(card.postTime).getTime();
@@ -52,10 +53,13 @@ const Lobby = () => {
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("scrumId", "==", id))
       );
+
+      // Check who has submitted picks
       const picksSnap = await getDocs(
         query(collection(db, "picks"), where("scrumId", "==", id))
       );
       const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
+
       const memberList = membersSnap.docs.map(d => ({
         handle: d.data().handle ?? "Anonymous",
         userId: d.data().userId,
@@ -63,6 +67,7 @@ const Lobby = () => {
       }));
       setMembers(memberList);
 
+      // Live leaderboard — updates in real time as races settle
       const handleMap: Record<string, string> = {};
       memberList.forEach(m => { handleMap[m.userId] = m.handle; });
 
@@ -119,281 +124,163 @@ const Lobby = () => {
 
   function handleCopyCode() {
     if (!scrum?.joinCode) return;
-    navigator.clipboard.writeText(scrum.joinCode).then(() => toast.success("Code copied!"));
+    navigator.clipboard.writeText(scrum.joinCode).then(() => {
+      toast.success("Code copied!");
+    });
   }
 
   function handleShare() {
     if (!scrum?.joinCode) return;
     const url = `https://slip-racing.vercel.app/join/${scrum.joinCode}`;
+    const text = `Join my SLIP group — tap to join instantly!`;
     if (navigator.share) {
-      navigator.share({ title: "SLIP", text: "Join my SLIP group!", url }).catch(() => {});
+      navigator.share({ title: "SLIP", text, url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url).then(() => toast.success("Invite link copied!"));
     }
   }
 
   if (!scrum) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-        Loading…
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <p className="text-label-caps uppercase text-muted-foreground">Loading…</p>
     </div>
   );
 
-  const label: React.CSSProperties = {
-    fontWeight: 700, fontSize: 9, letterSpacing: "0.18em",
-    textTransform: "uppercase", opacity: 0.7, color: "var(--ink)",
-  };
-  const block: React.CSSProperties = {
-    border: "3px solid var(--ink)",
-    background: "var(--cream)",
-  };
-
   return (
-    <div className="min-h-screen" style={{ background: "var(--cream)" }}>
-
-      {/* ── HEADER ── */}
-      <header
-        className="sticky top-0 z-50"
-        style={{
-          background: "var(--cream)", borderBottom: "3px solid var(--ink)",
-          padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}
-      >
-        <Link
-          to="/"
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "none" }}
-        >
-          ← PADDOCK
-        </Link>
-        <span className="font-display" style={{ fontSize: 26, color: "var(--ink)" }}>THE PEN</span>
-        <div style={{ width: 70 }} />
+    <div className="min-h-screen bg-background">
+      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
+        <Link to="/" className="text-label-caps uppercase hover:underline">← PADDOCK</Link>
+        <h1 className="text-headline-md uppercase">THE PEN</h1>
+        <div className="w-20" />
       </header>
 
-      <main style={{ padding: "16px 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-
-        {/* venue + group */}
-        <div style={{ ...block, padding: "14px 16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <div style={label}>VENUE</div>
-              <div className="font-display" style={{ fontSize: 32, lineHeight: 0.9, marginTop: 2 }}>
-                {card?.trackName ?? "—"}
-              </div>
-              <div style={{ ...label, marginTop: 10 }}>GROUP</div>
-              <div className="font-display" style={{ fontSize: 22, lineHeight: 0.9, marginTop: 2 }}>
-                {scrum.name}
-              </div>
-            </div>
-          </div>
+      <main className="px-4 pt-6 pb-16 max-w-sm mx-auto flex flex-col gap-6">
+        <div className="border-brutalist p-4">
+          <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
+          <span className="text-headline-md uppercase">{card?.trackName ?? "—"}</span>
+          <span className="text-label-caps text-muted-foreground uppercase block mt-2">GROUP</span>
+          <span className="text-body-lg font-bold uppercase">{scrum.name}</span>
         </div>
 
-        {/* join code */}
-        <div
-          className="halftone-bg halftone-loose"
-          style={{
-            border: "3px solid var(--ink)",
-            background: "var(--retro-green)", color: "var(--cream)",
-            padding: "16px 16px 14px", textAlign: "center",
-            boxShadow: "5px 5px 0 var(--ink)",
-          }}
-        >
-          <div style={{ ...label, opacity: 0.85, color: "var(--cream)" }}>JOIN CODE</div>
-          <div
-            className="font-display"
-            style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--cream)" }}
-          >
-            {scrum.joinCode}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 6 }}>
-            <button
-              onClick={handleCopyCode}
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", textDecoration: "underline" }}
-            >
+        {/* Join code with copy + share */}
+        <div className="border-brutalist p-6 flex flex-col items-center gap-2">
+          <span className="text-label-caps text-muted-foreground uppercase">JOIN CODE</span>
+          <span className="text-[56px] font-black tracking-[0.2em] font-mono leading-none">{scrum.joinCode}</span>
+          <div className="flex gap-4 mt-1">
+            <button onClick={handleCopyCode} className="text-label-caps uppercase underline underline-offset-2">
               COPY
             </button>
-            <button
-              onClick={handleShare}
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", textDecoration: "underline" }}
-            >
+            <button onClick={handleShare} className="text-label-caps uppercase underline underline-offset-2">
               SHARE
             </button>
           </div>
         </div>
 
-        {/* countdown */}
+        {/* Countdown to first race */}
         {countdown && (
-          <div style={{ ...block, padding: "12px 14px", textAlign: "center" }}>
-            <div style={label}>FIRST RACE IN</div>
-            <div
-              className="font-display"
-              style={{ fontSize: 40, marginTop: 2, color: "var(--ink)" }}
-            >
-              {countdown}
-            </div>
+          <div className="border-brutalist p-4 flex flex-col items-center gap-1">
+            <span className="text-label-caps text-muted-foreground uppercase">First Race In</span>
+            <span className="text-[40px] font-black font-mono leading-none tracking-tight">{countdown}</span>
           </div>
         )}
 
-        {/* players */}
-        <div style={block}>
-          <div style={{ padding: "10px 14px 8px", borderBottom: "2px solid var(--ink)" }}>
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-              PLAYERS — {members.length}
-            </span>
+        {/* Players with submitted indicator */}
+        <div className="border-brutalist">
+          <div className="px-4 py-2 border-b border-primary/20">
+            <span className="text-label-caps uppercase">PLAYERS — {members.length}</span>
           </div>
           {members.map((m, i) => (
             <div
               key={i}
-              style={{
-                padding: "10px 14px",
-                borderTop: i > 0 ? "1px dashed var(--ink)" : "none",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-              }}
+              className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""}`}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{
-                  width: 16, height: 16, borderRadius: "50%",
-                  background: m.userId === userId ? "var(--retro-pink)" : "var(--retro-green)",
-                  border: "2px solid var(--ink)", display: "inline-block", flexShrink: 0,
-                }} />
-                <span className="font-display" style={{ fontSize: 17 }}>
-                  {m.handle}
-                  {m.userId === userId && (
-                    <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>
-                  )}
-                </span>
-              </div>
-              <span style={{
-                fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
-                opacity: m.submitted ? 1 : 0.35,
-              }}>
-                {m.submitted ? "✓ PRINTED" : "PICKING…"}
-              </span>
+              <span className="text-body-md font-bold uppercase">{m.handle}</span>
+              {m.submitted
+                ? <span className="text-label-caps uppercase text-primary">✓ PRINTED</span>
+                : <span className="text-label-caps uppercase text-muted-foreground opacity-40">PENDING</span>
+              }
             </div>
           ))}
         </div>
 
-        {/* leaderboard */}
+        {/* Live leaderboard — only show once someone has points */}
         {leaderboard.some(r => r.points > 0) && (
-          <div style={block}>
-            <div style={{ padding: "10px 14px 8px", borderBottom: "2px solid var(--ink)" }}>
-              <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                LEADERBOARD
-              </span>
+          <div className="border-brutalist">
+            <div className="px-4 py-2 border-b border-primary/20">
+              <span className="text-label-caps uppercase">Leaderboard</span>
             </div>
             {leaderboard.map((r, i) => (
               <div
                 key={r.userId}
-                style={{
-                  padding: "10px 14px",
-                  borderTop: i > 0 ? "1px dashed var(--ink)" : "none",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  background: r.userId === userId ? "var(--retro-pink-pale)" : "transparent",
-                }}
+                className={`px-4 py-3 flex items-center justify-between ${i > 0 ? "border-t border-primary/20" : ""} ${r.userId === userId ? "bg-primary/5" : ""}`}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span className="font-display" style={{ fontSize: 14, opacity: 0.5 }}>#{i + 1}</span>
-                  <span className="font-display" style={{ fontSize: 18 }}>{r.handle}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-label-caps text-muted-foreground w-5">#{i + 1}</span>
+                  <span className="text-body-md font-bold uppercase">{r.handle}</span>
                 </div>
-                <span className="font-display" style={{ fontSize: 28 }}>{r.points}</span>
+                <span className="text-headline-md font-black">{r.points}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* horse data toggle (host only) */}
-        <div style={{ ...block, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-          <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            Horse Data
-          </span>
+        {/* Horse data mode — host can toggle, members see current setting */}
+        <div className="border-brutalist flex items-center justify-between px-4 h-14">
+          <span className="text-label-caps uppercase">Horse Data</span>
           {userId === scrum.hostId ? (
             <button
               onClick={handleToggleDetails}
               disabled={togglingDetails}
-              style={{
-                border: "2px solid var(--ink)",
-                background: (scrum.showDetails ?? true) ? "var(--ink)" : "transparent",
-                color: (scrum.showDetails ?? true) ? "var(--cream)" : "var(--ink)",
-                fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
-                textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
-                opacity: togglingDetails ? 0.4 : 1,
-              }}
+              className={`text-label-caps uppercase px-3 py-1.5 border transition-none disabled:opacity-40 ${(scrum.showDetails ?? true) ? "bg-primary text-primary-foreground border-primary" : "border-primary/40 text-muted-foreground"}`}
             >
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </button>
           ) : (
-            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6 }}>
+            <span className="text-label-caps uppercase text-muted-foreground">
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </span>
           )}
         </div>
 
-        {/* CTA buttons */}
         <button
           onClick={() => navigate(`/scrum/${id}/gallop`)}
-          className="btn-retro btn-retro-green"
+          className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist transition-none"
         >
           START PICKING →
         </button>
 
         <Link
           to={`/scrum/${id}/slip`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            border: "3px solid var(--ink)", background: "var(--cream)",
-            fontFamily: "Bagel Fat One, system-ui, sans-serif",
-            fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-            color: "var(--ink)", textDecoration: "none",
-            padding: "14px 18px", opacity: 0.7,
-          }}
+          className="w-full h-12 border-brutalist text-label-caps uppercase flex items-center justify-center opacity-60 hover:opacity-100 transition-none"
         >
           SHOW SLIPS
         </Link>
 
+        {/* Host-only results entry */}
         {userId === scrum.hostId && (
           <Link
             to={`/scrum/${id}/host-results`}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "3px solid var(--ink)", background: "var(--retro-green)", color: "var(--cream)",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-              textDecoration: "none", padding: "14px 18px",
-              boxShadow: "4px 4px 0 var(--ink)",
-            }}
+            className="w-full h-12 bg-primary text-primary-foreground text-label-caps uppercase flex items-center justify-center border-brutalist transition-none"
           >
             ENTER RESULTS →
           </Link>
         )}
 
-        {/* leave */}
+        {/* Leave with confirmation */}
         {confirmLeave ? (
-          <div style={{ ...block, padding: "14px" }}>
-            <p style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>
-              Are you sure you want to leave?
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
+          <div className="border-brutalist p-4 flex flex-col gap-3">
+            <p className="text-label-caps uppercase text-center">Are you sure you want to leave?</p>
+            <div className="flex gap-3">
               <button
                 onClick={() => setConfirmLeave(false)}
-                style={{
-                  flex: 1, border: "3px solid var(--ink)", background: "var(--cream)",
-                  fontFamily: "Bagel Fat One, system-ui, sans-serif", fontSize: 14,
-                  letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: "var(--ink)", padding: "10px", cursor: "pointer",
-                }}
+                className="flex-1 h-10 border-brutalist text-label-caps uppercase transition-none"
               >
                 CANCEL
               </button>
               <button
                 onClick={handleLeave}
                 disabled={leaving}
-                style={{
-                  flex: 1, border: "3px solid var(--ink)", background: "var(--retro-pink)",
-                  fontFamily: "Bagel Fat One, system-ui, sans-serif", fontSize: 14,
-                  letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: "var(--cream)", padding: "10px", cursor: "pointer",
-                  opacity: leaving ? 0.4 : 1,
-                }}
+                className="flex-1 h-10 bg-destructive text-white text-label-caps uppercase border-brutalist disabled:opacity-40 transition-none"
               >
                 {leaving ? "LEAVING…" : "YES, LEAVE"}
               </button>
@@ -402,12 +289,7 @@ const Lobby = () => {
         ) : (
           <button
             onClick={() => setConfirmLeave(true)}
-            style={{
-              border: "2px dashed var(--ink)", background: "transparent",
-              fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-              textTransform: "uppercase", color: "var(--ink)",
-              padding: "12px", width: "100%", cursor: "pointer", opacity: 0.55,
-            }}
+            className="w-full h-12 border-brutalist text-label-caps uppercase opacity-60 hover:opacity-100 transition-none"
           >
             LEAVE GROUP
           </button>

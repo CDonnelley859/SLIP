@@ -35,6 +35,7 @@ const Gallop = () => {
       if (!scrumDoc.exists()) return;
       const scrum = scrumDoc.data();
 
+      // Fetch card and races in parallel
       const [cardDoc, racesSnap] = await Promise.all([
         getDoc(doc(db, "cards", scrum.cardId)),
         getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
@@ -43,6 +44,7 @@ const Gallop = () => {
       setShowDetails(scrum.showDetails ?? true);
 
       async function loadRaces(): Promise<Race[]> {
+        // Fetch all races' horses in parallel
         const horseSnaps = await Promise.all(
           racesSnap.docs.map(raceDoc =>
             getDocs(query(collection(db, "horses"), where("raceId", "==", raceDoc.id)))
@@ -74,15 +76,19 @@ const Gallop = () => {
         return sorted;
       }
 
-      try { await syncRunners(scrum.cardId); } catch { }
+      // Sync runners from TRA if any race has no horses yet, then load
+      try { await syncRunners(scrum.cardId); } catch { /* silent */ }
       const loadedRaces = await loadRaces();
 
-      const nowTs = Date.now();
-      const firstOpen = loadedRaces.findIndex(r => new Date(r.offTime).getTime() > nowTs);
+      // Jump to the first race that hasn't started yet
+      const now = Date.now();
+      const firstOpen = loadedRaces.findIndex(r => new Date(r.offTime).getTime() > now);
       if (firstOpen > 0) setCurrentIdx(firstOpen);
 
       const picksSnap = await getDocs(
-        query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", userId))
+        query(collection(db, "picks"),
+          where("scrumId", "==", id),
+          where("userId", "==", userId))
       );
       const map: Record<string, string> = {};
       picksSnap.docs.forEach(p => { map[p.data().raceId] = p.data().horseId; });
@@ -90,29 +96,41 @@ const Gallop = () => {
     })();
   }, [id]);
 
+  // Slide direction for animation
   const slideDir = useRef<"forward" | "back">("forward");
+
   function goNext() { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); }
   function goPrev() { slideDir.current = "back";    setCurrentIdx(i => Math.max(0, i - 1)); }
 
+  // Swipe to navigate between races
   const touchStartX = useRef<number | null>(null);
-  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
-    if (Math.abs(dx) < 50) return;
-    if (dx < 0) { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); }
-    else { slideDir.current = "back"; setCurrentIdx(i => Math.max(0, i - 1)); }
+    if (Math.abs(dx) < 50) return; // too short, ignore
+    if (dx < 0) { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); } // swipe left → next
+    else { slideDir.current = "back"; setCurrentIdx(i => Math.max(0, i - 1)); } // swipe right → prev
   }
 
   const currentRace = races[currentIdx];
   const isLastRace = currentIdx === races.length - 1;
+
+  // A race is locked if its off time has passed
   const raceIsLocked = (r: Race) => new Date(r.offTime).getTime() <= Date.now();
+
+  // Only races that haven't started yet require a pick
   const pickableRaces = races.filter(r => !raceIsLocked(r));
   const allPicked = pickableRaces.length > 0 && pickableRaces.every(r => picks[r.id]);
+  const pickedCount = pickableRaces.filter(r => picks[r.id]).length;
+
   const currentPick = currentRace ? picks[currentRace.id] : undefined;
   const isLocked = currentRace ? raceIsLocked(currentRace) : false;
 
+  // Save pick immediately to Firestore as well as local state
   async function handlePick(raceId: string, horseId: string) {
     if (navigator.vibrate) navigator.vibrate(40);
     setPicks(p => ({ ...p, [raceId]: horseId }));
@@ -120,18 +138,20 @@ const Gallop = () => {
       await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {
         scrumId: id, raceId, horseId, userId, points: null,
       });
-    } catch { }
+    } catch {
+      // non-blocking — pick is still in local state
+    }
   }
 
   async function handleSubmit() {
     if (!allPicked) { toast.error("Pick a horse in every race"); return; }
     setSubmitting(true);
     try {
+      // Batch-write all picks to make sure everything is saved
       const batch = writeBatch(db);
       Object.entries(picks).forEach(([raceId, horseId]) => {
-        batch.set(doc(db, "picks", `${id}_${userId}_${raceId}`), {
-          scrumId: id, raceId, horseId, userId, points: null,
-        });
+        const pickRef = doc(db, "picks", `${id}_${userId}_${raceId}`);
+        batch.set(pickRef, { scrumId: id, raceId, horseId, userId, points: null });
       });
       await batch.commit();
       navigate(`/scrum/${id}/slip`);
@@ -144,10 +164,8 @@ const Gallop = () => {
 
   if (!currentRace) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-          Loading card…
-        </p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-label-caps uppercase text-muted-foreground">Loading card…</p>
       </div>
     );
   }
@@ -157,145 +175,89 @@ const Gallop = () => {
     : "—";
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--cream)" }}>
-
-      {/* ── HEADER ── */}
-      <header
-        className="sticky top-0 z-50"
-        style={{ background: "var(--cream)", borderBottom: "3px solid var(--ink)" }}
-      >
-        <div style={{ padding: "14px 18px 8px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <span className="font-display" style={{ fontSize: 44, lineHeight: 0.9, color: "var(--ink)" }}>SLIP</span>
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--ink-soft)" }}>
-            {card?.raceDate ?? ""}
-          </span>
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="w-full border-b-brutalist bg-background px-4 sticky top-0 z-50">
+        <div className="flex justify-between items-baseline py-2">
+          <h1 className="text-[44px] font-black tracking-tighter leading-none">SLIP</h1>
+          <div className="text-label-caps">{card?.raceDate ?? ""}</div>
         </div>
-        <div
-          style={{
-            borderTop: "1px solid rgba(26,20,16,0.15)",
-            padding: "6px 18px 8px",
-            display: "flex", alignItems: "baseline", justifyContent: "space-between",
-          }}
-        >
-          <span className="font-display" style={{ fontSize: 22, color: "var(--ink)" }}>
+        <div className="border-t border-primary/20 pt-1 pb-2 flex justify-between items-center">
+          <h2 className="text-[22px] font-black uppercase tracking-tight flex-1 leading-tight">
             {card?.trackName ?? "—"}
-          </span>
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          </h2>
+          <span className="text-data-mono text-[16px] border-l border-primary/20 pl-2 ml-2">
             {offTime}
           </span>
         </div>
 
-        {/* race number tabs */}
+        {/* Race progress dots */}
         {races.length > 0 && (
-          <div style={{ padding: "0 18px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div className="flex gap-1 pb-2 flex-wrap">
             {races.map((r, i) => {
               const locked = raceIsLocked(r);
-              const active = i === currentIdx;
-              const picked = picks[r.id];
               return (
                 <button
                   key={r.id}
                   onClick={() => setCurrentIdx(i)}
-                  style={{
-                    width: 34, height: 34,
-                    border: "2.5px solid var(--ink)",
-                    background: active ? "var(--ink)" : locked ? "transparent" : picked ? "rgba(26,20,16,0.12)" : "var(--cream)",
-                    color: active ? "var(--cream)" : locked ? "rgba(26,20,16,0.3)" : "var(--ink)",
-                    fontFamily: "Bagel Fat One, system-ui, sans-serif",
-                    fontSize: 15, cursor: "pointer",
-                    textDecoration: locked ? "line-through" : "none",
-                    opacity: locked ? 0.5 : 1,
-                  }}
+                  className={`w-5 h-5 flex items-center justify-center text-[9px] font-mono border transition-none
+                    ${i === currentIdx
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : locked
+                        ? "bg-muted border-muted-foreground/20 text-muted-foreground/40 line-through"
+                        : picks[r.id]
+                          ? "bg-primary/20 border-primary/40 text-primary"
+                          : "bg-background border-primary/20 text-muted-foreground"
+                    }`}
                 >
                   {r.raceNumber}
                 </button>
               );
             })}
-            <span
-              style={{
-                alignSelf: "center", marginLeft: "auto",
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: 10, letterSpacing: "0.14em", opacity: 0.55,
-              }}
-            >
-              ENTRY {String(currentIdx + 1).padStart(2, "0")}/{String(races.length).padStart(2, "0")}
-            </span>
           </div>
         )}
       </header>
 
-      {/* ── RACE TITLE ── */}
-      <div
-        style={{
-          padding: "16px 18px 12px",
-          borderBottom: "3px solid var(--ink)",
-          display: "flex", gap: 12, alignItems: "flex-start",
-        }}
-      >
-        <div>
-          <div
-            className="font-display"
-            style={{ fontSize: 64, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "3px 3px 0 var(--ink)" }}
-          >
-            R
-          </div>
-          <div
-            className="font-display"
-            style={{ fontSize: 64, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "3px 3px 0 var(--ink)", marginTop: -8 }}
-          >
-            {String(currentRace.raceNumber).padStart(2, "0")}
-          </div>
-        </div>
-        <div style={{ flex: 1, paddingTop: 6 }}>
-          {currentRace.name && (
-            <div className="font-display" style={{ fontSize: 18, lineHeight: 1.1, color: "var(--ink)" }}>
-              {currentRace.name}
-            </div>
-          )}
-          {isLocked && (
-            <span
-              style={{
-                display: "inline-block", marginTop: 8,
-                border: "2px solid var(--retro-pink)", color: "var(--retro-pink)",
-                fontFamily: "JetBrains Mono, monospace", fontSize: 10,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                padding: "3px 8px",
-              }}
-            >
-              LOCKED
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ── HORSE LIST ── */}
       <main
-        className="flex-grow"
-        style={{ paddingBottom: 80 }}
+        className="flex-grow px-4 pt-4 pb-[80px]"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        <div className="flex justify-between items-end border-b-brutalist mb-3 pb-2">
+          <div>
+            <span className="text-label-caps text-muted-foreground uppercase">
+              Entry {String(currentIdx + 1).padStart(2, "0")} of {String(races.length).padStart(2, "0")}
+            </span>
+            <h3 className="text-[48px] font-black uppercase leading-none">
+              RACE {String(currentRace.raceNumber).padStart(2, "0")}
+            </h3>
+          </div>
+          <div className="text-right pb-1">
+            {currentRace.name && (
+              <div className="text-headline-md leading-none uppercase">{currentRace.name}</div>
+            )}
+            {isLocked && (
+              <div className="text-label-caps text-destructive uppercase mt-1">LOCKED</div>
+            )}
+          </div>
+        </div>
+
         <div
           key={currentIdx}
-          style={{ borderBottom: "3px solid var(--ink)" }}
-          className={slideDir.current === "forward" ? "animate-slide-forward" : "animate-slide-back"}
+          className={`border-brutalist divide-y divide-primary/20 bg-background ${slideDir.current === "forward" ? "animate-slide-forward" : "animate-slide-back"}`}
         >
           {currentRace.horses.length === 0 && (
-            [...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex", gap: 14, padding: "12px 18px",
-                  borderBottom: "1px solid rgba(26,20,16,0.12)",
-                }}
-              >
-                <div style={{ width: 30, height: 20, background: "var(--cream-2)", flexShrink: 0, marginTop: 2 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ height: 18, width: 160, background: "var(--cream-2)", marginBottom: 6 }} />
-                  <div style={{ height: 10, width: 110, background: "var(--cream-2)" }} />
+            /* Skeleton runners while loading */
+            <>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-start gap-4 px-4 py-3">
+                  <div className="w-8 h-6 bg-muted animate-pulse shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <div className="h-5 w-40 bg-muted animate-pulse mb-2" />
+                    <div className="h-3 w-28 bg-muted animate-pulse" />
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </>
           )}
           {currentRace.horses.map((h) => {
             const selected = currentPick === h.id;
@@ -305,55 +267,39 @@ const Gallop = () => {
                 type="button"
                 disabled={isLocked}
                 onClick={() => !isLocked && handlePick(currentRace.id, h.id)}
-                style={{
-                  width: "100%", display: "flex", alignItems: "flex-start", gap: 14,
-                  padding: "12px 18px", textAlign: "left",
-                  border: 0, borderBottom: "1px solid rgba(26,20,16,0.12)",
-                  background: selected ? "var(--ink)" : "var(--cream)",
-                  color: selected ? "var(--cream)" : "var(--ink)",
-                  cursor: isLocked ? "not-allowed" : "pointer",
-                  opacity: isLocked ? 0.6 : 1,
-                  position: "relative",
-                  boxShadow: selected ? "inset 0 0 0 0" : "none",
-                  transition: "background 80ms",
-                }}
+                className={`w-full flex items-start gap-4 px-4 py-3 text-left relative transition-none
+                  ${selected ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}
+                  ${isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
               >
                 {selected && (
-                  <div className="x-stamp" style={{ position: "absolute", inset: 0, opacity: 0.08, pointerEvents: "none", color: "var(--cream)" }} />
+                  <div className="absolute inset-0 x-stamp opacity-10 pointer-events-none" />
                 )}
-                <span
-                  className="font-display"
-                  style={{ fontSize: 32, lineHeight: 0.9, minWidth: 38, paddingTop: 2 }}
-                >
-                  {h.number}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="font-display" style={{ fontSize: 18, lineHeight: 1 }}>{h.name}</div>
+                <span className="text-headline-md w-8 text-center shrink-0 pt-1">{h.number}</span>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-body-lg uppercase font-bold leading-tight">{h.name}</div>
                   {showDetails && (
-                    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 5, lineHeight: 1.5, opacity: 0.7 }}>
-                      {h.jockey && <div>J: {h.jockey}</div>}
-                      {h.lbs && <div>WT: {formatWeight(h.lbs)}</div>}
-                      {h.trainer && <div>T: {h.trainer}</div>}
-                    </div>
+                    <>
+                      {h.jockey && (
+                        <div className="text-label-caps opacity-60 mt-0.5">J: {h.jockey}</div>
+                      )}
+                      {h.lbs && (
+                        <div className="text-label-caps opacity-60">WT: {formatWeight(h.lbs)}</div>
+                      )}
+                      {h.trainer && (
+                        <div className="text-label-caps opacity-60">T: {h.trainer}</div>
+                      )}
+                      {h.owner && (
+                        <div className="text-label-caps opacity-60 truncate">O: {h.owner}</div>
+                      )}
+                    </>
                   )}
                 </div>
-                <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, paddingTop: 2 }}>
+                <div className="shrink-0 flex flex-col items-end gap-1 pt-1">
                   {showDetails && h.form && (
-                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, letterSpacing: "0.1em" }}>
-                      {h.form}
-                    </span>
+                    <span className="text-data-mono text-xs tracking-wider opacity-80">{h.form}</span>
                   )}
                   {selected && (
-                    <span
-                      style={{
-                        border: "2px solid currentColor", padding: "2px 6px",
-                        fontFamily: "Bagel Fat One, system-ui, sans-serif",
-                        fontSize: 12, letterSpacing: "0.06em",
-                        color: "var(--retro-pink)",
-                      }}
-                    >
-                      INKED
-                    </span>
+                    <span className="text-label-caps border border-current px-1 py-0.5">INKED</span>
                   )}
                 </div>
               </button>
@@ -362,53 +308,27 @@ const Gallop = () => {
         </div>
       </main>
 
-      {/* ── FOOTER NAV ── */}
-      <div
-        className="fixed bottom-0 left-0 w-full z-50"
-        style={{
-          borderTop: "3px solid var(--ink)", background: "var(--cream)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 18px", height: 60,
-        }}
-      >
+      <div className="fixed bottom-0 left-0 w-full h-[60px] z-50 flex items-center justify-between border-t-brutalist bg-background px-4">
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
-          style={{
-            background: "transparent", border: 0, cursor: "pointer",
-            fontFamily: "Bagel Fat One, system-ui, sans-serif",
-            fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-            color: "var(--ink)", opacity: currentIdx === 0 ? 0.25 : 1,
-          }}
+          className="text-label-caps uppercase disabled:opacity-30 transition-none"
         >
           ← PREV
         </button>
-
+        <div />
         {isLastRace ? (
           <button
             onClick={handleSubmit}
             disabled={submitting || !allPicked}
-            style={{
-              border: "2.5px solid var(--ink)",
-              background: "var(--retro-green)", color: "var(--cream)",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-              padding: "10px 18px", cursor: "pointer",
-              boxShadow: "3px 3px 0 var(--ink)",
-              opacity: (submitting || !allPicked) ? 0.35 : 1,
-            }}
+            className="text-label-caps uppercase disabled:opacity-30 transition-none"
           >
-            {submitting ? "PRINTING…" : "PRINT SLIP →"}
+            {submitting ? "PRINTING…" : "PRINT →"}
           </button>
         ) : (
           <button
             onClick={goNext}
-            style={{
-              background: "transparent", border: 0, cursor: "pointer",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-              color: "var(--ink)",
-            }}
+            className="text-label-caps uppercase transition-none"
           >
             NEXT →
           </button>

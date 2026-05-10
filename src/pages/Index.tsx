@@ -31,17 +31,20 @@ const Index = () => {
     return () => clearInterval(t);
   }, []);
 
+  // Create group (inline)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
   const [creating, setCreating] = useState(false);
 
+  // Join group (inline)
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState(handle);
   const [joining, setJoining] = useState(false);
 
   useEffect(() => { loadData(); }, [userId, location.key]);
 
+  // Keep name fields in sync with handle when handle changes
   useEffect(() => {
     setCreateName(h => h || handle);
     setJoinName(h => h || handle);
@@ -53,6 +56,7 @@ const Index = () => {
       query(collection(db, "cards"), where("raceDate", "==", today))
     );
 
+    // No cards yet — auto-sync from TRA instead of asking the user to refresh
     if (cardsSnap.empty) {
       setSyncing(true);
       try {
@@ -60,7 +64,7 @@ const Index = () => {
         cardsSnap = await getDocs(
           query(collection(db, "cards"), where("raceDate", "==", today))
         );
-      } catch { } finally {
+      } catch { /* silent — cards stay empty */ } finally {
         setSyncing(false);
       }
     }
@@ -79,10 +83,12 @@ const Index = () => {
       query(collection(db, "scrumMembers"), where("userId", "==", userId))
     );
 
+    // Fetch all scrums in parallel
     const scrumDocs = await Promise.all(
       membersSnap.docs.map(m => getDoc(doc(db, "scrums", m.data().scrumId)))
     );
 
+    // Sync results for all unique active cards so progress bars are fresh
     const uniqueCardIds = [...new Set(
       membersSnap.docs
         .map((m, i) => scrumDocs[i].exists() ? scrumDocs[i].data().cardId : null)
@@ -90,6 +96,7 @@ const Index = () => {
     )];
     await Promise.all(uniqueCardIds.map(cid => syncResults(cid).catch(() => {})));
 
+    // For each valid scrum, fetch card + races + picks in parallel
     const slipResults = await Promise.all(
       membersSnap.docs.map(async (m, i) => {
         const scrumId = m.data().scrumId;
@@ -112,11 +119,12 @@ const Index = () => {
         const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
         if (settled === total && total > 0) return null;
 
-        const nowTs = Date.now();
+        // Next unsettled race by off time
+        const now = Date.now();
         const nextRace = racesSnap.docs
           .filter(r => r.data().status !== "settled" && r.data().offTime)
           .map(r => r.data().offTime as string)
-          .filter(t => new Date(t).getTime() > nowTs)
+          .filter(t => new Date(t).getTime() > now)
           .sort()[0] ?? null;
 
         return {
@@ -159,16 +167,19 @@ const Index = () => {
     if (!selectedCard || !groupName.trim()) return;
     setCreating(true);
     try {
-      const code = genCode();
+      const joinCode = genCode();
       const scrumId = crypto.randomUUID();
       await setDoc(doc(db, "scrums", scrumId), {
-        cardId: selectedCard.id, hostId: userId, name: groupName.trim(),
-        joinCode: code, showDetails: true,
+        cardId: selectedCard.id,
+        hostId: userId,
+        name: groupName.trim(),
+        joinCode,
+        showDetails: true,
       });
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId, handle: createName.trim() || handle,
       });
-      toast.success(`Group code: ${code}`);
+      toast.success(`Group code: ${joinCode}`);
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
       toast.error(err.message);
@@ -213,138 +224,66 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: "var(--cream)" }}>
-
-      {/* ── HEADER ── */}
-      <header
-        className="halftone-bg sticky top-0 z-50"
-        style={{
-          background: "var(--cream)",
-          borderBottom: "3px solid var(--ink)",
-          padding: "16px 18px 12px",
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <Link
-            to="/spindle"
-            style={{
-              fontFamily: "Space Grotesk", fontWeight: 700,
-              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--ink)", textDecoration: "underline",
-            }}
-          >
-            SPINDLE
-          </Link>
-          <h1
-            className="font-display"
-            style={{ fontSize: 56, lineHeight: 0.85, color: "var(--ink)" }}
-          >
-            SLIP
-          </h1>
-          <Link
-            to="/stats"
-            style={{
-              fontFamily: "Space Grotesk", fontWeight: 700,
-              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--ink)", textDecoration: "underline",
-            }}
-          >
-            THE FORM
-          </Link>
-        </div>
+    <div className="min-h-screen bg-background pb-20">
+      <header className="bg-background border-b-brutalist flex justify-between items-center w-full h-16 px-4 sticky top-0 z-50">
+        <Link to="/spindle" className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] w-20">
+          SPINDLE
+        </Link>
+        <h1 className="text-headline-xl font-black tracking-tighter uppercase">SLIP</h1>
+        <Link to="/stats" className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] w-20 text-right">
+          THE FORM
+        </Link>
       </header>
 
-      <main style={{ padding: "0 18px" }}>
-
-        {/* ── TOP TRACKS ── */}
-        <section style={{ marginTop: 20 }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)" }}>
-              Top Tracks
-            </span>
+      <main className="px-4">
+        {/* Track tiles */}
+        <section className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-label-caps uppercase">Top Tracks</h2>
             <button
               onClick={handleRefresh}
               disabled={syncing}
-              style={{
-                background: "transparent", border: 0, color: "var(--ink)",
-                fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-                textTransform: "uppercase", textDecoration: "underline",
-                cursor: "pointer", opacity: syncing ? 0.4 : 1,
-              }}
+              className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px] disabled:opacity-40"
             >
-              {syncing ? "SYNCING…" : "↻ REFRESH"}
+              {syncing ? "SYNCING…" : "REFRESH"}
             </button>
           </div>
 
           {cards.length === 0 && !syncing ? (
-            <div
-              className="animate-fade-in"
-              style={{
-                border: "3px solid var(--ink)", padding: "24px",
-                textAlign: "center", background: "var(--cream)",
-              }}
-            >
-              <p style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                No races today.
-              </p>
+            <div className="border-brutalist p-6 text-center animate-fade-in">
+              <p className="text-body-md text-muted-foreground">No races today.</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 10,
-              }}
-            >
-              {(syncing && cards.length === 0 ? [0, 1, 2, 3] : filteredCards).map((c, i) => {
-                if (typeof c === "number") {
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        border: "3px solid var(--ink)", padding: "12px 12px 14px",
-                        background: "var(--cream)", height: 90,
-                      }}
-                    >
-                      <div style={{ height: 8, width: 80, background: "var(--cream-2)", marginBottom: 8 }} />
-                      <div style={{ height: 20, width: 100, background: "var(--cream-2)" }} />
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 pb-2 gap-3 px-4 scroll-px-4">
+              {syncing && cards.length === 0 ? (
+                /* Skeleton track tiles */
+                [0, 1, 2].map(i => (
+                  <div key={i} className="flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32">
+                    <div className="h-7 w-48 bg-muted animate-pulse" />
+                    <div className="flex gap-4">
+                      <div className="h-3 w-16 bg-muted animate-pulse" />
+                      <div className="h-3 w-16 bg-muted animate-pulse" />
                     </div>
-                  );
-                }
-                const card = c as Card;
-                const isSelected = selectedCard?.id === card.id;
-                const firstRace = card.postTime
-                  ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                  </div>
+                ))
+              ) : filteredCards.map((c) => {
+                const isSelected = selectedCard?.id === c.id;
+                const firstRace = c.postTime
+                  ? new Date(c.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
                 return (
                   <button
-                    key={card.id}
-                    onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(card)}
-                    className="halftone-bg halftone-loose animate-fade-in"
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 12px 14px",
-                      border: "3px solid var(--ink)",
-                      background: isSelected ? "var(--retro-green)" : "var(--cream)",
-                      color: isSelected ? "var(--cream)" : "var(--ink)",
-                      cursor: "pointer",
-                      boxShadow: isSelected ? "4px 4px 0 var(--ink)" : "none",
-                      transition: "all 120ms",
-                    }}
+                    key={c.id}
+                    onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(c)}
+                    className={`flex-shrink-0 w-[calc(100vw-2rem)] snap-center border-brutalist p-4 flex flex-col justify-between h-32 text-left transition-none animate-fade-in
+                      ${isSelected ? "bg-primary text-primary-foreground" : "bg-background"}`}
                   >
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", opacity: 0.7, marginBottom: 4, textTransform: "uppercase" }}>
-                      TODAY
-                    </div>
-                    <div
-                      className="font-display"
-                      style={{ fontSize: 20, lineHeight: 0.9 }}
-                    >
-                      {card.trackName}
-                    </div>
-                    <div style={{ marginTop: 10, fontSize: 11, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.08em", display: "flex", gap: 6 }}>
-                      <span>{firstRace}</span>
-                      <span>·</span>
-                      <span>{card.raceCount} RACES</span>
+                    <span className="text-headline-md uppercase leading-tight">
+                      {c.trackName}
+                    </span>
+                    <div className={`flex gap-4 items-end ${isSelected ? "opacity-70" : "text-muted-foreground"}`}>
+                      <span className="text-label-caps uppercase">{firstRace}</span>
+                      <span className="text-label-caps uppercase">{c.raceCount} RACES</span>
                     </div>
                   </button>
                 );
@@ -353,252 +292,190 @@ const Index = () => {
           )}
         </section>
 
-        {/* ── SEARCH ── */}
-        <section style={{ marginTop: 14 }}>
-          <div style={{ border: "3px solid var(--ink)", display: "flex", height: 48, background: "var(--cream)" }}>
+        {/* Search */}
+        <section className="mt-4">
+          <div className="relative flex border-brutalist h-14">
+            <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              SEARCH_TRACKS
+            </label>
             <input
               value={trackSearch}
               onChange={e => setTrackSearch(e.target.value)}
-              placeholder="SEARCH TRACKS…"
-              style={{
-                flex: 1, background: "transparent", border: 0,
-                padding: "0 14px", fontSize: 13, fontFamily: "JetBrains Mono, monospace",
-                letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "var(--ink)", outline: "none",
-              }}
+              placeholder="ENTER TRACK NAME"
+              className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
             />
           </div>
         </section>
 
-        {/* ── JOIN / CREATE ── */}
-        <section style={{ marginTop: 14 }}>
-          {/* perf divider with label */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", whiteSpace: "nowrap", color: "var(--ink)" }}>
-              {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "OR JOIN A CREW"}
+        {/* Single box: JOIN GROUP or CREATE GROUP depending on track selection */}
+        <section className="mt-4">
+          <div className="border-brutalist relative">
+            {/* Label + cancel (create mode only) */}
+            <span className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+              {selectedCard ? "CREATE GROUP" : "JOIN GROUP"}
             </span>
-            <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
             {selectedCard && (
-              <button
-                onClick={() => setSelectedCard(null)}
-                style={{
-                  background: "transparent", border: 0, cursor: "pointer",
-                  fontSize: 14, color: "var(--ink)", opacity: 0.5,
-                }}
-              >✕</button>
-            )}
-          </div>
-
-          {selectedCard ? (
-            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              <input
-                autoFocus
-                value={groupName}
-                onChange={e => setGroupName(e.target.value)}
-                placeholder="GROUP NAME"
-                maxLength={40}
-                style={{
-                  border: "3px solid var(--ink)", borderBottom: "1.5px solid var(--ink)",
-                  background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
-                }}
-              />
-              <input
-                value={createName}
-                onChange={e => setCreateName(e.target.value)}
-                placeholder="YOUR NAME"
-                maxLength={30}
-                style={{
-                  border: "3px solid var(--ink)", borderTop: 0, borderBottom: "1.5px solid var(--ink)",
-                  background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={creating || !groupName.trim() || !createName.trim()}
-                className="btn-retro btn-retro-green"
-                style={{ marginTop: 8 }}
-              >
-                {creating ? "CREATING…" : "CREATE GROUP →"}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value)}
-                  placeholder="JOIN CODE"
-                  maxLength={4}
-                  style={{
-                    flex: 1, border: "3px solid var(--ink)",
-                    background: "var(--cream)", padding: "12px 14px",
-                    fontSize: 20, fontFamily: "JetBrains Mono, monospace",
-                    letterSpacing: "0.3em", textTransform: "uppercase",
-                    color: "var(--ink)", outline: "none",
-                  }}
-                />
+              <div className="flex items-center justify-between px-4 h-8 border-b border-primary/20">
+                <span className="text-label-caps text-muted-foreground uppercase text-[10px]">
+                  {selectedCard.trackName}
+                </span>
                 <button
-                  type="submit"
-                  disabled={joining || joinCode.length < 4}
-                  style={{
-                    border: "3px solid var(--ink)",
-                    background: "var(--retro-pink)", color: "var(--cream)",
-                    fontFamily: "Bagel Fat One, system-ui, sans-serif",
-                    fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-                    padding: "12px 18px", cursor: "pointer",
-                    boxShadow: "4px 4px 0 var(--ink)",
-                    opacity: (joining || joinCode.length < 4) ? 0.4 : 1,
-                  }}
+                  onClick={() => setSelectedCard(null)}
+                  className="text-label-caps uppercase opacity-40"
                 >
-                  {joining ? "…" : "JOIN"}
+                  ✕
                 </button>
               </div>
-              <input
-                value={joinName}
-                onChange={e => setJoinName(e.target.value)}
-                placeholder="YOUR NAME"
-                maxLength={30}
-                style={{
-                  border: "3px solid var(--ink)", borderTop: 0,
-                  background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
-                }}
-              />
-            </form>
-          )}
+            )}
+
+            {selectedCard ? (
+              /* CREATE mode */
+              <form onSubmit={handleCreate}>
+                <div className="flex border-b border-primary/20 h-14">
+                  <input
+                    autoFocus
+                    value={groupName}
+                    onChange={e => setGroupName(e.target.value)}
+                    placeholder="GROUP NAME"
+                    maxLength={40}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <div className="relative flex border-b border-primary/20 h-14">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">YOUR_NAME</label>
+                  <input
+                    value={createName}
+                    onChange={e => setCreateName(e.target.value)}
+                    placeholder="YOUR NAME IN THIS GROUP"
+                    maxLength={30}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={creating || !groupName.trim() || !createName.trim()}
+                  className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
+                >
+                  {creating ? "CREATING…" : "CREATE GROUP"}
+                </button>
+              </form>
+            ) : (
+              /* JOIN mode */
+              <form onSubmit={handleJoin}>
+                <div className="flex border-b border-primary/20 h-14">
+                  <input
+                    value={joinCode}
+                    onChange={e => setJoinCode(e.target.value)}
+                    placeholder="ENTER JOIN CODE"
+                    maxLength={4}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest"
+                  />
+                </div>
+                <div className="relative flex border-b border-primary/20 h-14">
+                  <label className="absolute top-[-9px] left-4 bg-background px-2 text-label-caps text-[10px] uppercase z-10">YOUR_NAME</label>
+                  <input
+                    value={joinName}
+                    onChange={e => setJoinName(e.target.value)}
+                    placeholder="YOUR NAME IN THIS GROUP"
+                    maxLength={30}
+                    className="flex-1 bg-transparent px-4 text-body-md uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={joining || joinCode.length < 4 || !joinName.trim()}
+                  className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase disabled:opacity-40 transition-none"
+                >
+                  {joining ? "JOINING…" : "JOIN GROUP"}
+                </button>
+              </form>
+            )}
+          </div>
         </section>
 
-        {/* ── ACTIVE SLIPS ── */}
-        <section style={{ marginTop: 24 }}>
-          <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", display: "block", marginBottom: 10 }}>
-            Active Slips
-          </span>
-
+        {/* Active slips */}
+        <section className="mt-8">
+          <h2 className="text-label-caps uppercase mb-2">Active Slips</h2>
           {slipsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="flex flex-col gap-[-2.67px]">
               {[0, 1].map(i => (
-                <div
-                  key={i}
-                  style={{
-                    border: "3px solid var(--ink)", padding: "14px 16px",
-                    background: "var(--retro-pink-pale)",
-                  }}
-                >
-                  <div style={{ height: 8, width: 60, background: "var(--cream-2)", marginBottom: 6 }} />
-                  <div style={{ height: 22, width: 140, background: "var(--cream-2)", marginBottom: 10 }} />
-                  <div style={{ height: 8, width: 80, background: "var(--cream-2)" }} />
+                <div key={i} className={`border-brutalist p-4 ${i > 0 ? "mt-[-2.67px]" : ""}`}>
+                  <div className="h-3 w-12 bg-muted animate-pulse mb-1" />
+                  <div className="h-6 w-36 bg-muted animate-pulse mb-3" />
+                  <div className="h-3 w-20 bg-muted animate-pulse mb-1" />
+                  <div className="h-5 w-28 bg-muted animate-pulse" />
                 </div>
               ))}
             </div>
           ) : activeSlips.length === 0 ? (
-            <div
-              className="animate-fade-in"
-              style={{
-                border: "3px solid var(--ink)", padding: "24px",
-                textAlign: "center", background: "var(--cream)",
-              }}
-            >
-              <p style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                No active slips. Pick a track above or enter a join code.
+            <div className="border-brutalist p-6 text-center animate-fade-in">
+              <p className="text-body-md text-muted-foreground">
+                No active slips. Pick a track above or enter a group code.
               </p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {activeSlips.map(s => (
+            <div className="flex flex-col">
+              {activeSlips.map((s, i) => (
                 <div
                   key={s.scrumId}
-                  className="halftone-bg halftone-pink animate-fade-in"
-                  style={{
-                    border: "3px solid var(--ink)",
-                    background: "var(--retro-pink-pale)",
-                    boxShadow: "5px 5px 0 var(--ink)",
-                  }}
+                  className={`border-brutalist bg-background animate-fade-in ${i > 0 ? "mt-[-2.67px]" : ""}`}
                 >
                   <Link
                     to={`/scrum/${s.scrumId}/lobby`}
-                    style={{ display: "block", padding: "14px 16px", textDecoration: "none", color: "var(--ink)" }}
+                    className="p-4 flex flex-col gap-3 block"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 2 }}>
-                          VENUE
-                        </div>
-                        <div className="font-display" style={{ fontSize: 28, lineHeight: 0.9, marginBottom: 8 }}>
-                          {s.trackName}
-                        </div>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 2 }}>
-                          GROUP
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                          {s.scrumName}
-                        </div>
+                    <div>
+                      <span className="text-label-caps text-muted-foreground uppercase block">VENUE</span>
+                      <span className="text-headline-md uppercase">{s.trackName}</span>
+                      <div className="mt-1">
+                        <span className="text-label-caps text-muted-foreground uppercase block">GROUP</span>
+                        <span className="text-body-md font-bold uppercase">{s.scrumName}</span>
                       </div>
                     </div>
-
-                    {/* perf divider */}
-                    <div className="perf" style={{ margin: "10px 0", opacity: 0.4 }} />
-
-                    <div className="flex items-center justify-between">
-                      {/* countdown */}
-                      {s.nextRaceTime && (() => {
-                        const diff = new Date(s.nextRaceTime).getTime() - now;
-                        if (diff <= 0) return null;
-                        const h = Math.floor(diff / 3600000);
-                        const m = Math.floor((diff % 3600000) / 60000);
-                        const sec = Math.floor((diff % 60000) / 1000);
-                        const label = h > 0
-                          ? `${h}H ${String(m).padStart(2, "0")}M`
-                          : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-                        return (
-                          <div>
-                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7 }}>NEXT RACE</div>
-                            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{label}</div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* results bar */}
-                      {s.settled > 0 && (
-                        <div style={{ flex: 1, marginLeft: 16 }}>
-                          <div className="flex justify-between" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4, opacity: 0.7 }}>
-                            <span>RESULTS</span>
-                            <span>{s.settled}/{s.total}</span>
-                          </div>
-                          <div style={{ height: 8, border: "2px solid var(--ink)", background: "transparent", padding: "1px" }}>
-                            <div style={{ height: "100%", background: "var(--retro-green)", width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }} />
-                          </div>
+                    {s.nextRaceTime && (() => {
+                      const diff = new Date(s.nextRaceTime).getTime() - now;
+                      if (diff <= 0) return null;
+                      const h = Math.floor(diff / 3600000);
+                      const m = Math.floor((diff % 3600000) / 60000);
+                      const sec = Math.floor((diff % 60000) / 1000);
+                      const label = h > 0
+                        ? `${h}H ${String(m).padStart(2, "0")}M`
+                        : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+                      return (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-label-caps text-muted-foreground uppercase">NEXT RACE</span>
+                          <span className="text-body-md font-black font-mono">{label}</span>
                         </div>
-                      )}
-
-                      <div className="flex items-center gap-1" style={{ marginLeft: 12 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>SHOW SLIPS</span>
-                        <span style={{ fontSize: 18 }}>→</span>
+                      );
+                    })()}
+                    {s.settled > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between text-label-caps uppercase">
+                          <span>RESULTS</span>
+                          <span>{s.settled}/{s.total}</span>
+                        </div>
+                        <div className="h-3 w-full border border-primary p-[1px]">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </Link>
-
-                  {/* leave button */}
-                  <div style={{ borderTop: "2px dashed var(--ink)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
+                  <div className="border-t border-primary/20 px-4 py-2 flex justify-between">
                     <button
                       onClick={() => handleLeave(s.scrumId)}
-                      style={{
-                        background: "transparent", border: 0, cursor: "pointer",
-                        fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-                        textTransform: "uppercase", color: "var(--ink)", opacity: 0.5,
-                        textDecoration: "underline",
-                      }}
+                      className="text-label-caps uppercase text-destructive underline underline-offset-2"
                     >
                       LEAVE
                     </button>
+                    <Link
+                      to={`/scrum/${s.scrumId}/slip`}
+                      className="text-label-caps uppercase underline underline-offset-2"
+                    >
+                      SHOW SLIPS
+                    </Link>
                   </div>
                 </div>
               ))}
