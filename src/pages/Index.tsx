@@ -102,7 +102,7 @@ const Index = () => {
         .filter(Boolean) as string[]
     )];
     // Skip virtual card — its results are handled by cron-virtual-track
-    await Promise.all(uniqueCardIds.filter(cid => cid !== "virtual-park").map(cid => syncResults(cid).catch(() => {})));
+    await Promise.all(uniqueCardIds.filter(cid => cid !== "blotto-park").map(cid => syncResults(cid).catch(() => {})));
 
     const slipResults = await Promise.all(
       membersSnap.docs.map(async (m, i) => {
