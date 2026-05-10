@@ -219,7 +219,7 @@ const Index = () => {
       <header
         className="halftone-bg sticky top-0 z-50"
         style={{
-          background: "var(--cream)",
+          background: "var(--retro-green-deep)",
           borderBottom: "3px solid var(--ink)",
           padding: "16px 18px 12px",
         }}
@@ -230,14 +230,14 @@ const Index = () => {
             style={{
               fontFamily: "Space Grotesk", fontWeight: 700,
               fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--ink)", textDecoration: "underline",
+              color: "var(--cream)", textDecoration: "underline",
             }}
           >
             SPINDLE
           </Link>
           <h1
             className="font-display"
-            style={{ fontSize: 56, lineHeight: 0.85, color: "var(--ink)" }}
+            style={{ fontSize: 56, lineHeight: 0.85, color: "var(--cream)" }}
           >
             SLIP
           </h1>
@@ -246,7 +246,7 @@ const Index = () => {
             style={{
               fontFamily: "Space Grotesk", fontWeight: 700,
               fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--ink)", textDecoration: "underline",
+              color: "var(--cream)", textDecoration: "underline",
             }}
           >
             THE FORM
@@ -313,6 +313,10 @@ const Index = () => {
                 }
                 const card = c as Card;
                 const isSelected = selectedCard?.id === card.id;
+                const isFeatured = i < 2;
+                const featuredBg = i === 0 ? "var(--retro-pink)" : "var(--retro-green)";
+                const cardBg = isSelected ? "var(--retro-green)" : isFeatured ? featuredBg : "var(--cream)";
+                const cardColor = (isSelected || isFeatured) ? "var(--cream)" : "var(--ink)";
                 const firstRace = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
@@ -325,15 +329,15 @@ const Index = () => {
                       textAlign: "left",
                       padding: "12px 12px 14px",
                       border: "3px solid var(--ink)",
-                      background: isSelected ? "var(--retro-green)" : "var(--cream)",
-                      color: isSelected ? "var(--cream)" : "var(--ink)",
+                      background: cardBg,
+                      color: cardColor,
                       cursor: "pointer",
                       boxShadow: isSelected ? "4px 4px 0 var(--ink)" : "none",
                       transition: "all 120ms",
                     }}
                   >
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", opacity: 0.7, marginBottom: 4, textTransform: "uppercase" }}>
-                      TODAY
+                      {isFeatured ? "★ FEATURED" : "TODAY"}
                     </div>
                     <div
                       className="font-display"
