@@ -40,7 +40,7 @@ const Gallop = () => {
         getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
       ]);
       setCard(cardDoc.data());
-      setShowDetails(scrum.showDetails ?? true);
+      setShowDetails(scrum.showDetails ?? false);
 
       async function loadRaces(): Promise<Race[]> {
         const horseSnaps = await Promise.all(

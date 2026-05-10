@@ -163,7 +163,7 @@ const Index = () => {
       const scrumId = crypto.randomUUID();
       await setDoc(doc(db, "scrums", scrumId), {
         cardId: selectedCard.id, hostId: userId, name: groupName.trim(),
-        joinCode: code, showDetails: true,
+        joinCode: code, showDetails: false,
       });
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId, handle: createName.trim() || handle,

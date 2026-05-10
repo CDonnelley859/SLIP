@@ -122,7 +122,7 @@ const Lobby = () => {
   async function handleToggleDetails() {
     if (!id || !scrum) return;
     setTogglingDetails(true);
-    const next = !(scrum.showDetails ?? true);
+    const next = !(scrum.showDetails ?? false);
     try {
       await updateDoc(doc(db, "scrums", id), { showDetails: next });
       setScrum((s: any) => ({ ...s, showDetails: next }));
@@ -283,18 +283,18 @@ const Lobby = () => {
               disabled={togglingDetails}
               style={{
                 border: "2px solid var(--ink)",
-                background: (scrum.showDetails ?? true) ? "var(--ink)" : "transparent",
-                color: (scrum.showDetails ?? true) ? "var(--cream)" : "var(--ink)",
+                background: (scrum.showDetails ?? false) ? "var(--ink)" : "transparent",
+                color: (scrum.showDetails ?? false) ? "var(--cream)" : "var(--ink)",
                 fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
                 textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
                 opacity: togglingDetails ? 0.4 : 1,
               }}
             >
-              {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
+              {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
             </button>
           ) : (
             <span className="label-sm" style={{ opacity: 0.6, color: "var(--cream)" }}>
-              {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
+              {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
             </span>
           )}
         </div>
