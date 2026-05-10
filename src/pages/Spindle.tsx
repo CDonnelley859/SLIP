@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
-  collection, query, where, getDocs, doc, getDoc,
+  collection, query, where, getDocs, doc, getDoc, deleteDoc, writeBatch,
 } from "firebase/firestore";
 
 type LineStatus = "WIN" | "PLACE" | "SHOW" | "OUT";
@@ -71,6 +71,8 @@ const Spindle = () => {
   const [loading, setLoading] = useState(true);
   const [flipped, setFlipped] = useState<Set<string>>(new Set());
   const [visibleIdx, setVisibleIdx] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function onCarouselScroll(e: React.UIEvent<HTMLDivElement>) {
     const el = e.currentTarget;
@@ -84,6 +86,28 @@ const Spindle = () => {
       next.has(scrumId) ? next.delete(scrumId) : next.add(scrumId);
       return next;
     });
+  }
+
+  async function handleDelete(scrumId: string) {
+    if (!userId) return;
+    setDeleting(true);
+    try {
+      const batch = writeBatch(db);
+      // remove membership
+      batch.delete(doc(db, "scrumMembers", `${scrumId}_${userId}`));
+      // remove picks
+      const picksSnap = await getDocs(
+        query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))
+      );
+      picksSnap.docs.forEach(p => batch.delete(p.ref));
+      await batch.commit();
+      setSlips(prev => prev.filter(s => s.scrumId !== scrumId));
+      setConfirmDelete(null);
+    } catch {
+      // silent — user can try again
+    } finally {
+      setDeleting(false);
+    }
   }
 
   useEffect(() => {
@@ -330,6 +354,50 @@ const Spindle = () => {
                                   <span className="label" style={{ fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--cream)", textShadow: "none" }}>OF {s.totalMembers}</span>
                                 </div>
                               </div>
+                            )}
+                          </div>
+
+                          {/* discreet delete — sits at the foot of the stub */}
+                          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+                            {confirmDelete === s.scrumId ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>REMOVE THIS SLIP?</span>
+                                <button
+                                  onClick={() => handleDelete(s.scrumId)}
+                                  disabled={deleting}
+                                  className="label-sm"
+                                  style={{
+                                    background: "transparent", border: "1px solid rgba(245,232,223,0.45)",
+                                    color: "var(--cream)", padding: "3px 8px", cursor: "pointer",
+                                    opacity: deleting ? 0.4 : 0.85,
+                                  }}
+                                >
+                                  {deleting ? "…" : "YES"}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDelete(null)}
+                                  className="label-sm"
+                                  style={{
+                                    background: "transparent", border: 0,
+                                    color: "var(--cream)", padding: "3px 0", cursor: "pointer", opacity: 0.45,
+                                  }}
+                                >
+                                  CANCEL
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDelete(s.scrumId)}
+                                className="label-sm"
+                                style={{
+                                  background: "transparent", border: 0,
+                                  color: "var(--cream)", cursor: "pointer",
+                                  opacity: 0.25, padding: 0,
+                                  textDecoration: "underline",
+                                }}
+                              >
+                                REMOVE
+                              </button>
                             )}
                           </div>
                         </div>
