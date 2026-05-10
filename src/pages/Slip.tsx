@@ -311,18 +311,20 @@ const Slip = () => {
         <Link
           to={`/scrum/${id}/lobby`}
           className="label"
-          style={{ color: "var(--cream)", textDecoration: "none" }}
+          style={{ color: "var(--cream)", textDecoration: "none", flex: 1 }}
         >
           ← PADDOCK
         </Link>
-        <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>THE SLIP</span>
-        <button
-          onClick={() => navigate("/spindle")}
-          className="label"
-          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-        >
-          FLIP
-        </button>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+          <button
+            onClick={() => navigate("/spindle")}
+            className="label"
+            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+          >
+            FLIP
+          </button>
+        </div>
       </div>
 
       {/* ── PLAYER DOTS ── */}
