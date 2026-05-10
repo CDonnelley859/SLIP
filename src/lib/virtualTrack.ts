@@ -7,8 +7,7 @@ import {
 const CARD_ID = "blotto-park";
 const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
-const RACE_GAP_MS = 20 * 60 * 1000;   // 20 min between races
-const START_OFFSET_MS = 3 * 60 * 1000; // first race 3 min after seed
+const RACE_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours between races
 
 const HORSE_NAMES = [
   // British Pub Classics & Tavern Vibes
@@ -139,7 +138,10 @@ export async function seedVirtualTrack(): Promise<void> {
   }
 
   // Write new virtual card
-  const firstRaceTime = now + START_OFFSET_MS;
+  // Always anchor to next midnight so races land on the hour (00:00, 02:00 … 10:00)
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0); // rolls forward to 00:00:00 tomorrow
+  const firstRaceTime = midnight.getTime();
   const firstRaceISO = new Date(firstRaceTime).toISOString();
 
   await setDoc(cardRef, {

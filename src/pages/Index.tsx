@@ -79,7 +79,7 @@ const Index = () => {
     // Seed or reset virtual track when missing or stale
     const virtualCard = cardList.find(c => c.isVirtual);
     const needsSeed = !virtualCard || (() => {
-      const RACE_GAP_MS = 20 * 60 * 1000;
+      const RACE_GAP_MS = 2 * 60 * 60 * 1000;
       const lastRaceTime = new Date(virtualCard.postTime).getTime() + (6 - 1) * RACE_GAP_MS;
       return Date.now() > lastRaceTime + 5 * 60 * 1000;
     })();
