@@ -1,6 +1,6 @@
 import { db } from "./firebase";
 import {
-  doc, getDoc, setDoc, getDocs, writeBatch,
+  doc, getDoc, setDoc, getDocs, writeBatch, deleteDoc,
   collection, query, where, updateDoc,
 } from "firebase/firestore";
 
@@ -87,6 +87,9 @@ function shuffle<T>(arr: T[]): T[] {
 export async function seedVirtualTrack(): Promise<void> {
   const now = Date.now();
   const today = new Date().toISOString().slice(0, 10);
+
+  // One-time migration: remove old "virtual-park" card if it still exists
+  try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
 
   // Check if the existing card is still fresh
   const cardRef = doc(db, "cards", CARD_ID);
