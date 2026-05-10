@@ -258,31 +258,6 @@ const Lobby = () => {
           ))}
         </div>
 
-        {/* horse data toggle (host only) */}
-        <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-          <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
-          {userId === scrum.hostId ? (
-            <button
-              onClick={handleToggleDetails}
-              disabled={togglingDetails}
-              style={{
-                border: "2px solid var(--ink)",
-                background: (scrum.showDetails ?? false) ? "var(--ink)" : "transparent",
-                color: (scrum.showDetails ?? false) ? "var(--cream)" : "var(--ink)",
-                fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
-                textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
-                opacity: togglingDetails ? 0.4 : 1,
-              }}
-            >
-              {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
-            </button>
-          ) : (
-            <span className="label-sm" style={{ opacity: 0.6, color: "var(--cream)" }}>
-              {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
-            </span>
-          )}
-        </div>
-
         {/* CTA buttons */}
         <button
           onClick={() => navigate(`/scrum/${id}/gallop`)}
@@ -299,26 +274,56 @@ const Lobby = () => {
             border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)",
             fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
             color: "var(--cream)", textDecoration: "none",
-            padding: "14px 18px", marginTop: 10,
+            padding: "14px 18px",
           }}
         >
           SHOW SLIPS
         </Link>
 
-        {userId === scrum.hostId && (
-          <Link
-            to={`/scrum/${id}/host-results`}
-            className="display"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "3px solid var(--ink)", background: "var(--green)", color: "var(--cream)",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-              textDecoration: "none", padding: "14px 18px",
-              boxShadow: "4px 4px 0 var(--ink)",
-            }}
-          >
-            ENTER RESULTS →
-          </Link>
+        {/* host settings card */}
+        {userId === scrum.hostId ? (
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)" }}>
+            <div className="label-sm" style={{ padding: "10px 14px 6px", opacity: 0.5, color: "var(--cream)" }}>HOST SETTINGS</div>
+            {/* horse data row */}
+            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+              <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
+              <button
+                onClick={handleToggleDetails}
+                disabled={togglingDetails}
+                style={{
+                  border: "2px solid rgba(245,232,223,0.5)",
+                  background: (scrum.showDetails ?? false) ? "var(--cream)" : "transparent",
+                  color: (scrum.showDetails ?? false) ? "var(--ink)" : "var(--cream)",
+                  fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                  textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
+                  opacity: togglingDetails ? 0.4 : 1,
+                }}
+              >
+                {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
+              </button>
+            </div>
+            {/* enter results row */}
+            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px 4px" }}>
+              <Link
+                to={`/scrum/${id}/host-results`}
+                className="label"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  color: "var(--cream)", textDecoration: "none", padding: "10px 0",
+                }}
+              >
+                <span>Enter Results</span>
+                <span style={{ opacity: 0.5 }}>→</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+            <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
+            <span className="label-sm" style={{ opacity: 0.6, color: "var(--cream)" }}>
+              {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
+            </span>
+          </div>
         )}
 
         {/* leave */}

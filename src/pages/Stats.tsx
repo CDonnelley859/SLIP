@@ -94,16 +94,17 @@ const Stats = () => {
         <div style={{ width: 80 }} />
       </header>
 
-      <main style={{ padding: "24px 18px 64px", maxWidth: 420, margin: "0 auto" }}>
+      <main style={{ padding: "24px 18px 64px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} style={{ border: "3px solid rgba(245,232,223,0.25)", borderTop: i > 1 ? "1.5px solid rgba(245,232,223,0.15)" : undefined, padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ height: 10, width: 100, background: "rgba(245,232,223,0.15)" }} />
-                <div style={{ height: 28, width: 40, background: "rgba(245,232,223,0.15)" }} />
-              </div>
+          <>
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 24, display: "flex", justifyContent: "space-between" }}>
+              <div style={{ height: 60, width: 80, background: "rgba(245,232,223,0.1)" }} />
+              <div style={{ height: 60, width: 80, background: "rgba(245,232,223,0.1)" }} />
+            </div>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 16, height: 60, background: "rgba(245,232,223,0.05)" }} />
             ))}
-          </div>
+          </>
         ) : !stats || stats.gamesPlayed === 0 ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
             <p className="label" style={{ color: "var(--cream)" }}>NO STATS YET.</p>
@@ -112,30 +113,57 @@ const Stats = () => {
             </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {[
-              { label: "GAMES PLAYED", value: stats.gamesPlayed },
-              { label: "TOTAL POINTS", value: stats.totalPoints },
-              { label: "AVG POINTS / GAME", value: stats.avgPoints },
-              { label: "BEST SCORE", value: stats.bestScore },
-              { label: "BEST FINISH", value: stats.bestRank ? `#${stats.bestRank}` : "—" },
-              { label: "WINS (1ST)", value: stats.wins },
-              { label: "PLACES (2ND)", value: stats.places },
-              { label: "SHOWS (3RD)", value: stats.shows },
-            ].map((row, i) => (
-              <div
-                key={i}
-                style={{
-                  border: "3px solid rgba(245,232,223,0.25)",
-                  borderTop: i > 0 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
-                  padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
-                }}
-              >
-                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{row.label}</span>
-                <span className="display" style={{ fontSize: 28, color: "var(--cream)" }}>{row.value}</span>
+          <>
+            {/* hero row — games + best finish */}
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
+              <div style={{ flex: 1, padding: "16px 18px 18px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>GAMES PLAYED</div>
+                <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--cream)" }}>{stats.gamesPlayed}</div>
               </div>
-            ))}
-          </div>
+              <div style={{ flex: 1, padding: "16px 18px 18px", textAlign: "right" }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST FINISH</div>
+                <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--pink)" }}>
+                  {stats.bestRank ? `#${stats.bestRank}` : "—"}
+                </div>
+              </div>
+            </div>
+
+            {/* points row */}
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
+              <div style={{ flex: 1, padding: "14px 18px 16px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>TOTAL PTS</div>
+                <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.totalPoints}</div>
+              </div>
+              <div style={{ flex: 1, padding: "14px 18px 16px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>AVG / GAME</div>
+                <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.avgPoints}</div>
+              </div>
+              <div style={{ flex: 1, padding: "14px 18px 16px", textAlign: "right" }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST SCORE</div>
+                <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.bestScore}</div>
+              </div>
+            </div>
+
+            {/* win / place / show */}
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
+              {[
+                { label: "WINS", value: stats.wins, color: "var(--pink)" },
+                { label: "PLACES", value: stats.places, color: "var(--cream)" },
+                { label: "SHOWS", value: stats.shows, color: "var(--cream)" },
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  style={{
+                    flex: 1, padding: "14px 18px 16px", textAlign: i === 2 ? "right" : i === 1 ? "center" : "left",
+                    borderRight: i < 2 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
+                  }}
+                >
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>{s.label}</div>
+                  <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: s.color }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </main>
     </div>
