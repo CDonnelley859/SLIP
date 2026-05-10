@@ -202,9 +202,8 @@ const Spindle = () => {
     })();
   }, [userId]);
 
-  const label: React.CSSProperties = {
-    fontFamily: "'Bowlby One SC', system-ui, sans-serif",
-    fontWeight: 400, fontSize: 9, letterSpacing: "0.18em",
+  const labelStyle: React.CSSProperties = {
+    fontSize: 9, letterSpacing: "0.18em",
     textTransform: "uppercase", opacity: 0.65, color: "var(--cream)",
   };
 
@@ -221,7 +220,8 @@ const Spindle = () => {
       >
         <Link
           to="/"
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)", textDecoration: "none" }}
+          className="label"
+          style={{ color: "var(--cream)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
@@ -230,11 +230,10 @@ const Spindle = () => {
           {slips.length > 0 && (
             <button
               onClick={() => toggleFlip(slips[visibleIdx]?.scrumId)}
+              className="label"
               style={{
                 background: "transparent", border: 0, cursor: "pointer",
-                fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "var(--cream)",
-                textDecoration: "underline",
+                color: "var(--cream)", textDecoration: "underline",
               }}
             >
               {flipped.has(slips[visibleIdx]?.scrumId) ? "PICKS" : "STANDINGS"}
@@ -317,7 +316,7 @@ const Spindle = () => {
                           </div>
                           <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                             <div>
-                              <div style={label}>TOTAL</div>
+                              <div className="label-sm" style={labelStyle}>TOTAL</div>
                               <div className="display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 rgba(245,232,223,0.4)" }}>
                                 {s.totalPoints}
                                 <span className="label" style={{ fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--cream)", textShadow: "none" }}>PTS</span>
@@ -325,7 +324,7 @@ const Spindle = () => {
                             </div>
                             {s.rank && (
                               <div style={{ textAlign: "right" }}>
-                                <div style={label}>RANK</div>
+                                <div className="label-sm" style={labelStyle}>RANK</div>
                                 <div className="display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 rgba(245,232,223,0.4)" }}>
                                   #{s.rank}
                                   <span className="label" style={{ fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--cream)", textShadow: "none" }}>OF {s.totalMembers}</span>
@@ -359,9 +358,9 @@ const Spindle = () => {
                                     <div>
                                       <div className="display" style={{ fontSize: 20, lineHeight: 0.9, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                         {entry.handle}
-                                        {entry.isMe && <span style={{ fontFamily: "Space Grotesk", fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>}
+                                        {entry.isMe && <span className="label-sm" style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>}
                                       </div>
-                                      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 3, opacity: 0.6, display: "flex", gap: 6, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
+                                      <div className="mono" style={{ fontSize: 10, marginTop: 3, opacity: 0.6, display: "flex", gap: 6, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                         {entry.wins > 0 && <span>{entry.wins}W</span>}
                                         {entry.places > 0 && <span>{entry.places}P</span>}
                                         {entry.shows > 0 && <span>{entry.shows}S</span>}
@@ -404,11 +403,11 @@ const Spindle = () => {
                                           RACE {String(l.raceNumber).padStart(2, "0")}
                                         </span>
                                         {offTimeStr && (
-                                          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
+                                          <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
                                             {offTimeStr}
                                           </span>
                                         )}
-                                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, marginLeft: "auto", color: "var(--cream)" }}>
+                                        <span className="mono" style={{ fontSize: 10, opacity: 0.7, marginLeft: "auto", color: "var(--cream)" }}>
                                           +{l.points} PTS
                                         </span>
                                       </div>
@@ -438,7 +437,7 @@ const Spindle = () => {
                                           <div style={{ fontWeight: 700, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--cream)" }}>
                                             {["1ST", "2ND", "3RD"][pi]}
                                           </div>
-                                          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 2, color: "var(--cream)" }}>
+                                          <div className="mono" style={{ fontSize: 10, marginTop: 2, color: "var(--cream)" }}>
                                             {horse ? `${horse.number}. ${horse.name.slice(0, 12)}` : "—"}
                                           </div>
                                         </div>

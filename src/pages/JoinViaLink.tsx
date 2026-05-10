@@ -30,9 +30,9 @@ const JoinViaLink = () => {
   }, [code, userId]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="text-center">
-        <p className="text-label-caps uppercase text-muted-foreground">{status}</p>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--green)" }}>
+      <div style={{ textAlign: "center" }}>
+        <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>{status}</p>
       </div>
     </div>
   );

@@ -34,23 +34,28 @@ const JoinScrum = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background border-b-brutalist flex items-center h-16 px-4 sticky top-0 z-50">
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
+      <header
+        style={{
+          background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
+          display: "flex", alignItems: "center", height: 64, padding: "0 18px",
+          position: "sticky", top: 0, zIndex: 50,
+        }}
+      >
         <button
           onClick={() => navigate("/")}
-          className="text-label-caps uppercase mr-4 hover:underline"
+          className="label"
+          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", marginRight: 16 }}
         >
           ← BACK
         </button>
-        <h1 className="text-body-lg uppercase">Join Group</h1>
+        <span className="display" style={{ fontSize: 20, color: "var(--cream)" }}>JOIN GROUP</span>
       </header>
 
-      <main className="px-4 pt-6 max-w-sm">
+      <main style={{ padding: "24px 18px", maxWidth: 420 }}>
         <form onSubmit={join}>
-          <div className="relative border-brutalist">
-            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-              GROUP_CODE
-            </label>
+          <div style={{ border: "3px solid rgba(245,232,223,0.35)", position: "relative" }}>
+            <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)" }}>GROUP CODE</div>
             <input
               autoFocus
               required
@@ -58,26 +63,30 @@ const JoinScrum = () => {
               onChange={e => setCode(e.target.value)}
               placeholder="XXXX"
               maxLength={4}
-              className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none font-mono tracking-widest text-center"
+              className="mono"
+              style={{ width: "100%", border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.25)", background: "transparent", padding: "16px 14px", fontSize: 20, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--cream)", outline: "none", textAlign: "center" }}
             />
-          </div>
-          <div className="relative border-brutalist border-t-0">
-            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
-              YOUR_NAME
-            </label>
+            <div className="label-sm" style={{ position: "absolute", top: "calc(50% + 1px)", left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)" }}>YOUR NAME</div>
             <input
               required
               value={playerName}
               onChange={e => setPlayerName(e.target.value)}
               placeholder="YOUR NAME IN THIS GROUP"
               maxLength={30}
-              className="w-full bg-transparent px-4 py-4 text-data-mono uppercase placeholder:text-muted-foreground/40 focus:outline-none"
+              className="mono"
+              style={{ width: "100%", border: 0, background: "transparent", padding: "16px 14px", fontSize: 14, textTransform: "uppercase", color: "var(--cream)", outline: "none" }}
             />
           </div>
           <button
             type="submit"
             disabled={busy || code.length < 4 || !playerName.trim()}
-            className="w-full h-14 bg-primary text-primary-foreground text-headline-md uppercase border-brutalist border-t-0 disabled:opacity-40 transition-none"
+            className="display"
+            style={{
+              width: "100%", padding: "16px", fontSize: 18, letterSpacing: "0.06em",
+              textTransform: "uppercase", border: 0, cursor: "pointer",
+              background: (busy || code.length < 4 || !playerName.trim()) ? "rgba(245,232,223,0.25)" : "var(--cream)",
+              color: (busy || code.length < 4 || !playerName.trim()) ? "rgba(245,232,223,0.4)" : "var(--ink)",
+            }}
           >
             {busy ? "JOINING…" : "JOIN"}
           </button>

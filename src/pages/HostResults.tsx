@@ -132,17 +132,17 @@ const HostResults = () => {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <p className="text-label-caps uppercase text-muted-foreground">Loading…</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
     </div>
   );
 
   // Only the host can use this page
   if (!scrum || userId !== scrum.hostId) return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="text-center">
-        <p className="text-label-caps uppercase text-muted-foreground mb-4">Only the group host can enter results.</p>
-        <Link to={`/scrum/${id}/lobby`} className="text-label-caps uppercase underline underline-offset-2">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--green)" }}>
+      <div style={{ textAlign: "center" }}>
+        <p className="label" style={{ color: "var(--cream)", opacity: 0.7, marginBottom: 16 }}>Only the group host can enter results.</p>
+        <Link to={`/scrum/${id}/lobby`} className="label" style={{ color: "var(--cream)", textDecoration: "underline" }}>
           ← BACK TO LOBBY
         </Link>
       </div>
@@ -152,19 +152,25 @@ const HostResults = () => {
   const settledCount = races.filter(r => r.status === "settled").length;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
-        <Link to={`/scrum/${id}/lobby`} className="text-label-caps uppercase">← LOBBY</Link>
-        <h1 className="text-headline-md uppercase">RESULTS</h1>
-        <span className="text-label-caps uppercase text-muted-foreground">{settledCount}/{races.length}</span>
+    <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
+      <header
+        style={{
+          background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          height: 64, padding: "0 18px", position: "sticky", top: 0, zIndex: 50,
+        }}
+      >
+        <Link to={`/scrum/${id}/lobby`} className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← LOBBY</Link>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>RESULTS</span>
+        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>{settledCount}/{races.length}</span>
       </header>
 
-      <main className="px-4 pt-4 max-w-sm mx-auto flex flex-col gap-4">
-        <div className="border-brutalist p-3 text-center">
-          <p className="text-label-caps text-muted-foreground uppercase">
+      <main style={{ padding: "16px 18px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 12, textAlign: "center" }}>
+          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>
             {card?.trackName ?? "—"} · HOST ONLY
           </p>
-          <p className="text-label-caps text-muted-foreground uppercase opacity-60 mt-1">
+          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 4 }}>
             Pick 1st, 2nd &amp; 3rd for each race, then tap SETTLE
           </p>
         </div>
@@ -181,37 +187,38 @@ const HostResults = () => {
             : null;
 
           return (
-            <div key={race.id} className={`border-brutalist ${isSettled ? "opacity-60" : ""}`}>
+            <div key={race.id} style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", opacity: isSettled ? 0.6 : 1 }}>
               {/* Race header */}
-              <div className="px-4 py-2 border-b border-primary/20 flex items-center justify-between">
+              <div style={{ padding: "10px 16px", borderBottom: "1.5px solid rgba(245,232,223,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <span className="text-label-caps uppercase font-bold">
+                  <span className="label" style={{ color: "var(--cream)" }}>
                     RACE {String(race.raceNumber).padStart(2, "0")}
                     {offTime ? ` · ${offTime}` : ""}
                   </span>
                   {race.name && (
-                    <p className="text-label-caps text-muted-foreground uppercase text-[10px] truncate max-w-[200px]">
+                    <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 2 }}>
                       {race.name}
                     </p>
                   )}
                 </div>
                 {isSettled && (
-                  <span className="text-label-caps uppercase text-primary">✓ SETTLED</span>
+                  <span className="label-sm" style={{ color: "var(--pink)" }}>✓ SETTLED</span>
                 )}
               </div>
 
               {/* Place selectors */}
               {(["first", "second", "third"] as const).map((place, pi) => {
-                const label = ["1ST", "2ND", "3RD"][pi];
+                const placeLabel = ["1ST", "2ND", "3RD"][pi];
                 const current = p[place];
                 return (
-                  <div key={place} className={`px-4 py-2 flex items-center gap-3 ${pi < 2 ? "border-b border-primary/20" : ""}`}>
-                    <span className="text-label-caps uppercase w-8 shrink-0 font-bold">{label}</span>
+                  <div key={place} style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: pi < 2 ? "1.5px solid rgba(245,232,223,0.15)" : undefined }}>
+                    <span className="label-sm" style={{ color: "var(--cream)", width: 32, flexShrink: 0 }}>{placeLabel}</span>
                     <select
                       value={current}
                       onChange={e => setPlace(race.id, place, e.target.value)}
                       disabled={isSettled}
-                      className="flex-1 bg-background text-body-md uppercase border border-primary/30 px-2 py-1 focus:outline-none disabled:opacity-40"
+                      className="mono"
+                      style={{ flex: 1, background: "var(--green)", color: "var(--cream)", border: "1.5px solid rgba(245,232,223,0.3)", padding: "6px 8px", fontSize: 12, textTransform: "uppercase", outline: "none", opacity: isSettled ? 0.4 : 1 }}
                     >
                       <option value="">— PICK HORSE —</option>
                       {race.horses.map(h => (
@@ -229,7 +236,14 @@ const HostResults = () => {
                 <button
                   onClick={() => handleSettle(race.id)}
                   disabled={!canSettle || isSaving}
-                  className="w-full h-11 bg-primary text-primary-foreground text-label-caps uppercase disabled:opacity-30 transition-none"
+                  className="display"
+                  style={{
+                    width: "100%", padding: "14px", fontSize: 16, letterSpacing: "0.06em",
+                    textTransform: "uppercase", border: 0, cursor: canSettle ? "pointer" : "not-allowed",
+                    background: canSettle ? "var(--cream)" : "rgba(245,232,223,0.15)",
+                    color: canSettle ? "var(--ink)" : "rgba(245,232,223,0.4)",
+                    opacity: isSaving ? 0.5 : 1,
+                  }}
                 >
                   {isSaving ? "SETTLING…" : "SETTLE RACE"}
                 </button>
@@ -239,9 +253,9 @@ const HostResults = () => {
         })}
 
         {settledCount === races.length && races.length > 0 && (
-          <div className="border-brutalist p-4 text-center">
-            <p className="text-headline-md uppercase">ALL DONE</p>
-            <p className="text-label-caps text-muted-foreground uppercase mt-1">All races settled</p>
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 16, textAlign: "center" }}>
+            <p className="display" style={{ fontSize: 24, color: "var(--cream)" }}>ALL DONE</p>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 4 }}>ALL RACES SETTLED</p>
           </div>
         )}
       </main>

@@ -1,16 +1,17 @@
 import { Link } from "react-router-dom";
 
 const NotFound = () => (
-  <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-    <h1 className="text-headline-xl font-black tracking-tighter">404</h1>
-    <p className="text-label-caps text-muted-foreground uppercase mt-2 mb-8">
-      Slip not found
+  <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "var(--green)" }}>
+    <h1 className="display" style={{ fontSize: 96, color: "var(--cream)", lineHeight: 1 }}>404</h1>
+    <p className="label" style={{ color: "var(--cream)", opacity: 0.6, marginTop: 8, marginBottom: 32 }}>
+      SLIP NOT FOUND
     </p>
     <Link
       to="/"
-      className="text-label-caps uppercase underline underline-offset-4 decoration-[2.67px]"
+      className="label"
+      style={{ color: "var(--cream)", textDecoration: "underline" }}
     >
-      Back to Paddock
+      BACK TO PADDOCK
     </Link>
   </div>
 );

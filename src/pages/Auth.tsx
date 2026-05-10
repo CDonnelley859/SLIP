@@ -39,38 +39,39 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "var(--green)" }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <h1 className="font-display text-6xl brass-text font-black tracking-tight">SLIP</h1>
-          <p className="text-muted-foreground mt-2 text-sm uppercase tracking-[0.2em]">Race-Day Companion</p>
+          <h1 className="display" style={{ fontSize: 64, color: "var(--cream)" }}>SLIP</h1>
+          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginTop: 8 }}>Race-Day Companion</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {mode === "signup" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="handle">Handle</Label>
-              <Input id="handle" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="your jockey name" />
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", position: "relative" }}>
+              <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)" }}>HANDLE</div>
+              <input id="handle" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="YOUR JOCKEY NAME" className="mono" style={{ width: "100%", border: 0, background: "transparent", padding: "14px", fontSize: 14, textTransform: "uppercase", color: "var(--cream)", outline: "none" }} />
             </div>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <div style={{ border: "3px solid rgba(245,232,223,0.35)", position: "relative" }}>
+            <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)" }}>EMAIL</div>
+            <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className="mono" style={{ width: "100%", border: 0, background: "transparent", padding: "14px", fontSize: 14, color: "var(--cream)", outline: "none" }} />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div style={{ border: "3px solid rgba(245,232,223,0.35)", position: "relative" }}>
+            <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)" }}>PASSWORD</div>
+            <input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="mono" style={{ width: "100%", border: 0, background: "transparent", padding: "14px", fontSize: 14, color: "var(--cream)", outline: "none" }} />
           </div>
-          <Button type="submit" disabled={busy} className="w-full font-display tracking-wide">
-            {busy ? "..." : mode === "signin" ? "Enter the Paddock" : "Create Account"}
-          </Button>
+          <button type="submit" disabled={busy} className="display" style={{ background: busy ? "rgba(245,232,223,0.25)" : "var(--cream)", color: busy ? "rgba(245,232,223,0.5)" : "var(--ink)", border: 0, padding: "16px", fontSize: 18, letterSpacing: "0.06em", cursor: "pointer", width: "100%", textTransform: "uppercase" }}>
+            {busy ? "…" : mode === "signin" ? "ENTER THE PADDOCK" : "CREATE ACCOUNT"}
+          </button>
         </form>
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-center text-sm text-muted-foreground mt-6 hover:text-foreground transition"
+          className="label-sm"
+          style={{ width: "100%", textAlign: "center", color: "var(--cream)", opacity: 0.55, marginTop: 20, background: "transparent", border: 0, cursor: "pointer" }}
         >
-          {mode === "signin" ? "New jockey? Sign up" : "Already racing? Sign in"}
+          {mode === "signin" ? "NEW JOCKEY? SIGN UP" : "ALREADY RACING? SIGN IN"}
         </button>
       </div>
     </div>

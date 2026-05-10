@@ -254,14 +254,20 @@ const Design6 = () => (
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const SlipDesigns = () => (
-  <div className="min-h-screen bg-background pb-20">
-    <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
-      <Link to="/" className="text-label-caps uppercase">← BACK</Link>
-      <h1 className="text-headline-md uppercase">SLIP DESIGNS</h1>
-      <div className="w-20" />
+  <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
+    <header
+      style={{
+        background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        height: 64, padding: "0 18px", position: "sticky", top: 0, zIndex: 50,
+      }}
+    >
+      <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← BACK</Link>
+      <span className="display" style={{ fontSize: 20, color: "var(--cream)" }}>SLIP DESIGNS</span>
+      <div style={{ width: 80 }} />
     </header>
 
-    <main className="px-4 pt-6 space-y-10 max-w-lg mx-auto">
+    <main style={{ padding: "24px 18px", maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 40 }}>
       {[
         { n: 1, label: "Horizontal + right stub", el: <Design1 /> },
         { n: 2, label: "Portrait + top tear", el: <Design2 /> },
@@ -271,11 +277,11 @@ const SlipDesigns = () => (
         { n: 6, label: "Tall portrait + dark stub", el: <Design6 /> },
       ].map(({ n, label, el }) => (
         <div key={n}>
-          <div className="flex items-baseline gap-3 mb-3">
-            <span className="text-[32px] font-black leading-none">{n}</span>
-            <span className="text-label-caps uppercase text-muted-foreground">{label}</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
+            <span className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1 }}>{n}</span>
+            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>{label.toUpperCase()}</span>
           </div>
-          <div className="overflow-visible px-2">{el}</div>
+          <div style={{ overflow: "visible", padding: "0 8px" }}>{el}</div>
         </div>
       ))}
     </main>

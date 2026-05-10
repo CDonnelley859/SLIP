@@ -309,10 +309,10 @@ const Lobby = () => {
 
         <Link
           to={`/scrum/${id}/slip`}
+          className="display"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)",
-            fontFamily: "'Bowlby One SC', system-ui, sans-serif",
             fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
             color: "var(--cream)", textDecoration: "none",
             padding: "14px 18px", marginTop: 10,
@@ -324,10 +324,10 @@ const Lobby = () => {
         {userId === scrum.hostId && (
           <Link
             to={`/scrum/${id}/host-results`}
+            className="display"
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "3px solid var(--ink)", background: "var(--green)", color: "var(--cream)",
-              fontFamily: "'Bowlby One SC', system-ui, sans-serif",
               fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
               textDecoration: "none", padding: "14px 18px",
               boxShadow: "4px 4px 0 var(--ink)",
@@ -346,10 +346,10 @@ const Lobby = () => {
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={() => setConfirmLeave(false)}
+                className="display"
                 style={{
                   flex: 1, border: "3px solid rgba(245,232,223,0.35)", background: "transparent",
-                  fontFamily: "'Bowlby One SC', system-ui, sans-serif", fontSize: 14,
-                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
                   color: "var(--cream)", padding: "10px", cursor: "pointer",
                 }}
               >
@@ -358,10 +358,10 @@ const Lobby = () => {
               <button
                 onClick={handleLeave}
                 disabled={leaving}
+                className="display"
                 style={{
                   flex: 1, border: "3px solid var(--ink)", background: "var(--pink)",
-                  fontFamily: "'Bowlby One SC', system-ui, sans-serif", fontSize: 14,
-                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
                   color: "var(--cream)", padding: "10px", cursor: "pointer",
                   opacity: leaving ? 0.4 : 1,
                 }}

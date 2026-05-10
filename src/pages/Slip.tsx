@@ -62,12 +62,11 @@ const Stamp = ({ kind }: { kind: string }) => {
   };
   const s = map[kind] ?? map.PENDING;
   return (
-    <span style={{
+    <span className="display" style={{
       display: "inline-block",
       border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
       color: s.color, padding: "3px 10px 2px",
-      fontFamily: "'Bowlby One SC', system-ui", fontSize: 14,
-      letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
+      fontSize: 14, letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
       background: "transparent", opacity: s.dim ? 0.5 : 1, flexShrink: 0,
     }}>{s.label}</span>
   );
@@ -362,10 +361,9 @@ const Slip = () => {
               {/* player badge */}
               {currentPlayer && (
                 <div style={{ textAlign: "center", marginBottom: 8 }}>
-                  <span style={{
+                  <span className="mono" style={{
                     border: "2px solid var(--ink)", padding: "3px 10px",
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
-                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
                   }}>
                     {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
                   </span>
@@ -425,7 +423,7 @@ const Slip = () => {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
-                          <span style={{ background: "var(--ink)", color: "var(--cream)", padding: "2px 6px", fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: ".18em" }}>
+                          <span className="mono" style={{ background: "var(--ink)", color: "var(--cream)", padding: "2px 6px", fontSize: 9, letterSpacing: ".18em" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
                           <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>

@@ -318,12 +318,12 @@ const Gallop = () => {
                 {selected && (
                   <div style={{ flexShrink: 0, display: "flex", alignItems: "flex-start", paddingTop: 2 }}>
                     <span
+                      className="display"
                       style={{
                         display: "inline-block",
                         border: "2px solid var(--pink)",
                         color: "var(--pink)",
                         padding: "2px 6px",
-                        fontFamily: "'Bowlby One SC', system-ui",
                         fontSize: 12, letterSpacing: "0.06em",
                         transform: "rotate(-6deg)",
                         background: "transparent",

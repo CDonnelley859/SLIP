@@ -81,48 +81,58 @@ const Stats = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
-        <Link to="/" className="text-label-caps uppercase hover:underline">← PADDOCK</Link>
-        <h1 className="text-headline-md uppercase">THE FORM</h1>
-        <div className="w-20" />
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
+      <header
+        style={{
+          background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          height: 64, padding: "0 18px", position: "sticky", top: 0, zIndex: 50,
+        }}
+      >
+        <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← PADDOCK</Link>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>THE FORM</span>
+        <div style={{ width: 80 }} />
       </header>
 
-      <main className="px-4 pt-6 pb-16 max-w-sm mx-auto">
+      <main style={{ padding: "24px 18px 64px", maxWidth: 420, margin: "0 auto" }}>
         {loading ? (
-          <div className="space-y-[-2.67px] animate-pulse">
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-              <div key={i} className="border-brutalist px-4 py-4 flex justify-between items-center mt-[-2.67px] first:mt-0">
-                <div className="h-3 w-24 bg-primary/10 rounded" />
-                <div className="h-7 w-10 bg-primary/10 rounded" />
+              <div key={i} style={{ border: "3px solid rgba(245,232,223,0.25)", borderTop: i > 1 ? "1.5px solid rgba(245,232,223,0.15)" : undefined, padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ height: 10, width: 100, background: "rgba(245,232,223,0.15)" }} />
+                <div style={{ height: 28, width: 40, background: "rgba(245,232,223,0.15)" }} />
               </div>
             ))}
           </div>
         ) : !stats || stats.gamesPlayed === 0 ? (
-          <div className="border-brutalist p-8 text-center">
-            <p className="text-body-md text-muted-foreground">No stats yet.</p>
-            <p className="text-label-caps text-muted-foreground uppercase mt-2">
-              Finish a Daily Gallop to see your form.
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
+            <p className="label" style={{ color: "var(--cream)" }}>NO STATS YET.</p>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 8 }}>
+              FINISH A DAILY GALLOP TO SEE YOUR FORM.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {[
-              { label: "Games Played", value: stats.gamesPlayed },
-              { label: "Total Points", value: stats.totalPoints },
-              { label: "Avg Points / Game", value: stats.avgPoints },
-              { label: "Best Score", value: stats.bestScore },
-              { label: "Best Finish", value: stats.bestRank ? `#${stats.bestRank}` : "—" },
-              { label: "Wins (1st)", value: stats.wins },
-              { label: "Places (2nd)", value: stats.places },
-              { label: "Shows (3rd)", value: stats.shows },
+              { label: "GAMES PLAYED", value: stats.gamesPlayed },
+              { label: "TOTAL POINTS", value: stats.totalPoints },
+              { label: "AVG POINTS / GAME", value: stats.avgPoints },
+              { label: "BEST SCORE", value: stats.bestScore },
+              { label: "BEST FINISH", value: stats.bestRank ? `#${stats.bestRank}` : "—" },
+              { label: "WINS (1ST)", value: stats.wins },
+              { label: "PLACES (2ND)", value: stats.places },
+              { label: "SHOWS (3RD)", value: stats.shows },
             ].map((row, i) => (
               <div
                 key={i}
-                className={`border-brutalist px-4 py-4 flex justify-between items-center ${i > 0 ? "mt-[-2.67px]" : ""}`}
+                style={{
+                  border: "3px solid rgba(245,232,223,0.25)",
+                  borderTop: i > 0 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
+                  padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}
               >
-                <span className="text-label-caps uppercase text-muted-foreground">{row.label}</span>
-                <span className="text-headline-md font-black">{row.value}</span>
+                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{row.label}</span>
+                <span className="display" style={{ fontSize: 28, color: "var(--cream)" }}>{row.value}</span>
               </div>
             ))}
           </div>

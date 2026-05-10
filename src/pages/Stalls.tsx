@@ -3,8 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, getDocs, collection } from "firebase/firestore";
-import { PageShell } from "@/components/PageShell";
-import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 
 const Stalls = () => {
@@ -45,48 +43,64 @@ const Stalls = () => {
   }, [id]);
 
   return (
-    <PageShell title="The Stalls">
-      {scrum && card && (
-        <div className="space-y-6">
-          <div className="bg-card rounded-lg p-5 border border-border">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{card.trackName}</div>
-            <h2 className="font-display text-2xl mt-1">{scrum.name}</h2>
-            <div className="flex items-center justify-between mt-4">
-              <div>
-                <div className="text-xs text-muted-foreground">Join code</div>
-                <div className="font-mono brass-text text-xl tracking-widest">{scrum.joinCode}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Post Time</div>
-                <div className="font-mono text-sm">
-                  {card.postTime && formatDistanceToNow(new Date(card.postTime), { addSuffix: true })}
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
+      <header
+        style={{
+          background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.25)",
+          display: "flex", alignItems: "center", height: 64, padding: "0 18px",
+          position: "sticky", top: 0, zIndex: 50,
+        }}
+      >
+        <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← PADDOCK</Link>
+        <span className="display" style={{ fontSize: 20, color: "var(--cream)", margin: "0 auto" }}>THE STALLS</span>
+        <div style={{ width: 80 }} />
+      </header>
+
+      <main style={{ padding: "24px 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+        {scrum && card && (
+          <>
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px 16px" }}>
+              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{card.trackName}</div>
+              <div className="display" style={{ fontSize: 28, color: "var(--cream)", marginTop: 4 }}>{scrum.name}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
+                <div>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>JOIN CODE</div>
+                  <div className="mono" style={{ fontSize: 22, letterSpacing: "0.2em", color: "var(--cream)", marginTop: 2 }}>{scrum.joinCode}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>POST TIME</div>
+                  <div className="mono" style={{ fontSize: 13, color: "var(--cream)", marginTop: 2 }}>
+                    {card.postTime && formatDistanceToNow(new Date(card.postTime), { addSuffix: true })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-              Lineup ({members.length})
+            <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px 16px" }}>
+              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginBottom: 10 }}>LINEUP ({members.length})</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {members.map((m) => (
+                  <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 6, border: "1.5px solid rgba(245,232,223,0.3)", padding: "4px 10px 4px 4px" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: m.profile?.capColor ?? "var(--pink)", flexShrink: 0 }} />
+                    <span className="label-sm" style={{ color: "var(--cream)" }}>@{m.profile?.handle ?? m.userId.slice(0, 8)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {members.map((m) => (
-                <div key={m.userId} className="flex items-center gap-2 bg-card rounded-full pl-1 pr-3 py-1 border border-border">
-                  <div className="h-6 w-6 rounded-full" style={{ background: m.profile?.capColor ?? "#c9a84c" }} />
-                  <span className="text-sm">@{m.profile?.handle ?? m.userId.slice(0, 8)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="text-xs text-muted-foreground">{horseCount} horses across the card</div>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>{horseCount} HORSES ACROSS THE CARD</p>
 
-          <Link to={`/scrum/${id}/gallop`}>
-            <Button className="w-full font-display text-lg" size="lg">Enter the Daily Gallop</Button>
-          </Link>
-        </div>
-      )}
-    </PageShell>
+            <Link
+              to={`/scrum/${id}/gallop`}
+              className="btn-retro btn-retro-pink"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            >
+              ENTER THE DAILY GALLOP →
+            </Link>
+          </>
+        )}
+      </main>
+    </div>
   );
 };
 
