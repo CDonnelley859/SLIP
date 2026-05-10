@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -38,29 +38,47 @@ function pointsFor(status: LineStatus): number {
   return 0;
 }
 
-const StampBadge = ({ status }: { status: LineStatus }) => {
-  if (status === "RUNNING") return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      <div style={{ width: 10, height: 10, background: "var(--retro-pink)", animation: "pulse 1s infinite" }} />
-      <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-        RUNNING
-      </span>
-    </div>
+// ── File-local components ──
+
+const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
+  <svg viewBox="0 0 400 8" preserveAspectRatio="none" style={{
+    position: "absolute" as const, left: 0, right: 0, width: "100%", height: 8, display: "block", zIndex: 4,
+    ...(side === "top" ? { top: 0, transform: "translateY(-1px)" } : { bottom: 0, transform: "translateY(1px) scaleY(-1)" }),
+  }}>
+    {Array.from({ length: 25 }).map((_, i) => (
+      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--cream-2)" stroke="var(--ink)" strokeWidth={1.5} />
+    ))}
+  </svg>
+);
+
+const Stamp = ({ kind }: { kind: string }) => {
+  const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
+    WIN:     { label: "WIN",     color: "var(--pink)",     rot: -8 },
+    PLACE:   { label: "PLACE",   color: "var(--green)",    rot: -5 },
+    SHOW:    { label: "SHOW",    color: "var(--ink)",      rot: -3 },
+    OUT:     { label: "OUT",     color: "var(--ink-soft)", rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "var(--ink-soft)", rot: 0, dim: true },
+    RUNNING: { label: "NOW",     color: "var(--ink)",      rot: -4 },
+  };
+  const s = map[kind] ?? map.PENDING;
+  return (
+    <span style={{
+      display: "inline-block",
+      border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
+      color: s.color, padding: "3px 10px 2px",
+      fontFamily: "'Bagel Fat One', system-ui", fontSize: 14,
+      letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
+      background: "transparent", opacity: s.dim ? 0.5 : 1, flexShrink: 0,
+    }}>{s.label}</span>
   );
-  if (status === "PENDING") return (
-    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, letterSpacing: "0.1em", opacity: 0.35, textTransform: "uppercase" }}>
-      PENDING
-    </span>
-  );
-  if (status === "WIN") return <span className="stamp-win">WIN</span>;
-  if (status === "PLACE") return <span className="stamp-place">PLACE</span>;
-  if (status === "SHOW") return <span className="stamp-show">SHOW</span>;
-  return <span className="stamp-out">OUT</span>;
 };
+
+// ── Main component ──
 
 const Slip = () => {
   const { id } = useParams();
   const { userId } = useAuth();
+  const navigate = useNavigate();
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [players, setPlayers] = useState<{ userId: string; handle: string }[]>([]);
@@ -222,21 +240,17 @@ const Slip = () => {
     if (dx > 0 && playerIdx > 0) goToPlayer("back");
   }
 
-  const total = lines.reduce((sum, l) => sum + l.points, 0);
+  const myTotal = lines.reduce((sum, l) => sum + l.points, 0);
+  const myRank = rank?.position ?? null;
+  const playerCount = rank?.total ?? 0;
   const isFullyPending = lines.length > 0 && lines.every(l => l.status === "PENDING");
 
-  const raceDate = card?.raceDate
+  const dateLabel = card?.raceDate
     ? new Date(card.raceDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()
     : "";
-  const postTime = card?.postTime
+  const postTimeLabel = card?.postTime
     ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     : "";
-
-  const label: React.CSSProperties = {
-    fontFamily: "Space Grotesk, system-ui, sans-serif",
-    fontWeight: 700, fontSize: 9, letterSpacing: "0.18em",
-    textTransform: "uppercase", opacity: 0.65, color: "var(--ink)",
-  };
 
   async function handleNotifToggle() {
     if (!userId) return;
@@ -278,7 +292,7 @@ const Slip = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center"
+      className="min-h-screen halftone-bg halftone-loose flex flex-col items-center"
       style={{ background: "var(--cream-2)", padding: "0 0 80px" }}
     >
       {/* ── PAGE HEADER ── */}
@@ -290,17 +304,19 @@ const Slip = () => {
       >
         <Link
           to={`/scrum/${id}/lobby`}
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "none" }}
+          className="label"
+          style={{ color: "var(--ink)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
-        <span className="font-display" style={{ fontSize: 22, color: "var(--ink)" }}>THE SLIP</span>
-        <Link
-          to="/spindle"
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "underline" }}
+        <span className="display" style={{ fontSize: 22, color: "var(--ink)" }}>THE SLIP</span>
+        <button
+          onClick={() => navigate("/spindle")}
+          className="label"
+          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--ink)", textDecoration: "underline" }}
         >
-          SPINDLE
-        </Link>
+          FLIP
+        </button>
       </div>
 
       {/* ── PLAYER DOTS ── */}
@@ -328,174 +344,125 @@ const Slip = () => {
       {/* ── TICKET ── */}
       <div
         key={slideKey}
-        className={`retro-ticket ${slideKey === 0 ? "animate-print" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}`}
-        style={{
-          width: "calc(100% - 36px)", maxWidth: 420,
-          position: "relative",
-        }}
+        className={slideKey === 0 ? "animate-print" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}
+        style={{ width: "calc(100% - 36px)", maxWidth: 420 }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* drop shadow board */}
-        <div style={{ position: "absolute", inset: "8px -6px -8px 6px", background: "var(--ink)", zIndex: 0 }} />
+        {/* Ticket */}
+        <div style={{ position: "relative" }}>
+          {/* drop shadow board */}
+          <div style={{ position: "absolute", inset: "8px -6px -8px 6px", background: "var(--ink)", zIndex: 0 }} />
+          {/* ticket */}
+          <div style={{ position: "relative", zIndex: 1, background: "var(--cream)", border: "3px solid var(--ink)", color: "var(--ink)" }}>
+            <ScalloppedEdge side="top" />
+            <ScalloppedEdge side="bottom" />
+            <div style={{ padding: "20px 18px 22px" }}>
 
-        <div style={{ position: "relative", zIndex: 1, background: "var(--cream)", border: "3px solid var(--ink)" }}>
-
-          {/* scalloped top edge */}
-          <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginTop: -1 }}>
-            {Array.from({ length: 25 }).map((_, i) => (
-              <circle key={i} cx={8 + i * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
-            ))}
-          </svg>
-
-          {/* STUB — venue, group, date, total, rank */}
-          <div style={{ padding: "14px 20px 18px", borderBottom: "2px dashed var(--ink)", position: "relative" }}>
-            {/* perforation notch circles */}
-            <div style={{ position: "absolute", left: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
-            <div style={{ position: "absolute", right: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
-
-            {/* player badge */}
-            {currentPlayer && (
-              <div style={{ textAlign: "center", marginBottom: 8 }}>
-                <span
-                  style={{
+              {/* player badge */}
+              {currentPlayer && (
+                <div style={{ textAlign: "center", marginBottom: 8 }}>
+                  <span style={{
                     border: "2px solid var(--ink)", padding: "3px 10px",
-                    fontFamily: "JetBrains Mono, monospace", fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
                     letterSpacing: "0.14em", textTransform: "uppercase",
-                  }}
-                >
-                  {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
-                </span>
-              </div>
-            )}
-
-            <div className="font-display" style={{ fontSize: 40, lineHeight: 0.9, textAlign: "center", marginBottom: 4 }}>
-              {card?.trackName ?? "—"}
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 4 }}>
-              <div className="perf" style={{ width: 30 }} />
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                {raceDate}{postTime ? ` · POST ${postTime}` : ""}
-              </span>
-              <div className="perf" style={{ width: 30 }} />
-            </div>
-
-            {scrum?.name && (
-              <div style={{ textAlign: "center", marginBottom: 12 }}>
-                <span style={{ ...label, opacity: 0.5 }}>{scrum.name}</span>
-              </div>
-            )}
-
-            <div style={{ borderTop: "1px solid rgba(26,20,16,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-              <div>
-                <div style={label}>TOTAL</div>
-                <div className="font-display" style={{ fontSize: 48, lineHeight: 0.85, color: isFullyPending ? "var(--ink)" : "var(--retro-pink)", textShadow: isFullyPending ? "none" : "2px 2px 0 var(--ink)" }}>
-                  {isFullyPending ? "—" : total}
-                  <span style={{ fontFamily: "Space Grotesk", fontSize: 13, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>PTS</span>
-                </div>
-              </div>
-              {rank && (
-                <div style={{ textAlign: "right" }}>
-                  <div style={label}>RANK</div>
-                  <div className="font-display" style={{ fontSize: 48, lineHeight: 0.85, color: "var(--retro-green)", textShadow: "2px 2px 0 var(--ink)" }}>
-                    #{rank.position}
-                    <span style={{ fontFamily: "Space Grotesk", fontSize: 13, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>OF {rank.total}</span>
-                  </div>
+                  }}>
+                    {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
+                  </span>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* BODY — race lines */}
-          <div style={{ padding: "14px 18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-            {lines.length === 0 && (
-              <p style={{ ...label, textAlign: "center", paddingBlock: 16 }}>
-                No picks yet — head to the Daily Gallop
-              </p>
-            )}
-            {lines.map((l, i) => {
-              const isOut = l.status === "OUT";
-              const offTimeStr = l.offTime
-                ? new Date(l.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                : null;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    border: "2px solid var(--ink)",
-                    background: "var(--cream)",
-                    padding: "10px 12px",
-                    opacity: isOut ? 0.5 : 1,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                        <span style={{
-                          background: "var(--ink)", color: "var(--cream)",
-                          fontFamily: "JetBrains Mono, monospace",
-                          fontSize: 9, letterSpacing: "0.18em", padding: "2px 6px",
-                        }}>
-                          RACE {String(l.raceNumber).padStart(2, "0")}
-                        </span>
-                        {offTimeStr && (
-                          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.6 }}>
-                            {offTimeStr}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className="font-display"
-                        style={{ fontSize: 16, lineHeight: 1, textDecoration: isOut ? "line-through" : "none" }}
-                      >
-                        {l.horseNumber}. {l.horseName}
-                      </div>
-                    </div>
-                    <div style={{ flexShrink: 0, paddingTop: 2, paddingLeft: 8 }}>
-                      <StampBadge status={l.status} />
-                    </div>
-                  </div>
+              {/* venue */}
+              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center" }}>{scrum?.trackName ?? "—"}</div>
 
-                  {/* podium boxes */}
-                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    {(["first", "second", "third"] as const).map((pos, pi) => {
-                      const horse = l.podium[pos];
-                      return (
-                        <div
-                          key={pos}
-                          style={{
-                            flex: 1, border: "1.5px solid var(--ink)", padding: "5px 6px",
-                            textAlign: "center", background: "var(--cream-2)", opacity: 0.8,
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                            {["1ST", "2ND", "3RD"][pi]}
-                          </div>
-                          <div className="font-display" style={{ fontSize: 12, marginTop: 2 }}>
-                            {horse ? `${horse.number}. ${horse.name.slice(0, 12)}` : "—"}
-                          </div>
-                        </div>
-                      );
-                    })}
+              {/* date + post time */}
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }}>
+                <div className="perf" style={{ width: 30 }} />
+                <span className="label-sm">{dateLabel} · POST {postTimeLabel}</span>
+                <div className="perf" style={{ width: 30 }} />
+              </div>
+
+              {scrum?.name && (
+                <div style={{ textAlign: "center", marginTop: 4 }}>
+                  <span className="label-sm" style={{ opacity: 0.5 }}>{scrum.name}</span>
+                </div>
+              )}
+
+              {/* TOTAL / RANK */}
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, padding: "0 6px" }}>
+                <div>
+                  <div className="label-sm" style={{ opacity: 0.65 }}>TOTAL</div>
+                  <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
+                    {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>PTS</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                {myRank && (
+                  <div style={{ textAlign: "right" }}>
+                    <div className="label-sm" style={{ opacity: 0.65 }}>RANK</div>
+                    <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
+                      #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>OF {playerCount}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-          {/* scalloped bottom edge */}
-          <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginBottom: -1, transform: "scaleY(-1)" }}>
-            {Array.from({ length: 25 }).map((_, i) => (
-              <circle key={i} cx={8 + i * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
-            ))}
-          </svg>
+              {/* perforated tear */}
+              <div style={{ display: "flex", alignItems: "center", margin: "18px -22px 14px" }}>
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", marginLeft: -10 }} />
+                <div className="perf" style={{ flex: 1, opacity: 0.6 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", marginRight: -10 }} />
+              </div>
+
+              {/* pick cards */}
+              {lines.length === 0 && (
+                <p className="label-sm" style={{ textAlign: "center", paddingBlock: 16, opacity: 0.5 }}>
+                  No picks yet — head to the Daily Gallop
+                </p>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {lines.map(line => (
+                  <div key={line.raceNumber} style={{ border: "2px solid var(--ink)", background: "var(--cream)", padding: "10px 12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
+                          <span style={{ background: "var(--ink)", color: "var(--cream)", padding: "2px 6px", fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: ".18em" }}>
+                            RACE {String(line.raceNumber).padStart(2, "0")}
+                          </span>
+                          <span className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                            {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
+                          </span>
+                        </div>
+                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4,
+                          textDecoration: line.status === "OUT" ? "line-through" : "none",
+                          opacity: line.status === "OUT" ? 0.45 : 1 }}>
+                          {line.horseNumber}. {line.horseName}
+                        </div>
+                      </div>
+                      <Stamp kind={line.status} />
+                    </div>
+                    <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                      {(["1ST", "2ND", "3RD"] as const).map((pos, idx) => {
+                        const w = idx === 0 ? line.podium?.first : idx === 1 ? line.podium?.second : line.podium?.third;
+                        return (
+                          <div key={pos} style={{ flex: 1, border: "1.5px solid var(--ink)", padding: "5px 6px", textAlign: "center", background: "var(--cream-2)", opacity: w ? 1 : 0.55 }}>
+                            <div className="label-sm">{pos}</div>
+                            <div className="display" style={{ fontSize: 12, marginTop: 1 }}>{w ? w.name : "—"}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
 
       {/* swipe hint */}
       {players.length > 1 && (
-        <p style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 12, opacity: 0.4, color: "var(--ink)" }}>
+        <p className="label-sm" style={{ marginTop: 12, opacity: 0.4, color: "var(--ink)" }}>
           ← SWIPE TO SEE OTHER SLIPS →
         </p>
       )}
@@ -518,7 +485,7 @@ const Slip = () => {
             onClick={handleNotifToggle}
             disabled={notifLoading}
             className="btn-retro"
-            style={{ opacity: notifLoading ? 0.4 : 1, background: "var(--retro-pink-pale)" }}
+            style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink-pale)" : "var(--cream)" }}
           >
             <span>{notifEnabled ? "🔔" : "🔕"}</span>
             <span>
@@ -529,11 +496,10 @@ const Slip = () => {
 
         <Link
           to={`/scrum/${id}/lobby`}
+          className="label"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-            textTransform: "uppercase", color: "var(--ink)",
-            textDecoration: "underline", padding: "12px",
+            color: "var(--ink)", textDecoration: "underline", padding: "12px",
           }}
         >
           BACK TO THE PEN
@@ -541,7 +507,6 @@ const Slip = () => {
       </div>
     </div>
   );
-
 };
 
 export default Slip;

@@ -213,63 +213,54 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: "var(--cream)" }}>
+    <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--cream)" }}>
 
       {/* ── HEADER ── */}
       <header
-        className="halftone-bg sticky top-0 z-50"
         style={{
-          background: "var(--retro-green-deep)",
+          background: "var(--cream)",
           borderBottom: "3px solid var(--ink)",
-          padding: "16px 18px 12px",
+          padding: "20px 18px 8px",
         }}
       >
-        <div className="flex items-center justify-between">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link
             to="/spindle"
-            style={{
-              fontFamily: "Space Grotesk", fontWeight: 700,
-              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--cream)", textDecoration: "underline",
-            }}
+            className="label"
+            style={{ color: "var(--ink)", textDecoration: "underline" }}
           >
             SPINDLE
           </Link>
           <h1
-            className="font-display"
-            style={{ fontSize: 56, lineHeight: 0.85, color: "var(--cream)" }}
+            className="display"
+            style={{ fontSize: 56, color: "var(--ink)" }}
           >
             SLIP
           </h1>
           <Link
             to="/stats"
-            style={{
-              fontFamily: "Space Grotesk", fontWeight: 700,
-              fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: "var(--cream)", textDecoration: "underline",
-            }}
+            className="label"
+            style={{ color: "var(--ink)", textDecoration: "underline" }}
           >
             THE FORM
           </Link>
         </div>
       </header>
 
-      <main style={{ padding: "0 18px" }}>
+      <main>
 
         {/* ── TOP TRACKS ── */}
-        <section style={{ marginTop: 20 }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)" }}>
-              Top Tracks
-            </span>
+        <section style={{ padding: "16px 18px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <span className="label" style={{ color: "var(--ink)" }}>Top Tracks</span>
             <button
               onClick={handleRefresh}
               disabled={syncing}
+              className="label"
               style={{
                 background: "transparent", border: 0, color: "var(--ink)",
-                fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-                textTransform: "uppercase", textDecoration: "underline",
-                cursor: "pointer", opacity: syncing ? 0.4 : 1,
+                textDecoration: "underline", cursor: "pointer",
+                opacity: syncing ? 0.4 : 1,
               }}
             >
               {syncing ? "SYNCING…" : "↻ REFRESH"}
@@ -284,18 +275,10 @@ const Index = () => {
                 textAlign: "center", background: "var(--cream)",
               }}
             >
-              <p style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                No races today.
-              </p>
+              <p className="label" style={{ color: "var(--ink-soft)" }}>No races today.</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 10,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {(syncing && cards.length === 0 ? [0, 1, 2, 3] : filteredCards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
@@ -314,9 +297,6 @@ const Index = () => {
                 const card = c as Card;
                 const isSelected = selectedCard?.id === card.id;
                 const isFeatured = i < 2;
-                const featuredBg = i === 0 ? "var(--retro-pink)" : "var(--retro-green)";
-                const cardBg = isSelected ? "var(--retro-green)" : isFeatured ? featuredBg : "var(--cream)";
-                const cardColor = (isSelected || isFeatured) ? "var(--cream)" : "var(--ink)";
                 const firstRace = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
@@ -329,23 +309,20 @@ const Index = () => {
                       textAlign: "left",
                       padding: "12px 12px 14px",
                       border: "3px solid var(--ink)",
-                      background: cardBg,
-                      color: cardColor,
+                      background: isSelected ? "var(--green)" : "var(--cream)",
+                      color: isSelected ? "var(--cream)" : "var(--ink)",
                       cursor: "pointer",
                       boxShadow: isSelected ? "4px 4px 0 var(--ink)" : "none",
                       transition: "all 120ms",
                     }}
                   >
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", opacity: 0.7, marginBottom: 4, textTransform: "uppercase" }}>
+                    <div className="label-sm" style={{ opacity: 0.7, marginBottom: 4 }}>
                       {isFeatured ? "★ FEATURED" : "TODAY"}
                     </div>
-                    <div
-                      className="font-display"
-                      style={{ fontSize: 20, lineHeight: 0.9 }}
-                    >
+                    <div className="display" style={{ fontSize: 22 }}>
                       {card.trackName}
                     </div>
-                    <div style={{ marginTop: 10, fontSize: 11, fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.08em", display: "flex", gap: 6 }}>
+                    <div className="mono" style={{ fontSize: 11, marginTop: 6, display: "flex", gap: 6 }}>
                       <span>{firstRace}</span>
                       <span>·</span>
                       <span>{card.raceCount} RACES</span>
@@ -358,28 +335,26 @@ const Index = () => {
         </section>
 
         {/* ── SEARCH ── */}
-        <section style={{ marginTop: 14 }}>
-          <div style={{ border: "3px solid var(--ink)", display: "flex", height: 48, background: "var(--cream)" }}>
-            <input
-              value={trackSearch}
-              onChange={e => setTrackSearch(e.target.value)}
-              placeholder="SEARCH TRACKS…"
-              style={{
-                flex: 1, background: "transparent", border: 0,
-                padding: "0 14px", fontSize: 13, fontFamily: "JetBrains Mono, monospace",
-                letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "var(--ink)", outline: "none",
-              }}
-            />
-          </div>
+        <section style={{ padding: "14px 18px 0" }}>
+          <input
+            value={trackSearch}
+            onChange={e => setTrackSearch(e.target.value)}
+            placeholder="SEARCH TRACKS…"
+            className="mono"
+            style={{
+              width: "100%", border: "3px solid var(--ink)",
+              background: "var(--cream)", padding: "12px 14px",
+              fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "var(--ink)", outline: "none",
+            }}
+          />
         </section>
 
         {/* ── JOIN / CREATE ── */}
-        <section style={{ marginTop: 14 }}>
-          {/* perf divider with label */}
+        <section style={{ padding: "14px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", whiteSpace: "nowrap", color: "var(--ink)" }}>
+            <span className="label" style={{ whiteSpace: "nowrap", color: "var(--ink)" }}>
               {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "OR JOIN A CREW"}
             </span>
             <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
@@ -402,11 +377,11 @@ const Index = () => {
                 onChange={e => setGroupName(e.target.value)}
                 placeholder="GROUP NAME"
                 maxLength={40}
+                className="mono"
                 style={{
                   border: "3px solid var(--ink)", borderBottom: "1.5px solid var(--ink)",
                   background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
                   color: "var(--ink)", outline: "none",
                 }}
               />
@@ -415,11 +390,11 @@ const Index = () => {
                 onChange={e => setCreateName(e.target.value)}
                 placeholder="YOUR NAME"
                 maxLength={30}
+                className="mono"
                 style={{
                   border: "3px solid var(--ink)", borderTop: 0, borderBottom: "1.5px solid var(--ink)",
                   background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
                   color: "var(--ink)", outline: "none",
                 }}
               />
@@ -440,25 +415,22 @@ const Index = () => {
                   onChange={e => setJoinCode(e.target.value)}
                   placeholder="JOIN CODE"
                   maxLength={4}
+                  className="mono"
                   style={{
                     flex: 1, border: "3px solid var(--ink)",
                     background: "var(--cream)", padding: "12px 14px",
-                    fontSize: 20, fontFamily: "JetBrains Mono, monospace",
-                    letterSpacing: "0.3em", textTransform: "uppercase",
+                    fontSize: 20, letterSpacing: "0.3em", textTransform: "uppercase",
                     color: "var(--ink)", outline: "none",
                   }}
                 />
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}
+                  className="btn-retro btn-retro-pink"
                   style={{
-                    border: "3px solid var(--ink)",
-                    background: "var(--retro-pink)", color: "var(--cream)",
-                    fontFamily: "Bagel Fat One, system-ui, sans-serif",
-                    fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-                    padding: "12px 18px", cursor: "pointer",
-                    boxShadow: "4px 4px 0 var(--ink)",
+                    width: "auto", padding: "12px 18px",
                     opacity: (joining || joinCode.length < 4) ? 0.4 : 1,
+                    boxShadow: "4px 4px 0 var(--ink)",
                   }}
                 >
                   {joining ? "…" : "JOIN"}
@@ -469,11 +441,11 @@ const Index = () => {
                 onChange={e => setJoinName(e.target.value)}
                 placeholder="YOUR NAME"
                 maxLength={30}
+                className="mono"
                 style={{
                   border: "3px solid var(--ink)", borderTop: 0,
                   background: "var(--cream)", padding: "12px 14px",
-                  fontSize: 14, fontFamily: "JetBrains Mono, monospace",
-                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
                   color: "var(--ink)", outline: "none",
                 }}
               />
@@ -482,8 +454,8 @@ const Index = () => {
         </section>
 
         {/* ── ACTIVE SLIPS ── */}
-        <section style={{ marginTop: 24 }}>
-          <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", display: "block", marginBottom: 10 }}>
+        <section style={{ padding: "24px 18px 0" }}>
+          <span className="label" style={{ color: "var(--ink)", display: "block", marginBottom: 10 }}>
             Active Slips
           </span>
 
@@ -494,7 +466,7 @@ const Index = () => {
                   key={i}
                   style={{
                     border: "3px solid var(--ink)", padding: "14px 16px",
-                    background: "var(--retro-pink-pale)",
+                    background: "var(--pink-pale)",
                   }}
                 >
                   <div style={{ height: 8, width: 60, background: "var(--cream-2)", marginBottom: 6 }} />
@@ -511,101 +483,96 @@ const Index = () => {
                 textAlign: "center", background: "var(--cream)",
               }}
             >
-              <p style={{ fontSize: 12, letterSpacing: "0.1em", color: "var(--ink-soft)", textTransform: "uppercase" }}>
+              <p className="label" style={{ color: "var(--ink-soft)" }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {activeSlips.map(s => (
-                <div
-                  key={s.scrumId}
-                  className="halftone-bg halftone-pink animate-fade-in"
-                  style={{
-                    border: "3px solid var(--ink)",
-                    background: "var(--retro-pink-pale)",
-                    boxShadow: "5px 5px 0 var(--ink)",
-                  }}
-                >
-                  <Link
-                    to={`/scrum/${s.scrumId}/lobby`}
-                    style={{ display: "block", padding: "14px 16px", textDecoration: "none", color: "var(--ink)" }}
+              {activeSlips.map(s => {
+                const nextRaceDisplay = s.nextRaceTime
+                  ? (() => {
+                      const diff = new Date(s.nextRaceTime).getTime() - now;
+                      if (diff <= 0) return "—";
+                      const h = Math.floor(diff / 3600000);
+                      const m = Math.floor((diff % 3600000) / 60000);
+                      const sec = Math.floor((diff % 60000) / 1000);
+                      return h > 0
+                        ? `${h}H ${String(m).padStart(2, "0")}M`
+                        : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+                    })()
+                  : "—";
+
+                return (
+                  <div
+                    key={s.scrumId}
+                    className="halftone-bg halftone-pink animate-fade-in"
+                    style={{
+                      border: "3px solid var(--ink)",
+                      background: "var(--pink-pale)",
+                      boxShadow: "5px 5px 0 var(--ink)",
+                    }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 2 }}>
-                          VENUE
-                        </div>
-                        <div className="font-display" style={{ fontSize: 28, lineHeight: 0.9, marginBottom: 8 }}>
-                          {s.trackName}
-                        </div>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7, marginBottom: 2 }}>
-                          GROUP
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                          {s.scrumName}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* perf divider */}
-                    <div className="perf" style={{ margin: "10px 0", opacity: 0.4 }} />
-
-                    <div className="flex items-center justify-between">
-                      {/* countdown */}
-                      {s.nextRaceTime && (() => {
-                        const diff = new Date(s.nextRaceTime).getTime() - now;
-                        if (diff <= 0) return null;
-                        const h = Math.floor(diff / 3600000);
-                        const m = Math.floor((diff % 3600000) / 60000);
-                        const sec = Math.floor((diff % 60000) / 1000);
-                        const label = h > 0
-                          ? `${h}H ${String(m).padStart(2, "0")}M`
-                          : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-                        return (
-                          <div>
-                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.7 }}>NEXT RACE</div>
-                            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 18, fontWeight: 700, marginTop: 2 }}>{label}</div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* results bar */}
-                      {s.settled > 0 && (
-                        <div style={{ flex: 1, marginLeft: 16 }}>
-                          <div className="flex justify-between" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4, opacity: 0.7 }}>
-                            <span>RESULTS</span>
-                            <span>{s.settled}/{s.total}</span>
-                          </div>
-                          <div style={{ height: 8, border: "2px solid var(--ink)", background: "transparent", padding: "1px" }}>
-                            <div style={{ height: "100%", background: "var(--retro-green)", width: `${s.total ? (s.settled / s.total) * 100 : 0}%` }} />
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-1" style={{ marginLeft: 12 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>SHOW SLIPS</span>
-                        <span style={{ fontSize: 18 }}>→</span>
-                      </div>
-                    </div>
-                  </Link>
-
-                  {/* leave button */}
-                  <div style={{ borderTop: "2px dashed var(--ink)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
-                    <button
-                      onClick={() => handleLeave(s.scrumId)}
-                      style={{
-                        background: "transparent", border: 0, cursor: "pointer",
-                        fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-                        textTransform: "uppercase", color: "var(--ink)", opacity: 0.5,
-                        textDecoration: "underline",
-                      }}
+                    <div
+                      onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                      style={{ display: "block", padding: "14px 16px", cursor: "pointer", color: "var(--ink)" }}
                     >
-                      LEAVE
-                    </button>
+                      {/* Top row: venue + GO disc */}
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                        <div>
+                          <div className="label-sm" style={{ opacity: 0.7, marginBottom: 2 }}>VENUE</div>
+                          <div className="display" style={{ fontSize: 26 }}>{s.trackName}</div>
+                        </div>
+                        {/* GO circle */}
+                        <div style={{
+                          width: 56, height: 56, borderRadius: "50%",
+                          background: "var(--green)", border: "3px solid var(--ink)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          position: "relative", overflow: "hidden", flexShrink: 0,
+                        }}>
+                          <div style={{
+                            position: "absolute", inset: 0,
+                            backgroundImage: "radial-gradient(var(--ink) 1px, transparent 1.4px)",
+                            backgroundSize: "6px 6px", opacity: 0.20, mixBlendMode: "multiply" as const,
+                          }} />
+                          <span className="label-sm" style={{ color: "var(--cream)", position: "relative", zIndex: 2 }}>GO</span>
+                        </div>
+                      </div>
+
+                      {/* perf divider */}
+                      <div className="perf" style={{ margin: "10px 0", opacity: 0.4 }} />
+
+                      {/* Bottom row: next race + show slips */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div>
+                          <div className="label-sm" style={{ opacity: 0.7 }}>NEXT RACE</div>
+                          <div className="mono" style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>
+                            {nextRaceDisplay}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <span className="label-sm">SHOW SLIPS</span>
+                          <span style={{ fontSize: 18 }}>→</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* leave button */}
+                    <div style={{ borderTop: "2px dashed var(--ink)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => handleLeave(s.scrumId)}
+                        className="label"
+                        style={{
+                          background: "transparent", border: 0, cursor: "pointer",
+                          color: "var(--ink)", opacity: 0.5, textDecoration: "underline",
+                        }}
+                      >
+                        LEAVE
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

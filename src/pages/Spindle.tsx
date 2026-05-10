@@ -320,7 +320,7 @@ const Spindle = () => {
                           <div style={{ borderTop: "1px solid rgba(26,20,16,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                             <div>
                               <div style={label}>TOTAL</div>
-                              <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "2px 2px 0 var(--ink)" }}>
+                              <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 var(--ink)" }}>
                                 {s.totalPoints}
                                 <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>PTS</span>
                               </div>
@@ -328,7 +328,7 @@ const Spindle = () => {
                             {s.rank && (
                               <div style={{ textAlign: "right" }}>
                                 <div style={label}>RANK</div>
-                                <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--retro-green)", textShadow: "2px 2px 0 var(--ink)" }}>
+                                <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--green)", textShadow: "2px 2px 0 var(--ink)" }}>
                                   #{s.rank}
                                   <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>OF {s.totalMembers}</span>
                                 </div>
@@ -351,7 +351,7 @@ const Spindle = () => {
                                   style={{
                                     display: "flex", alignItems: "center", justifyContent: "space-between",
                                     padding: "10px 8px",
-                                    background: entry.isMe ? "var(--retro-pink-pale)" : "transparent",
+                                    background: entry.isMe ? "var(--pink-pale)" : "transparent",
                                     border: entry.isMe ? "2px dashed var(--ink)" : "none",
                                     marginBottom: entry.isMe ? 4 : 0,
                                   }}
@@ -370,7 +370,7 @@ const Spindle = () => {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--retro-pink)" : "var(--ink)" }}>
+                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--pink)" : "var(--ink)" }}>
                                     {entry.points}
                                   </div>
                                 </div>

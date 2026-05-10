@@ -7,6 +7,22 @@ import {
 } from "firebase/firestore";
 import { toast } from "sonner";
 
+const HalftoneDisc = () => (
+  <div style={{
+    width: 56, height: 56, borderRadius: "50%",
+    background: "var(--pink)", border: "3px solid var(--ink)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    position: "relative", overflow: "hidden", flexShrink: 0,
+  }}>
+    <div style={{
+      position: "absolute", inset: 0,
+      backgroundImage: "radial-gradient(var(--ink) 1px, transparent 1.4px)",
+      backgroundSize: "6px 6px", opacity: 0.35, mixBlendMode: "multiply" as const,
+    }} />
+    <span className="label-sm" style={{ color: "var(--cream)", position: "relative", zIndex: 2 }}>CREW</span>
+  </div>
+);
+
 const Lobby = () => {
   const { id } = useParams();
   const { userId } = useAuth();
@@ -134,57 +150,48 @@ const Lobby = () => {
 
   if (!scrum) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-        Loading…
-      </p>
+      <p className="label" style={{ color: "var(--ink-soft)" }}>Loading…</p>
     </div>
   );
-
-  const label: React.CSSProperties = {
-    fontWeight: 700, fontSize: 9, letterSpacing: "0.18em",
-    textTransform: "uppercase", opacity: 0.7, color: "var(--ink)",
-  };
-  const block: React.CSSProperties = {
-    border: "3px solid var(--ink)",
-    background: "var(--cream)",
-  };
 
   return (
     <div className="min-h-screen" style={{ background: "var(--cream)" }}>
 
       {/* ── HEADER ── */}
       <header
-        className="sticky top-0 z-50"
         style={{
-          background: "var(--cream)", borderBottom: "3px solid var(--ink)",
-          padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 18px",
+          marginBottom: 14,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
         <Link
           to="/"
-          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "none" }}
+          className="label"
+          style={{ color: "var(--ink)", textDecoration: "none" }}
         >
           ← PADDOCK
         </Link>
-        <span className="font-display" style={{ fontSize: 26, color: "var(--ink)" }}>THE PEN</span>
-        <div style={{ width: 70 }} />
+        <span className="display" style={{ fontSize: 22, color: "var(--ink)" }}>THE PEN</span>
+        <div style={{ width: 60 }} />
       </header>
 
-      <main style={{ padding: "16px 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+      <main style={{ padding: "0 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
 
         {/* venue + group */}
-        <div style={{ ...block, padding: "14px 16px" }}>
+        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "14px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <div style={label}>VENUE</div>
-              <div className="font-display" style={{ fontSize: 32, lineHeight: 0.9, marginTop: 2 }}>
+              <div className="label-sm" style={{ opacity: 0.7 }}>VENUE</div>
+              <div className="display" style={{ fontSize: 30, marginTop: 2 }}>
                 {card?.trackName ?? "—"}
               </div>
-              <div style={{ ...label, marginTop: 10 }}>GROUP</div>
-              <div className="font-display" style={{ fontSize: 22, lineHeight: 0.9, marginTop: 2 }}>
+              <div className="label-sm" style={{ opacity: 0.7, marginTop: 10 }}>GROUP</div>
+              <div className="display" style={{ fontSize: 22, marginTop: 2 }}>
                 {scrum.name}
               </div>
             </div>
+            <HalftoneDisc />
           </div>
         </div>
 
@@ -193,14 +200,15 @@ const Lobby = () => {
           className="halftone-bg halftone-loose"
           style={{
             border: "3px solid var(--ink)",
-            background: "var(--retro-green)", color: "var(--cream)",
-            padding: "16px 16px 14px", textAlign: "center",
+            background: "var(--green)", color: "var(--cream)",
+            padding: "16px", marginBottom: 0,
+            textAlign: "center",
             boxShadow: "5px 5px 0 var(--ink)",
           }}
         >
-          <div style={{ ...label, opacity: 0.85, color: "var(--cream)" }}>JOIN CODE</div>
+          <div className="label-sm" style={{ opacity: 0.85, color: "var(--cream)" }}>JOIN CODE</div>
           <div
-            className="font-display"
+            className="display"
             style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--cream)" }}
           >
             {scrum.joinCode}
@@ -208,13 +216,16 @@ const Lobby = () => {
           <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 6 }}>
             <button
               onClick={handleCopyCode}
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", textDecoration: "underline" }}
+              className="label-sm"
+              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline" }}
             >
               COPY
             </button>
+            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>·</span>
             <button
               onClick={handleShare}
-              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", textDecoration: "underline" }}
+              className="label-sm"
+              style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline" }}
             >
               SHARE
             </button>
@@ -223,89 +234,49 @@ const Lobby = () => {
 
         {/* countdown */}
         {countdown && (
-          <div style={{ ...block, padding: "12px 14px", textAlign: "center" }}>
-            <div style={label}>FIRST RACE IN</div>
-            <div
-              className="font-display"
-              style={{ fontSize: 40, marginTop: 2, color: "var(--ink)" }}
-            >
+          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "12px 14px", textAlign: "center" }}>
+            <div className="label-sm" style={{ opacity: 0.7 }}>FIRST RACE IN</div>
+            <div className="display" style={{ fontSize: 38, marginTop: 2, color: "var(--ink)" }}>
               {countdown}
             </div>
           </div>
         )}
 
         {/* players */}
-        <div style={block}>
-          <div style={{ padding: "10px 14px 8px", borderBottom: "2px solid var(--ink)" }}>
-            <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-              PLAYERS — {members.length}
-            </span>
-          </div>
+        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "10px 14px 4px" }}>
+          <div className="label" style={{ marginBottom: 8 }}>Players — {members.length}</div>
           {members.map((m, i) => (
             <div
               key={i}
               style={{
-                padding: "10px 14px",
-                borderTop: i > 0 ? "1px dashed var(--ink)" : "none",
+                padding: "8px 0",
+                borderTop: "1px dashed var(--ink)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{
-                  width: 16, height: 16, borderRadius: "50%",
-                  background: m.userId === userId ? "var(--retro-pink)" : "var(--retro-green)",
+                  width: 18, height: 18, borderRadius: "50%",
+                  background: m.userId === userId ? "var(--pink)" : "var(--green)",
                   border: "2px solid var(--ink)", display: "inline-block", flexShrink: 0,
                 }} />
-                <span className="font-display" style={{ fontSize: 17 }}>
+                <span className="display" style={{ fontSize: 16 }}>
                   {m.handle}
                   {m.userId === userId && (
-                    <span style={{ fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>
+                    <span className="label-sm" style={{ opacity: 0.5, marginLeft: 6 }}>(YOU)</span>
                   )}
                 </span>
               </div>
-              <span style={{
-                fontWeight: 700, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase",
-                opacity: m.submitted ? 1 : 0.35,
-              }}>
+              <span className="label-sm" style={{ opacity: m.submitted ? 1 : 0.4 }}>
                 {m.submitted ? "✓ PRINTED" : "PICKING…"}
               </span>
             </div>
           ))}
         </div>
 
-        {/* leaderboard */}
-        {leaderboard.some(r => r.points > 0) && (
-          <div style={block}>
-            <div style={{ padding: "10px 14px 8px", borderBottom: "2px solid var(--ink)" }}>
-              <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                LEADERBOARD
-              </span>
-            </div>
-            {leaderboard.map((r, i) => (
-              <div
-                key={r.userId}
-                style={{
-                  padding: "10px 14px",
-                  borderTop: i > 0 ? "1px dashed var(--ink)" : "none",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  background: r.userId === userId ? "var(--retro-pink-pale)" : "transparent",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span className="font-display" style={{ fontSize: 14, opacity: 0.5 }}>#{i + 1}</span>
-                  <span className="font-display" style={{ fontSize: 18 }}>{r.handle}</span>
-                </div>
-                <span className="font-display" style={{ fontSize: 28 }}>{r.points}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* horse data toggle (host only) */}
-        <div style={{ ...block, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-          <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            Horse Data
-          </span>
+        <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+          <span className="label">Horse Data</span>
           {userId === scrum.hostId ? (
             <button
               onClick={handleToggleDetails}
@@ -322,7 +293,7 @@ const Lobby = () => {
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </button>
           ) : (
-            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6 }}>
+            <span className="label-sm" style={{ opacity: 0.6 }}>
               {(scrum.showDetails ?? true) ? "FULL CARD" : "NAME ONLY"}
             </span>
           )}
@@ -341,10 +312,10 @@ const Lobby = () => {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             border: "3px solid var(--ink)", background: "var(--cream)",
-            fontFamily: "Bagel Fat One, system-ui, sans-serif",
+            fontFamily: "'Bagel Fat One', system-ui, sans-serif",
             fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
             color: "var(--ink)", textDecoration: "none",
-            padding: "14px 18px", opacity: 0.7,
+            padding: "14px 18px", marginTop: 10,
           }}
         >
           SHOW SLIPS
@@ -355,8 +326,8 @@ const Lobby = () => {
             to={`/scrum/${id}/host-results`}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
-              border: "3px solid var(--ink)", background: "var(--retro-green)", color: "var(--cream)",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
+              border: "3px solid var(--ink)", background: "var(--green)", color: "var(--cream)",
+              fontFamily: "'Bagel Fat One', system-ui, sans-serif",
               fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
               textDecoration: "none", padding: "14px 18px",
               boxShadow: "4px 4px 0 var(--ink)",
@@ -368,8 +339,8 @@ const Lobby = () => {
 
         {/* leave */}
         {confirmLeave ? (
-          <div style={{ ...block, padding: "14px" }}>
-            <p style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", textAlign: "center", marginBottom: 12 }}>
+          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", padding: "14px" }}>
+            <p className="label" style={{ textAlign: "center", marginBottom: 12 }}>
               Are you sure you want to leave?
             </p>
             <div style={{ display: "flex", gap: 10 }}>
@@ -377,7 +348,7 @@ const Lobby = () => {
                 onClick={() => setConfirmLeave(false)}
                 style={{
                   flex: 1, border: "3px solid var(--ink)", background: "var(--cream)",
-                  fontFamily: "Bagel Fat One, system-ui, sans-serif", fontSize: 14,
+                  fontFamily: "'Bagel Fat One', system-ui, sans-serif", fontSize: 14,
                   letterSpacing: "0.06em", textTransform: "uppercase",
                   color: "var(--ink)", padding: "10px", cursor: "pointer",
                 }}
@@ -388,8 +359,8 @@ const Lobby = () => {
                 onClick={handleLeave}
                 disabled={leaving}
                 style={{
-                  flex: 1, border: "3px solid var(--ink)", background: "var(--retro-pink)",
-                  fontFamily: "Bagel Fat One, system-ui, sans-serif", fontSize: 14,
+                  flex: 1, border: "3px solid var(--ink)", background: "var(--pink)",
+                  fontFamily: "'Bagel Fat One', system-ui, sans-serif", fontSize: 14,
                   letterSpacing: "0.06em", textTransform: "uppercase",
                   color: "var(--cream)", padding: "10px", cursor: "pointer",
                   opacity: leaving ? 0.4 : 1,
@@ -402,11 +373,11 @@ const Lobby = () => {
         ) : (
           <button
             onClick={() => setConfirmLeave(true)}
+            className="label"
             style={{
               border: "2px dashed var(--ink)", background: "transparent",
-              fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
-              textTransform: "uppercase", color: "var(--ink)",
-              padding: "12px", width: "100%", cursor: "pointer", opacity: 0.55,
+              color: "var(--ink)", padding: "12px", width: "100%",
+              cursor: "pointer", opacity: 0.55, marginTop: 10,
             }}
           >
             LEAVE GROUP

@@ -145,9 +145,7 @@ const Gallop = () => {
   if (!currentRace) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-          Loading card…
-        </p>
+        <p className="label" style={{ color: "var(--ink-soft)" }}>Loading card…</p>
       </div>
     );
   }
@@ -157,52 +155,50 @@ const Gallop = () => {
     : "—";
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--cream)" }}>
+    <div className="min-h-screen flex flex-col halftone-bg" style={{ background: "var(--cream)" }}>
 
       {/* ── HEADER ── */}
       <header
-        className="sticky top-0 z-50"
-        style={{ background: "var(--cream)", borderBottom: "3px solid var(--ink)" }}
+        style={{
+          background: "var(--cream)",
+          borderBottom: "3px solid var(--ink)",
+          padding: "16px 18px 10px",
+        }}
       >
-        <div style={{ padding: "14px 18px 8px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <span className="font-display" style={{ fontSize: 44, lineHeight: 0.9, color: "var(--ink)" }}>SLIP</span>
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11, color: "var(--ink-soft)" }}>
-            {card?.raceDate ?? ""}
-          </span>
-        </div>
-        <div
-          style={{
-            borderTop: "1px solid rgba(26,20,16,0.15)",
-            padding: "6px 18px 8px",
-            display: "flex", alignItems: "baseline", justifyContent: "space-between",
-          }}
-        >
-          <span className="font-display" style={{ fontSize: 22, color: "var(--ink)" }}>
+        {/* top row */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+          <button
+            onClick={() => navigate(`/scrum/${id}/lobby`)}
+            className="label"
+            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--ink)" }}
+          >
+            ← PEN
+          </button>
+          <span className="display" style={{ fontSize: 36, lineHeight: 0.9, color: "var(--ink)" }}>
             {card?.trackName ?? "—"}
           </span>
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          <span className="label" style={{ fontSize: 10, color: "var(--ink)", opacity: 0.7 }}>
             {offTime}
           </span>
         </div>
 
-        {/* race number tabs */}
+        {/* race selector row */}
         {races.length > 0 && (
-          <div style={{ padding: "0 18px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {races.map((r, i) => {
               const locked = raceIsLocked(r);
               const active = i === currentIdx;
-              const picked = picks[r.id];
               return (
                 <button
                   key={r.id}
                   onClick={() => setCurrentIdx(i)}
+                  className="display"
                   style={{
-                    width: 34, height: 34,
+                    width: 36, height: 36,
                     border: "2.5px solid var(--ink)",
-                    background: active ? "var(--ink)" : locked ? "transparent" : picked ? "rgba(26,20,16,0.12)" : "var(--cream)",
+                    background: active ? "var(--ink)" : "var(--cream)",
                     color: active ? "var(--cream)" : locked ? "rgba(26,20,16,0.3)" : "var(--ink)",
-                    fontFamily: "Bagel Fat One, system-ui, sans-serif",
-                    fontSize: 15, cursor: "pointer",
+                    fontSize: 16, cursor: "pointer",
                     textDecoration: locked ? "line-through" : "none",
                     opacity: locked ? 0.5 : 1,
                   }}
@@ -212,11 +208,8 @@ const Gallop = () => {
               );
             })}
             <span
-              style={{
-                alignSelf: "center", marginLeft: "auto",
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: 10, letterSpacing: "0.14em", opacity: 0.55,
-              }}
+              className="label-sm"
+              style={{ marginLeft: "auto", opacity: 0.6 }}
             >
               ENTRY {String(currentIdx + 1).padStart(2, "0")}/{String(races.length).padStart(2, "0")}
             </span>
@@ -225,59 +218,47 @@ const Gallop = () => {
       </header>
 
       {/* ── RACE TITLE ── */}
-      <div
-        style={{
-          padding: "16px 18px 12px",
-          borderBottom: "3px solid var(--ink)",
-          display: "flex", gap: 12, alignItems: "flex-start",
-        }}
-      >
-        <div>
-          <div
-            className="font-display"
-            style={{ fontSize: 64, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "3px 3px 0 var(--ink)" }}
-          >
-            R
+      <div style={{ padding: "16px 18px 10px" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <div className="display" style={{ fontSize: 64, lineHeight: 0.85, color: "var(--pink)", textShadow: "3px 3px 0 var(--ink)" }}>
+            R{String(currentRace.raceNumber).padStart(2, "0")}
           </div>
-          <div
-            className="font-display"
-            style={{ fontSize: 64, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "3px 3px 0 var(--ink)", marginTop: -8 }}
-          >
-            {String(currentRace.raceNumber).padStart(2, "0")}
-          </div>
-        </div>
-        <div style={{ flex: 1, paddingTop: 6 }}>
-          {currentRace.name && (
-            <div className="font-display" style={{ fontSize: 18, lineHeight: 1.1, color: "var(--ink)" }}>
-              {currentRace.name}
+          <div style={{ flex: 1, paddingTop: 4 }}>
+            {currentRace.name && (
+              <div className="display" style={{ fontSize: 18, lineHeight: 1, color: "var(--ink)", textWrap: "balance" as any }}>
+                {currentRace.name}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+              <span className="label-sm" style={{ background: "var(--green)", color: "var(--cream)", padding: "3px 6px", border: "none" }}>
+                {card?.raceDate ?? ""}
+              </span>
+              {isLocked && (
+                <span className="label-sm" style={{ background: "var(--pink)", color: "var(--cream)", padding: "3px 6px" }}>
+                  LOCKED
+                </span>
+              )}
+              <span className="label-sm" style={{ background: "var(--ink)", color: "var(--cream)", padding: "3px 6px" }}>
+                {offTime}
+              </span>
             </div>
-          )}
-          {isLocked && (
-            <span
-              style={{
-                display: "inline-block", marginTop: 8,
-                border: "2px solid var(--retro-pink)", color: "var(--retro-pink)",
-                fontFamily: "JetBrains Mono, monospace", fontSize: 10,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                padding: "3px 8px",
-              }}
-            >
-              LOCKED
-            </span>
-          )}
+          </div>
         </div>
       </div>
+
+      {/* perf divider */}
+      <div className="perf" style={{ margin: "0 18px" }} />
 
       {/* ── HORSE LIST ── */}
       <main
         className="flex-grow"
-        style={{ paddingBottom: 80 }}
+        style={{ padding: "10px 18px 24px" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         <div
           key={currentIdx}
-          style={{ borderBottom: "3px solid var(--ink)" }}
+          style={{ display: "flex", flexDirection: "column", gap: 0 }}
           className={slideDir.current === "forward" ? "animate-slide-forward" : "animate-slide-back"}
         >
           {currentRace.horses.length === 0 && (
@@ -285,7 +266,7 @@ const Gallop = () => {
               <div
                 key={i}
                 style={{
-                  display: "flex", gap: 14, padding: "12px 18px",
+                  display: "flex", gap: 14, padding: "12px 0",
                   borderBottom: "1px solid rgba(26,20,16,0.12)",
                 }}
               >
@@ -306,78 +287,74 @@ const Gallop = () => {
                 disabled={isLocked}
                 onClick={() => !isLocked && handlePick(currentRace.id, h.id)}
                 style={{
-                  width: "100%", display: "flex", alignItems: "flex-start", gap: 14,
-                  padding: "12px 18px", textAlign: "left",
-                  border: 0, borderBottom: "1px solid rgba(26,20,16,0.12)",
+                  width: "100%", display: "flex", alignItems: "flex-start", gap: 12,
+                  padding: "12px", textAlign: "left", marginBottom: 10,
+                  border: "3px solid var(--ink)",
                   background: selected ? "var(--ink)" : "var(--cream)",
                   color: selected ? "var(--cream)" : "var(--ink)",
                   cursor: isLocked ? "not-allowed" : "pointer",
                   opacity: isLocked ? 0.6 : 1,
-                  position: "relative",
-                  boxShadow: selected ? "inset 0 0 0 0" : "none",
+                  boxShadow: selected ? "5px 5px 0 var(--pink)" : "none",
                   transition: "background 80ms",
                 }}
               >
-                {selected && (
-                  <div className="x-stamp" style={{ position: "absolute", inset: 0, opacity: 0.08, pointerEvents: "none", color: "var(--cream)" }} />
-                )}
                 <span
-                  className="font-display"
-                  style={{ fontSize: 32, lineHeight: 0.9, minWidth: 38, paddingTop: 2 }}
+                  className="display"
+                  style={{ fontSize: 30, lineHeight: 0.9, minWidth: 36 }}
                 >
                   {h.number}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="font-display" style={{ fontSize: 18, lineHeight: 1 }}>{h.name}</div>
+                  <div className="display" style={{ fontSize: 18 }}>{h.name}</div>
                   {showDetails && (
-                    <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 5, lineHeight: 1.5, opacity: 0.7 }}>
+                    <div className="mono" style={{ fontSize: 10, marginTop: 5, lineHeight: 1.5, opacity: 0.75 }}>
                       {h.jockey && <div>J: {h.jockey}</div>}
                       {h.lbs && <div>WT: {formatWeight(h.lbs)}</div>}
                       {h.trainer && <div>T: {h.trainer}</div>}
+                      {h.odds && <div>O: {h.odds}</div>}
                     </div>
                   )}
                 </div>
-                <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, paddingTop: 2 }}>
-                  {showDetails && h.form && (
-                    <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, letterSpacing: "0.1em" }}>
-                      {h.form}
-                    </span>
-                  )}
-                  {selected && (
+                {selected && (
+                  <div style={{ flexShrink: 0, display: "flex", alignItems: "flex-start", paddingTop: 2 }}>
                     <span
                       style={{
-                        border: "2px solid currentColor", padding: "2px 6px",
-                        fontFamily: "Bagel Fat One, system-ui, sans-serif",
+                        display: "inline-block",
+                        border: "2px solid var(--pink)",
+                        color: "var(--pink)",
+                        padding: "2px 6px",
+                        fontFamily: "'Bagel Fat One', system-ui",
                         fontSize: 12, letterSpacing: "0.06em",
-                        color: "var(--retro-pink)",
+                        transform: "rotate(-6deg)",
+                        background: "transparent",
                       }}
                     >
                       INKED
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
       </main>
 
-      {/* ── FOOTER NAV ── */}
+      {/* ── STICKY FOOTER ── */}
       <div
-        className="fixed bottom-0 left-0 w-full z-50"
         style={{
-          borderTop: "3px solid var(--ink)", background: "var(--cream)",
+          position: "sticky", bottom: 0,
+          padding: "12px 18px",
+          borderTop: "3px solid var(--ink)",
+          background: "var(--cream)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 18px", height: 60,
         }}
       >
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
+          className="label"
           style={{
             background: "transparent", border: 0, cursor: "pointer",
-            fontFamily: "Bagel Fat One, system-ui, sans-serif",
-            fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
             color: "var(--ink)", opacity: currentIdx === 0 ? 0.25 : 1,
           }}
         >
@@ -388,13 +365,9 @@ const Gallop = () => {
           <button
             onClick={handleSubmit}
             disabled={submitting || !allPicked}
+            className="btn-retro btn-retro-pink"
             style={{
-              border: "2.5px solid var(--ink)",
-              background: "var(--retro-green)", color: "var(--cream)",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
-              padding: "10px 18px", cursor: "pointer",
-              boxShadow: "3px 3px 0 var(--ink)",
+              width: "auto", padding: "10px 18px", fontSize: 14,
               opacity: (submitting || !allPicked) ? 0.35 : 1,
             }}
           >
@@ -403,10 +376,9 @@ const Gallop = () => {
         ) : (
           <button
             onClick={goNext}
+            className="label"
             style={{
               background: "transparent", border: 0, cursor: "pointer",
-              fontFamily: "Bagel Fat One, system-ui, sans-serif",
-              fontSize: 16, letterSpacing: "0.06em", textTransform: "uppercase",
               color: "var(--ink)",
             }}
           >
