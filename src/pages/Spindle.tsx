@@ -58,15 +58,11 @@ function pointsFor(status: LineStatus): number {
   return 0;
 }
 
-const StatusBadge = ({ status }: { status: LineStatus }) => {
-  if (status === "WIN") return <div className="text-headline-md uppercase stamp-win">WIN</div>;
-  if (status === "PLACE") return (
-    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-8deg)" }}>PLACE</div>
-  );
-  if (status === "SHOW") return (
-    <div className="text-headline-md uppercase stamp-win" style={{ transform: "rotate(-6deg)" }}>SHOW</div>
-  );
-  return <div className="text-label-caps text-muted-foreground">OUT</div>;
+const StampBadge = ({ status }: { status: LineStatus }) => {
+  if (status === "WIN") return <span className="stamp-win">WIN</span>;
+  if (status === "PLACE") return <span className="stamp-place">PLACE</span>;
+  if (status === "SHOW") return <span className="stamp-show">SHOW</span>;
+  return <span className="stamp-out">OUT</span>;
 };
 
 const Spindle = () => {
@@ -94,14 +90,12 @@ const Spindle = () => {
     if (!userId) return;
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("userId", "==", userId))
       );
 
       const results = await Promise.all(membersSnap.docs.map(async (m) => {
         const scrumId = m.data().scrumId;
-
         const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
         if (!scrumDoc.exists()) return null;
         const scrum = scrumDoc.data();
@@ -114,7 +108,6 @@ const Spindle = () => {
         ]);
 
         const cardData = cardDocReal?.data();
-
         const isPreviousDay = cardData?.raceDate && cardData.raceDate < today;
         if (!isPreviousDay) {
           const racesSnap = await getDocs(
@@ -126,7 +119,6 @@ const Spindle = () => {
         }
 
         const pickData = myPicksSnap.docs.map(p => p.data());
-
         const [raceDocs, horseDocs] = await Promise.all([
           Promise.all(pickData.map(p => getDoc(doc(db, "races", p.raceId)))),
           Promise.all(pickData.map(p => getDoc(doc(db, "horses", p.horseId)))),
@@ -139,7 +131,6 @@ const Spindle = () => {
           if (w?.second) winnerIdSet.add(w.second);
           if (w?.third) winnerIdSet.add(w.third);
         });
-
         const winnerIdArr = [...winnerIdSet];
         const winnerDocs = await Promise.all(winnerIdArr.map(id => getDoc(doc(db, "horses", id))));
         const winnerMap: Record<string, { number: number; name: string }> = {};
@@ -170,11 +161,8 @@ const Spindle = () => {
         lines.sort((a, b) => a.raceNumber - b.raceNumber);
         const totalPoints = lines.reduce((a, l) => a + l.points, 0);
 
-        // Build leaderboard from all picks with tiebreakers
         const handleMap: Record<string, string> = {};
-        allMembersSnap.docs.forEach(d => {
-          handleMap[d.data().userId] = d.data().handle ?? "Anonymous";
-        });
+        allMembersSnap.docs.forEach(d => { handleMap[d.data().userId] = d.data().handle ?? "Anonymous"; });
 
         const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
         allPicksSnap.docs.forEach(p => {
@@ -188,12 +176,7 @@ const Spindle = () => {
         });
 
         const leaderboard: LeaderboardEntry[] = Object.entries(statsByUser)
-          .map(([uid, s]) => ({
-            userId: uid,
-            handle: handleMap[uid] ?? "—",
-            ...s,
-            isMe: uid === userId,
-          }))
+          .map(([uid, s]) => ({ userId: uid, handle: handleMap[uid] ?? "—", ...s, isMe: uid === userId }))
           .sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points;
             if (b.wins !== a.wins) return b.wins - a.wins;
@@ -205,15 +188,11 @@ const Spindle = () => {
         const rank = myEntry ? leaderboard.indexOf(myEntry) + 1 : null;
 
         return {
-          scrumId,
-          scrumName: scrum.name,
+          scrumId, scrumName: scrum.name,
           trackName: cardData?.trackName ?? "—",
           date: cardData?.raceDate ?? "",
-          totalPoints,
-          rank,
-          totalMembers: leaderboard.length,
-          lines,
-          leaderboard,
+          totalPoints, rank, totalMembers: leaderboard.length,
+          lines, leaderboard,
         } as CompletedSlip;
       }));
 
@@ -223,206 +202,282 @@ const Spindle = () => {
     })();
   }, [userId]);
 
+  const label: React.CSSProperties = {
+    fontFamily: "Space Grotesk, system-ui, sans-serif",
+    fontWeight: 700, fontSize: 9, letterSpacing: "0.18em",
+    textTransform: "uppercase", opacity: 0.65, color: "var(--ink)",
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background border-b-brutalist flex items-center justify-between h-16 px-4 sticky top-0 z-50">
-        <Link to="/" className="text-label-caps uppercase hover:underline">← PADDOCK</Link>
-        <h1 className="text-headline-md uppercase">THE SPINDLE</h1>
-        <div className="w-20 flex justify-end">
+    <div className="min-h-screen" style={{ background: "var(--cream-2)" }}>
+
+      {/* ── HEADER ── */}
+      <header
+        className="sticky top-0 z-50"
+        style={{
+          background: "var(--cream)", borderBottom: "3px solid var(--ink)",
+          padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}
+      >
+        <Link
+          to="/"
+          style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", textDecoration: "none" }}
+        >
+          ← PADDOCK
+        </Link>
+        <span className="font-display" style={{ fontSize: 24, color: "var(--ink)" }}>THE SPINDLE</span>
+        <div style={{ minWidth: 70, textAlign: "right" }}>
           {slips.length > 0 && (
             <button
               onClick={() => toggleFlip(slips[visibleIdx]?.scrumId)}
-              className="text-label-caps uppercase underline underline-offset-2 decoration-[2.67px]"
+              style={{
+                background: "transparent", border: 0, cursor: "pointer",
+                fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
+                textTransform: "uppercase", color: "var(--ink)",
+                textDecoration: "underline",
+              }}
             >
-              {flipped.has(slips[visibleIdx]?.scrumId) ? "PICKS" : "FLIP"}
+              {flipped.has(slips[visibleIdx]?.scrumId) ? "PICKS" : "STANDINGS"}
             </button>
           )}
         </div>
       </header>
 
-      <main className="pt-8 pb-16">
+      <main style={{ paddingTop: 24, paddingBottom: 40 }}>
         {loading ? (
-          <div className="flex overflow-x-hidden px-4">
-            <div className="w-full max-w-md mx-auto space-y-3 animate-pulse">
-              <div className="border-brutalist p-6 pt-8">
-                <div className="flex flex-col items-center gap-2 mb-5">
-                  <div className="h-7 w-40 bg-primary/10 rounded" />
-                  <div className="h-4 w-24 bg-primary/10 rounded" />
-                  <div className="h-4 w-20 bg-primary/10 rounded" />
-                </div>
-                <div className="border-t border-primary/20 pt-4 flex justify-between">
-                  <div className="h-10 w-16 bg-primary/10 rounded" />
-                  <div className="h-10 w-16 bg-primary/10 rounded" />
-                </div>
-              </div>
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="flex gap-3 border-b border-primary/10 pb-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-24 bg-primary/10 rounded" />
-                    <div className="h-5 w-40 bg-primary/10 rounded" />
-                    <div className="h-3 w-16 bg-primary/10 rounded" />
-                  </div>
-                  <div className="h-8 w-12 bg-primary/10 rounded" />
-                </div>
+          <div style={{ padding: "0 18px" }}>
+            <div className="retro-ticket animate-pulse" style={{ maxWidth: 420, margin: "0 auto", padding: "24px 20px" }}>
+              <div style={{ height: 24, width: 160, background: "var(--cream-2)", margin: "0 auto 10px" }} />
+              <div style={{ height: 14, width: 120, background: "var(--cream-2)", margin: "0 auto 20px" }} />
+              <div style={{ height: 40, width: 80, background: "var(--cream-2)", marginBottom: 16 }} />
+              {[1,2,3,4].map(i => (
+                <div key={i} style={{ height: 60, background: "var(--cream-2)", marginBottom: 8 }} />
               ))}
             </div>
           </div>
         ) : slips.length === 0 ? (
-          <div className="mx-4 border-brutalist p-8 text-center">
-            <p className="text-body-md text-muted-foreground">No completed slips yet.</p>
-            <p className="text-label-caps text-muted-foreground uppercase mt-2">
+          <div
+            style={{
+              margin: "0 18px", border: "3px solid var(--ink)",
+              padding: "32px", textAlign: "center", background: "var(--cream)",
+            }}
+          >
+            <p style={{ fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
+              No completed slips yet.
+            </p>
+            <p style={{ fontWeight: 700, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 8, opacity: 0.5 }}>
               Finish a Daily Gallop to see it here.
             </p>
           </div>
         ) : (
           <>
             <div
-              className="flex overflow-x-auto snap-x snap-mandatory pb-4"
-              style={{ scrollbarWidth: "none" }}
+              className="flex overflow-x-auto snap-x snap-mandatory"
+              style={{ scrollbarWidth: "none", paddingBottom: 16 }}
               onScroll={onCarouselScroll}
             >
               {slips.map((s) => {
                 const isFlipped = flipped.has(s.scrumId);
+                const dateStr = s.date
+                  ? new Date(s.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()
+                  : "";
+
                 return (
                   <div
                     key={s.scrumId}
-                    className="flex-shrink-0 w-screen snap-center flex justify-center px-4"
+                    className="flex-shrink-0 snap-center"
+                    style={{ width: "100vw", display: "flex", justifyContent: "center", padding: "0 18px" }}
                   >
-                    <div className="relative w-full max-w-md bg-white border-brutalist ticket-clip overflow-hidden">
-                      {/* Punch holes */}
-                      <div style={{
-                        position: "absolute", left: -10, top: "20%",
-                        width: 20, height: 20, background: "#f9f9f9",
-                        borderRadius: "50%", borderRight: "2.67px solid black", zIndex: 10,
-                      }} />
-                      <div style={{
-                        position: "absolute", right: -10, top: "20%",
-                        width: 20, height: 20, background: "#f9f9f9",
-                        borderRadius: "50%", borderLeft: "2.67px solid black", zIndex: 10,
-                      }} />
+                    {/* ticket wrapper */}
+                    <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
+                      {/* drop shadow */}
+                      <div style={{ position: "absolute", inset: "8px -6px -8px 6px", background: "var(--ink)", zIndex: 0 }} />
 
-                      {/* ── STUB ── same on both sides */}
-                      <div className="p-6 pt-8 border-b-[2.67px] border-dashed border-primary">
-                        <div className="flex flex-col items-center gap-1 mb-5">
-                          <span className="text-headline-lg uppercase text-center leading-tight">{s.trackName}</span>
-                          <span className="text-label-caps text-muted-foreground uppercase">{s.scrumName}</span>
-                          {s.date && (
-                            <span className="text-label-caps text-muted-foreground">
-                              {new Date(s.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                      <div style={{ position: "relative", zIndex: 1, background: "var(--cream)", border: "3px solid var(--ink)" }}>
+
+                        {/* scalloped top */}
+                        <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginTop: -1 }}>
+                          {Array.from({ length: 25 }).map((_, i2) => (
+                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
+                          ))}
+                        </svg>
+
+                        {/* STUB */}
+                        <div style={{ padding: "14px 20px 18px", borderBottom: "2px dashed var(--ink)", position: "relative" }}>
+                          <div style={{ position: "absolute", left: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
+                          <div style={{ position: "absolute", right: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
+
+                          <div className="font-display" style={{ fontSize: 40, lineHeight: 0.9, textAlign: "center", marginBottom: 4 }}>
+                            {s.trackName}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
+                            <div className="perf" style={{ width: 30 }} />
+                            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                              {s.scrumName}{dateStr ? ` · ${dateStr}` : ""}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex justify-between items-end border-t border-primary/20 pt-4">
-                          <div>
-                            <span className="text-label-caps text-muted-foreground uppercase block">TOTAL</span>
-                            <span className="text-[40px] font-black leading-none">{s.totalPoints}</span>
-                            <span className="text-label-caps text-muted-foreground uppercase"> PTS</span>
+                            <div className="perf" style={{ width: 30 }} />
                           </div>
-                          {s.rank && (
-                            <div className="text-right">
-                              <span className="text-label-caps text-muted-foreground uppercase block">RANK</span>
-                              <span className="text-headline-md font-black">#{s.rank}</span>
-                              <span className="text-label-caps text-muted-foreground"> OF {s.totalMembers}</span>
+                          <div style={{ borderTop: "1px solid rgba(26,20,16,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                            <div>
+                              <div style={label}>TOTAL</div>
+                              <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--retro-pink)", textShadow: "2px 2px 0 var(--ink)" }}>
+                                {s.totalPoints}
+                                <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>PTS</span>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ── BODY ── toggled by flip */}
-                      {isFlipped ? (
-                        /* LEADERBOARD SIDE */
-                        <div className="p-6 animate-fade-in">
-                          <div className="text-label-caps uppercase text-muted-foreground mb-4 text-center">
-                            FINAL STANDINGS
+                            {s.rank && (
+                              <div style={{ textAlign: "right" }}>
+                                <div style={label}>RANK</div>
+                                <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--retro-green)", textShadow: "2px 2px 0 var(--ink)" }}>
+                                  #{s.rank}
+                                  <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>OF {s.totalMembers}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="space-y-0 divide-y divide-primary/10">
-                            {s.leaderboard.map((entry, i) => (
-                              <div
-                                key={entry.userId}
-                                className={`flex items-center justify-between py-3 ${entry.isMe ? "font-black" : ""}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="text-label-caps text-muted-foreground w-6">#{i + 1}</span>
-                                  <div>
-                                    <span className={`text-body-md uppercase ${entry.isMe ? "font-black" : "font-bold"}`}>
-                                      {entry.handle}
-                                      {entry.isMe && <span className="text-label-caps text-muted-foreground font-normal ml-1">(YOU)</span>}
-                                    </span>
-                                    <div className="flex gap-2 mt-0.5">
-                                      {entry.wins > 0 && (
-                                        <span className="text-[10px] font-mono text-muted-foreground">{entry.wins}W</span>
-                                      )}
-                                      {entry.places > 0 && (
-                                        <span className="text-[10px] font-mono text-muted-foreground">{entry.places}P</span>
-                                      )}
-                                      {entry.shows > 0 && (
-                                        <span className="text-[10px] font-mono text-muted-foreground">{entry.shows}S</span>
-                                      )}
+                        </div>
+
+                        {/* BODY — toggled by flip */}
+                        {isFlipped ? (
+                          /* STANDINGS */
+                          <div style={{ padding: "14px 18px 20px" }} className="animate-fade-in">
+                            <div className="font-display" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.3em", marginBottom: 12, opacity: 0.65, textTransform: "uppercase" }}>
+                              FINAL STANDINGS
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column" }}>
+                              {s.leaderboard.map((entry, i) => (
+                                <div
+                                  key={entry.userId}
+                                  style={{
+                                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    padding: "10px 8px",
+                                    background: entry.isMe ? "var(--retro-pink-pale)" : "transparent",
+                                    border: entry.isMe ? "2px dashed var(--ink)" : "none",
+                                    marginBottom: entry.isMe ? 4 : 0,
+                                  }}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <span className="font-display" style={{ fontSize: 16, opacity: 0.45 }}>#{i + 1}</span>
+                                    <div>
+                                      <div className="font-display" style={{ fontSize: 20, lineHeight: 0.9 }}>
+                                        {entry.handle}
+                                        {entry.isMe && <span style={{ fontFamily: "Space Grotesk", fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>}
+                                      </div>
+                                      <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 3, opacity: 0.6, display: "flex", gap: 6 }}>
+                                        {entry.wins > 0 && <span>{entry.wins}W</span>}
+                                        {entry.places > 0 && <span>{entry.places}P</span>}
+                                        {entry.shows > 0 && <span>{entry.shows}S</span>}
+                                      </div>
                                     </div>
                                   </div>
+                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--retro-pink)" : "var(--ink)" }}>
+                                    {entry.points}
+                                  </div>
                                 </div>
-                                <span className="text-headline-md font-black">{entry.points}</span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        /* PICKS SIDE */
-                        <div className="p-6 space-y-4 animate-fade-in">
-                          {s.lines.map((l, i) => {
-                            const isOut = l.status === "OUT";
-                            const isSettled = l.status === "WIN" || l.status === "PLACE" || l.status === "SHOW";
-                            return (
-                              <div
-                                key={i}
-                                className={`flex items-start gap-3 border-b border-primary/10 pb-3 last:border-0 ${isOut ? "opacity-50" : ""}`}
-                              >
-                                <div className="flex flex-col flex-1 min-w-0">
-                                  <span className="text-label-caps text-muted-foreground">
-                                    RACE {String(l.raceNumber).padStart(2, "0")}
-                                    {l.offTime && ` · ${new Date(l.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
-                                  </span>
-                                  <span className={`text-body-lg ${isOut ? "line-through" : ""}`}>
-                                    {l.horseNumber}. {l.horseName}
-                                  </span>
-                                  <span className={`text-label-caps mt-1 ${isSettled ? "text-primary" : "text-muted-foreground"}`}>
-                                    {isOut ? "+0 PTS" : `+${l.points} PTS`}
-                                  </span>
-                                  <div className="flex gap-2 mt-2">
+                        ) : (
+                          /* PICKS */
+                          <div style={{ padding: "14px 18px 20px", display: "flex", flexDirection: "column", gap: 10 }} className="animate-fade-in">
+                            {s.lines.map((l, i) => {
+                              const isOut = l.status === "OUT";
+                              const offTimeStr = l.offTime
+                                ? new Date(l.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                : null;
+                              return (
+                                <div
+                                  key={i}
+                                  style={{
+                                    border: "2px solid var(--ink)",
+                                    background: "var(--cream)",
+                                    padding: "10px 12px",
+                                    opacity: isOut ? 0.5 : 1,
+                                  }}
+                                >
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                                        <span style={{
+                                          background: "var(--ink)", color: "var(--cream)",
+                                          fontFamily: "JetBrains Mono, monospace",
+                                          fontSize: 9, letterSpacing: "0.18em", padding: "2px 6px",
+                                        }}>
+                                          RACE {String(l.raceNumber).padStart(2, "0")}
+                                        </span>
+                                        {offTimeStr && (
+                                          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.6 }}>
+                                            {offTimeStr}
+                                          </span>
+                                        )}
+                                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, opacity: 0.7, marginLeft: "auto" }}>
+                                          +{l.points} PTS
+                                        </span>
+                                      </div>
+                                      <div
+                                        className="font-display"
+                                        style={{ fontSize: 16, lineHeight: 1, textDecoration: isOut ? "line-through" : "none" }}
+                                      >
+                                        {l.horseNumber}. {l.horseName}
+                                      </div>
+                                    </div>
+                                    <div style={{ flexShrink: 0, paddingTop: 2, paddingLeft: 8 }}>
+                                      <StampBadge status={l.status} />
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                                     {(["first", "second", "third"] as const).map((pos, pi) => {
                                       const horse = l.podium[pos];
-                                      const label = ["1ST", "2ND", "3RD"][pi];
                                       return (
-                                        <div key={pos} className="flex-1 border border-primary/30 p-1 text-center">
-                                          <div className="text-[9px] text-muted-foreground font-mono uppercase">{label}</div>
-                                          <div className="text-[11px] font-bold uppercase leading-tight mt-0.5 truncate">
-                                            {horse ? `${horse.number}. ${horse.name}` : "—"}
+                                        <div
+                                          key={pos}
+                                          style={{
+                                            flex: 1, border: "1.5px solid var(--ink)", padding: "5px 6px",
+                                            textAlign: "center", background: "var(--cream-2)", opacity: 0.8,
+                                          }}
+                                        >
+                                          <div style={{ fontWeight: 700, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                                            {["1ST", "2ND", "3RD"][pi]}
+                                          </div>
+                                          <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 10, marginTop: 2 }}>
+                                            {horse ? `${horse.number}. ${horse.name.slice(0, 12)}` : "—"}
                                           </div>
                                         </div>
                                       );
                                     })}
                                   </div>
                                 </div>
-                                <div className="shrink-0 pt-1 pr-1">
-                                  <StatusBadge status={l.status} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                              );
+                            })}
+                          </div>
+                        )}
 
-                      <div className="pb-2" />
+                        {/* scalloped bottom */}
+                        <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginBottom: -1, transform: "scaleY(-1)" }}>
+                          {Array.from({ length: 25 }).map((_, i2) => (
+                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
+                          ))}
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
 
+            {/* dot indicators */}
             {slips.length > 1 && (
-              <div className="flex justify-center gap-1.5 mt-3">
-                {slips.map((s) => (
-                  <div key={s.scrumId} className="w-1.5 h-1.5 rounded-full bg-primary opacity-30" />
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 8 }}>
+                {slips.map((s, i) => (
+                  <div
+                    key={s.scrumId}
+                    style={{
+                      width: 8, height: 8, borderRadius: "50%",
+                      border: "2px solid var(--ink)",
+                      background: i === visibleIdx ? "var(--ink)" : "transparent",
+                    }}
+                  />
                 ))}
               </div>
             )}
