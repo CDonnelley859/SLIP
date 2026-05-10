@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
+import { settleVirtualRaces } from "@/lib/virtualTrack";
 import { registerPush, unregisterPush, isPushRegistered } from "@/lib/notifications";
 import {
   doc, getDoc, getDocs, collection, query, where, onSnapshot,
@@ -203,7 +204,9 @@ const Slip = () => {
       ];
       setPlayers(sorted);
 
-      try { await syncResults(scrumData.cardId); } catch { }
+      if (!cardDoc.data()?.isVirtual) {
+        try { await syncResults(scrumData.cardId); } catch { }
+      }
       await buildLines(sorted[0]?.userId ?? userId ?? "");
     })();
 
@@ -279,7 +282,11 @@ const Slip = () => {
     if (!scrum?.cardId) return;
     setRefreshing(true);
     try {
-      await syncResults(scrum.cardId);
+      if (card?.isVirtual) {
+        await settleVirtualRaces();
+      } else {
+        await syncResults(scrum.cardId);
+      }
       await buildLines(viewUserId ?? userId ?? "");
       toast.success("Results updated");
     } catch {
@@ -369,7 +376,7 @@ const Slip = () => {
               )}
 
               {/* venue */}
-              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center" }}>{scrum?.trackName ?? "—"}</div>
+              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center" }}>{card?.trackName ?? "—"}</div>
 
               {/* date + post time */}
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }}>
