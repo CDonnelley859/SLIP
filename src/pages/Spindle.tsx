@@ -357,8 +357,8 @@ const Spindle = () => {
                             )}
                           </div>
 
-                          {/* discreet delete — sits at the foot of the stub */}
-                          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+                          {/* discreet delete — only visible on the standings side */}
+                          <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", visibility: isFlipped ? "visible" : "hidden" }}>
                             {confirmDelete === s.scrumId ? (
                               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                 <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>REMOVE THIS SLIP?</span>
