@@ -46,19 +46,19 @@ const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
     ...(side === "top" ? { top: 0, transform: "translateY(-1px)" } : { bottom: 0, transform: "translateY(1px) scaleY(-1)" }),
   }}>
     {Array.from({ length: 25 }).map((_, i) => (
-      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--cream-2)" stroke="var(--ink)" strokeWidth={1.5} />
+      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--green)" stroke="rgba(245,232,223,0.4)" strokeWidth={1.5} />
     ))}
   </svg>
 );
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN",     color: "var(--pink)",     rot: -8 },
-    PLACE:   { label: "PLACE",   color: "var(--green)",    rot: -5 },
-    SHOW:    { label: "SHOW",    color: "var(--ink)",      rot: -3 },
-    OUT:     { label: "OUT",     color: "var(--ink-soft)", rot: 4, dashed: true, dim: true },
-    PENDING: { label: "PENDING", color: "var(--ink-soft)", rot: 0, dim: true },
-    RUNNING: { label: "NOW",     color: "var(--ink)",      rot: -4 },
+    WIN:     { label: "WIN",     color: "var(--pink)",              rot: -8 },
+    PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
+    SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
+    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.5)",    rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.4)",    rot: 0, dim: true },
+    RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
   return (
@@ -350,10 +350,8 @@ const Slip = () => {
       >
         {/* Ticket */}
         <div style={{ position: "relative" }}>
-          {/* drop shadow board */}
-          <div style={{ position: "absolute", inset: "8px -6px -8px 6px", background: "var(--ink)", zIndex: 0 }} />
           {/* ticket */}
-          <div style={{ position: "relative", zIndex: 1, background: "var(--cream)", border: "3px solid var(--ink)", color: "var(--ink)" }}>
+          <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", color: "var(--cream)", boxShadow: "6px 6px 0 var(--cream)" }}>
             <ScalloppedEdge side="top" />
             <ScalloppedEdge side="bottom" />
             <div style={{ padding: "20px 18px 22px" }}>
@@ -362,8 +360,8 @@ const Slip = () => {
               {currentPlayer && (
                 <div style={{ textAlign: "center", marginBottom: 8 }}>
                   <span className="mono" style={{
-                    border: "2px solid var(--ink)", padding: "3px 10px",
-                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                    border: "2px solid rgba(245,232,223,0.4)", padding: "3px 10px",
+                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)",
                   }}>
                     {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
                   </span>
@@ -406,9 +404,9 @@ const Slip = () => {
 
               {/* perforated tear */}
               <div style={{ display: "flex", alignItems: "center", margin: "18px -22px 14px" }}>
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", marginLeft: -10 }} />
-                <div className="perf" style={{ flex: 1, opacity: 0.6 }} />
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", marginRight: -10 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginLeft: -10 }} />
+                <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginRight: -10 }} />
               </div>
 
               {/* pick cards */}
@@ -423,7 +421,7 @@ const Slip = () => {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
-                          <span className="mono" style={{ background: "var(--ink)", color: "var(--cream)", padding: "2px 6px", fontSize: 9, letterSpacing: ".18em" }}>
+                          <span className="mono" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "2px 6px", fontSize: 9, letterSpacing: ".18em", border: "1px solid rgba(245,232,223,0.3)" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
                           <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
