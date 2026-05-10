@@ -252,7 +252,7 @@ const Index = () => {
         {/* ── TOP TRACKS ── */}
         <section style={{ padding: "16px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <span className="label" style={{ color: "var(--cream)" }}>Top Tracks</span>
+            <span className="label" style={{ color: "var(--cream)" }}>TOP TRACKS</span>
             <button
               onClick={handleRefresh}
               disabled={syncing}
@@ -263,40 +263,27 @@ const Index = () => {
                 opacity: syncing ? 0.4 : 1,
               }}
             >
-              {syncing ? "SYNCING…" : "↻ REFRESH"}
+              {syncing ? "SYNCING…" : "REFRESH"}
             </button>
           </div>
 
           {cards.length === 0 && !syncing ? (
-            <div
-              className="animate-fade-in"
-              style={{
-                border: "3px solid rgba(245,232,223,0.3)", padding: "24px",
-                textAlign: "center", background: "var(--green)",
-              }}
-            >
+            <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
               <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {(syncing && cards.length === 0 ? [0, 1, 2, 3] : filteredCards).map((c, i) => {
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {(syncing && cards.length === 0 ? [0, 1, 2] : filteredCards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
-                    <div
-                      key={i}
-                      style={{
-                        border: "3px solid rgba(245,232,223,0.3)", padding: "12px 12px 14px",
-                        background: "var(--green)", height: 90,
-                      }}
-                    >
-                      <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.2)", marginBottom: 8 }} />
-                      <div style={{ height: 20, width: 100, background: "rgba(245,232,223,0.2)" }} />
+                    <div key={i} style={{ border: "3px solid var(--cream)", borderBottom: i < 2 ? "1.5px solid var(--cream)" : "3px solid var(--cream)", padding: "18px 16px 16px", background: "var(--green)" }}>
+                      <div style={{ height: 28, width: 160, background: "rgba(245,232,223,0.15)", marginBottom: 10 }} />
+                      <div style={{ height: 11, width: 100, background: "rgba(245,232,223,0.1)" }} />
                     </div>
                   );
                 }
                 const card = c as Card;
                 const isSelected = selectedCard?.id === card.id;
-                const isFeatured = i < 2;
                 const firstRace = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
@@ -307,24 +294,20 @@ const Index = () => {
                     className="animate-fade-in"
                     style={{
                       textAlign: "left",
-                      padding: "12px 12px 14px",
-                      border: "3px solid var(--ink)",
-                      background: isSelected ? "var(--green)" : "var(--cream)",
-                      color: isSelected ? "var(--cream)" : "var(--ink)",
+                      padding: "18px 16px 16px",
+                      border: "3px solid var(--cream)",
+                      borderBottom: i < filteredCards.length - 1 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
+                      background: isSelected ? "var(--cream)" : "var(--green)",
+                      color: isSelected ? "var(--ink)" : "var(--cream)",
                       cursor: "pointer",
-                      boxShadow: isSelected ? "4px 4px 0 var(--pink)" : "4px 4px 0 var(--ink)",
                       transition: "all 120ms",
                     }}
                   >
-                    <div className="label-sm" style={{ opacity: 0.7, marginBottom: 4 }}>
-                      {isFeatured ? "★ FEATURED" : "TODAY"}
-                    </div>
-                    <div className="display" style={{ fontSize: 22 }}>
+                    <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
-                    <div className="mono" style={{ fontSize: 11, marginTop: 6, display: "flex", gap: 6 }}>
+                    <div className="mono" style={{ fontSize: 11, marginTop: 8, opacity: 0.7, display: "flex", gap: 8 }}>
                       <span>{firstRace}</span>
-                      <span>·</span>
                       <span>{card.raceCount} RACES</span>
                     </div>
                   </button>
@@ -336,160 +319,177 @@ const Index = () => {
 
         {/* ── SEARCH ── */}
         <section style={{ padding: "14px 18px 0" }}>
-          <input
-            value={trackSearch}
-            onChange={e => setTrackSearch(e.target.value)}
-            placeholder="SEARCH TRACKS…"
-            className="mono"
-            style={{
-              width: "100%", border: "3px solid var(--ink)",
-              background: "var(--cream)", padding: "12px 14px",
-              fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "var(--ink)", outline: "none",
-            }}
-          />
+          <div style={{ border: "3px solid var(--cream)", position: "relative" }}>
+            <div
+              className="label-sm"
+              style={{
+                position: "absolute", top: -1, left: 12,
+                transform: "translateY(-50%)",
+                background: "var(--green)", padding: "0 4px",
+                color: "var(--cream)", letterSpacing: "0.18em",
+              }}
+            >
+              SEARCH TRACKS
+            </div>
+            <input
+              value={trackSearch}
+              onChange={e => setTrackSearch(e.target.value)}
+              placeholder="ENTER TRACK NAME"
+              className="mono"
+              style={{
+                width: "100%", border: 0,
+                background: "transparent", padding: "14px 14px",
+                fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--cream)", outline: "none",
+              }}
+            />
+          </div>
         </section>
 
         {/* ── JOIN / CREATE ── */}
         <section style={{ padding: "14px 18px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-            <span className="label" style={{ whiteSpace: "nowrap", color: "var(--cream)" }}>
-              {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "OR JOIN A CREW"}
-            </span>
-            <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-            {selectedCard && (
-              <button
-                onClick={() => setSelectedCard(null)}
-                style={{
-                  background: "transparent", border: 0, cursor: "pointer",
-                  fontSize: 14, color: "var(--cream)", opacity: 0.5,
-                }}
-              >✕</button>
-            )}
-          </div>
-          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", boxShadow: "4px 4px 0 var(--ink)", padding: "14px" }}>
+          {selectedCard && (
+            <button
+              onClick={() => setSelectedCard(null)}
+              className="label-sm"
+              style={{ background: "transparent", border: 0, color: "var(--cream)", opacity: 0.5, cursor: "pointer", marginBottom: 6 }}
+            >
+              ← BACK
+            </button>
+          )}
+          <div style={{ border: "3px solid var(--cream)", position: "relative" }}>
+            <div
+              className="label-sm"
+              style={{
+                position: "absolute", top: -1, left: 12,
+                transform: "translateY(-50%)",
+                background: "var(--green)", padding: "0 4px",
+                color: "var(--cream)", letterSpacing: "0.18em",
+              }}
+            >
+              {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "JOIN GROUP"}
+            </div>
 
-          {selectedCard ? (
-            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <input
-                autoFocus
-                value={groupName}
-                onChange={e => setGroupName(e.target.value)}
-                placeholder="GROUP NAME"
-                maxLength={40}
-                className="mono"
-                style={{
-                  border: "2px solid var(--ink)",
-                  background: "var(--cream-2)", padding: "10px 12px",
-                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none", width: "100%",
-                }}
-              />
-              <input
-                value={createName}
-                onChange={e => setCreateName(e.target.value)}
-                placeholder="YOUR NAME"
-                maxLength={30}
-                className="mono"
-                style={{
-                  border: "2px solid var(--ink)",
-                  background: "var(--cream-2)", padding: "10px 12px",
-                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none", width: "100%",
-                }}
-              />
-              <button
-                type="submit"
-                disabled={creating || !groupName.trim() || !createName.trim()}
-                className="btn-retro btn-retro-green"
-              >
-                {creating ? "CREATING…" : "CREATE GROUP →"}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", gap: 8 }}>
+            {selectedCard ? (
+              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column" }}>
+                <input
+                  autoFocus
+                  value={groupName}
+                  onChange={e => setGroupName(e.target.value)}
+                  placeholder="ENTER GROUP NAME"
+                  maxLength={40}
+                  className="mono"
+                  style={{
+                    border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
+                    background: "transparent", padding: "16px 14px",
+                    fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: "var(--cream)", outline: "none", width: "100%",
+                  }}
+                />
+                <div style={{ position: "relative" }}>
+                  <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)", opacity: 0.7 }}>YOUR NAME</div>
+                  <input
+                    value={createName}
+                    onChange={e => setCreateName(e.target.value)}
+                    placeholder="YOUR NAME"
+                    maxLength={30}
+                    className="mono"
+                    style={{
+                      border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
+                      background: "transparent", padding: "16px 14px",
+                      fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
+                      color: "var(--cream)", outline: "none", width: "100%",
+                    }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={creating || !groupName.trim() || !createName.trim()}
+                  className="display"
+                  style={{
+                    background: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.25)" : "var(--cream)",
+                    color: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.5)" : "var(--ink)",
+                    border: 0, padding: "16px", fontSize: 18, letterSpacing: "0.06em",
+                    cursor: "pointer", width: "100%", textTransform: "uppercase",
+                  }}
+                >
+                  {creating ? "CREATING…" : "CREATE GROUP"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column" }}>
                 <input
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value)}
-                  placeholder="JOIN CODE"
+                  placeholder="ENTER JOIN CODE"
                   maxLength={4}
                   className="mono"
                   style={{
-                    flex: 1, border: "2px solid var(--ink)",
-                    background: "var(--cream-2)", padding: "10px 12px",
+                    border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
+                    background: "transparent", padding: "16px 14px",
                     fontSize: 20, letterSpacing: "0.3em", textTransform: "uppercase",
-                    color: "var(--ink)", outline: "none",
+                    color: "var(--cream)", outline: "none", width: "100%",
                   }}
                 />
+                <div style={{ position: "relative" }}>
+                  <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)", opacity: 0.7 }}>YOUR NAME</div>
+                  <input
+                    value={joinName}
+                    onChange={e => setJoinName(e.target.value)}
+                    placeholder="YOUR NAME"
+                    maxLength={30}
+                    className="mono"
+                    style={{
+                      border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
+                      background: "transparent", padding: "16px 14px",
+                      fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
+                      color: "var(--cream)", outline: "none", width: "100%",
+                    }}
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}
-                  className="btn-retro"
+                  className="display"
                   style={{
-                    width: "auto", padding: "10px 18px",
-                    opacity: (joining || joinCode.length < 4) ? 0.4 : 1,
+                    background: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.25)" : "var(--cream)",
+                    color: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.5)" : "var(--ink)",
+                    border: 0, padding: "16px", fontSize: 18, letterSpacing: "0.06em",
+                    cursor: "pointer", width: "100%", textTransform: "uppercase",
                   }}
                 >
-                  {joining ? "…" : "JOIN"}
+                  {joining ? "JOINING…" : "JOIN GROUP"}
                 </button>
-              </div>
-              <input
-                value={joinName}
-                onChange={e => setJoinName(e.target.value)}
-                placeholder="YOUR NAME"
-                maxLength={30}
-                className="mono"
-                style={{
-                  border: "2px solid var(--ink)",
-                  background: "var(--cream-2)", padding: "10px 12px",
-                  fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none", width: "100%",
-                }}
-              />
-            </form>
-          )}
+              </form>
+            )}
           </div>
         </section>
 
         {/* ── ACTIVE SLIPS ── */}
         <section style={{ padding: "24px 18px 0" }}>
           <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>
-            Active Slips
+            ACTIVE SLIPS
           </span>
 
           {slipsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {[0, 1].map(i => (
-                <div
-                  key={i}
-                  style={{
-                    border: "2px dashed rgba(245,232,223,0.4)", padding: "14px 16px",
-                    background: "var(--green)",
-                  }}
-                >
-                  <div style={{ height: 8, width: 60, background: "rgba(245,232,223,0.2)", marginBottom: 6 }} />
-                  <div style={{ height: 22, width: 140, background: "rgba(245,232,223,0.2)", marginBottom: 10 }} />
-                  <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.2)" }} />
+                <div key={i} style={{ border: "3px solid var(--cream)", borderBottom: i === 0 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)", padding: "16px" }}>
+                  <div style={{ height: 8, width: 50, background: "rgba(245,232,223,0.15)", marginBottom: 6 }} />
+                  <div style={{ height: 24, width: 150, background: "rgba(245,232,223,0.15)", marginBottom: 8 }} />
+                  <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.15)" }} />
                 </div>
               ))}
             </div>
           ) : activeSlips.length === 0 ? (
-            <div
-              className="animate-fade-in"
-              style={{
-                border: "2px dashed rgba(245,232,223,0.4)", padding: "24px",
-                textAlign: "center", background: "var(--green)",
-              }}
-            >
-              <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>
+            <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
+              <p className="label" style={{ color: "var(--cream)", opacity: 0.5 }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {activeSlips.map(s => {
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {activeSlips.map((s, i) => {
                 const nextRaceDisplay = s.nextRaceTime
                   ? (() => {
                       const diff = new Date(s.nextRaceTime).getTime() - now;
@@ -506,67 +506,43 @@ const Index = () => {
                 return (
                   <div
                     key={s.scrumId}
-                    className="halftone-bg animate-fade-in"
+                    className="animate-fade-in"
                     style={{
-                      border: "2px dashed rgba(245,232,223,0.4)",
-                      background: "var(--green)",
+                      border: "3px solid var(--cream)",
+                      borderBottom: i < activeSlips.length - 1 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
+                      color: "var(--cream)",
                     }}
                   >
+                    {/* Main content */}
                     <div
                       onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
-                      style={{ display: "block", padding: "14px 16px", cursor: "pointer", color: "var(--cream)" }}
+                      style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
-                      {/* Top row: venue + GO disc */}
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                        <div>
-                          <div className="label-sm" style={{ opacity: 0.7, marginBottom: 2 }}>VENUE</div>
-                          <div className="display" style={{ fontSize: 26 }}>{s.trackName}</div>
-                        </div>
-                        {/* GO circle */}
-                        <div style={{
-                          width: 56, height: 56, borderRadius: "50%",
-                          background: "var(--pink)", border: "3px solid var(--ink)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          position: "relative", overflow: "hidden", flexShrink: 0,
-                        }}>
-                          <div style={{
-                            position: "absolute", inset: 0,
-                            backgroundImage: "radial-gradient(var(--ink) 1px, transparent 1.4px)",
-                            backgroundSize: "6px 6px", opacity: 0.20, mixBlendMode: "multiply" as const,
-                          }} />
-                          <span className="label-sm" style={{ color: "var(--cream)", position: "relative", zIndex: 2 }}>GO</span>
-                        </div>
-                      </div>
-
-                      {/* perf divider */}
-                      <div className="perf" style={{ margin: "10px 0", opacity: 0.4 }} />
-
-                      {/* Bottom row: next race + show slips */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div>
-                          <div className="label-sm" style={{ opacity: 0.7 }}>NEXT RACE</div>
-                          <div className="mono" style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>
-                            {nextRaceDisplay}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <span className="label-sm">SHOW SLIPS</span>
-                          <span style={{ fontSize: 18 }}>→</span>
-                        </div>
+                      <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>VENUE</div>
+                      <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 10 }}>{s.trackName}</div>
+                      <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>GROUP</div>
+                      <div className="display" style={{ fontSize: 18, lineHeight: 1, marginBottom: 10 }}>{s.scrumName}</div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                        <span className="label-sm" style={{ opacity: 0.6 }}>NEXT RACE</span>
+                        <span className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{nextRaceDisplay}</span>
                       </div>
                     </div>
 
-                    {/* leave button */}
-                    <div style={{ borderTop: "2px dashed rgba(245,232,223,0.4)", padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
+                    {/* Bottom row */}
+                    <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "space-between" }}>
                       <button
                         onClick={() => handleLeave(s.scrumId)}
                         className="label"
-                        style={{
-                          background: "transparent", border: 0, cursor: "pointer",
-                          color: "var(--cream)", opacity: 0.5, textDecoration: "underline",
-                        }}
+                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
                       >
                         LEAVE
+                      </button>
+                      <button
+                        onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                        className="label"
+                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                      >
+                        SHOW SLIPS
                       </button>
                     </div>
                   </div>
