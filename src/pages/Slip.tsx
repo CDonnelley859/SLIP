@@ -238,6 +238,44 @@ const Slip = () => {
     textTransform: "uppercase", opacity: 0.65, color: "var(--ink)",
   };
 
+  async function handleNotifToggle() {
+    if (!userId) return;
+    setNotifLoading(true);
+    try {
+      if (notifEnabled) {
+        await unregisterPush(userId);
+        setNotifEnabled(false);
+        toast.success("Notifications off");
+      } else {
+        const ok = await registerPush(userId);
+        if (ok) {
+          setNotifEnabled(true);
+          toast.success("Notifications on");
+        } else {
+          toast.error("Couldn't enable notifications — check your browser settings");
+        }
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
+  async function handleRefresh() {
+    if (!scrum?.cardId) return;
+    setRefreshing(true);
+    try {
+      await syncResults(scrum.cardId);
+      await buildLines(viewUserId ?? userId ?? "");
+      toast.success("Results updated");
+    } catch {
+      await buildLines(viewUserId ?? userId ?? "");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col items-center"
@@ -503,44 +541,6 @@ const Slip = () => {
       </div>
     </div>
   );
-
-  async function handleNotifToggle() {
-    if (!userId) return;
-    setNotifLoading(true);
-    try {
-      if (notifEnabled) {
-        await unregisterPush(userId);
-        setNotifEnabled(false);
-        toast.success("Notifications off");
-      } else {
-        const ok = await registerPush(userId);
-        if (ok) {
-          setNotifEnabled(true);
-          toast.success("Notifications on");
-        } else {
-          toast.error("Couldn't enable notifications — check your browser settings");
-        }
-      }
-    } catch {
-      toast.error("Something went wrong");
-    } finally {
-      setNotifLoading(false);
-    }
-  }
-
-  async function handleRefresh() {
-    if (!scrum?.cardId) return;
-    setRefreshing(true);
-    try {
-      await syncResults(scrum.cardId);
-      await buildLines(viewUserId ?? userId ?? "");
-      toast.success("Results updated");
-    } catch {
-      await buildLines(viewUserId ?? userId ?? "");
-    } finally {
-      setRefreshing(false);
-    }
-  }
 };
 
 export default Slip;
