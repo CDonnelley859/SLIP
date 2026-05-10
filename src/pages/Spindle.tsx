@@ -484,51 +484,6 @@ const Spindle = () => {
                       </div>
                     </div>
 
-                    {/* delete — below the ticket, standings side only */}
-                    {isFlipped && (
-                      <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-                        {confirmDelete === s.scrumId ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>REMOVE THIS SLIP?</span>
-                            <button
-                              onClick={() => handleDelete(s.scrumId)}
-                              disabled={deleting}
-                              className="label-sm"
-                              style={{
-                                background: "transparent", border: "1px solid rgba(245,232,223,0.45)",
-                                color: "var(--cream)", padding: "3px 8px", cursor: "pointer",
-                                opacity: deleting ? 0.4 : 0.85,
-                              }}
-                            >
-                              {deleting ? "…" : "YES"}
-                            </button>
-                            <button
-                              onClick={() => setConfirmDelete(null)}
-                              className="label-sm"
-                              style={{
-                                background: "transparent", border: 0,
-                                color: "var(--cream)", padding: "3px 0", cursor: "pointer", opacity: 0.45,
-                              }}
-                            >
-                              CANCEL
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setConfirmDelete(s.scrumId)}
-                            className="label-sm"
-                            style={{
-                              background: "transparent", border: 0,
-                              color: "var(--cream)", cursor: "pointer",
-                              opacity: 0.25, padding: 0,
-                              textDecoration: "underline",
-                            }}
-                          >
-                            REMOVE
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -552,6 +507,56 @@ const Spindle = () => {
           </>
         )}
       </main>
+
+      {/* fixed delete — appears below the slip when on standings side */}
+      {(() => {
+        const current = slips[visibleIdx];
+        if (!current || !flipped.has(current.scrumId)) return null;
+        return (
+          <div style={{ position: "fixed", bottom: 24, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 40 }}>
+            {confirmDelete === current.scrumId ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>REMOVE THIS SLIP?</span>
+                <button
+                  onClick={() => handleDelete(current.scrumId)}
+                  disabled={deleting}
+                  className="label-sm"
+                  style={{
+                    background: "transparent", border: "1px solid rgba(245,232,223,0.45)",
+                    color: "var(--cream)", padding: "3px 8px", cursor: "pointer",
+                    opacity: deleting ? 0.4 : 0.85,
+                  }}
+                >
+                  {deleting ? "…" : "YES"}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="label-sm"
+                  style={{
+                    background: "transparent", border: 0,
+                    color: "var(--cream)", padding: "3px 0", cursor: "pointer", opacity: 0.45,
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(current.scrumId)}
+                className="label-sm"
+                style={{
+                  background: "transparent", border: 0,
+                  color: "var(--cream)", cursor: "pointer",
+                  opacity: 0.25, padding: 0,
+                  textDecoration: "underline",
+                }}
+              >
+                REMOVE
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };
