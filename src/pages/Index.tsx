@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number };
+type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number; isVirtual?: boolean };
 type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null };
 
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -71,8 +71,20 @@ const Index = () => {
       raceDate: d.data().raceDate,
       postTime: d.data().postTime,
       raceCount: d.data().raceCount ?? 0,
+      isVirtual: d.data().isVirtual ?? false,
     })).sort((a, b) => a.postTime.localeCompare(b.postTime));
     setCards(cardList);
+
+    // Auto-reset virtual track if all its races have passed
+    const virtualCard = cardList.find(c => c.isVirtual);
+    if (virtualCard && virtualCard.postTime) {
+      const RACE_GAP_MS = 20 * 60 * 1000;
+      const lastRaceTime = new Date(virtualCard.postTime).getTime() + (6 - 1) * RACE_GAP_MS;
+      if (Date.now() > lastRaceTime + 5 * 60 * 1000) {
+        fetch("/api/cron-virtual-track").catch(() => {});
+        setTimeout(() => loadData(), 4000);
+      }
+    }
 
     if (!userId) return;
     const membersSnap = await getDocs(
@@ -88,7 +100,8 @@ const Index = () => {
         .map((m, i) => scrumDocs[i].exists() ? scrumDocs[i].data().cardId : null)
         .filter(Boolean) as string[]
     )];
-    await Promise.all(uniqueCardIds.map(cid => syncResults(cid).catch(() => {})));
+    // Skip virtual card — its results are handled by cron-virtual-track
+    await Promise.all(uniqueCardIds.filter(cid => cid !== "virtual-park").map(cid => syncResults(cid).catch(() => {})));
 
     const slipResults = await Promise.all(
       membersSnap.docs.map(async (m, i) => {
@@ -305,6 +318,15 @@ const Index = () => {
                       cursor: "pointer", transition: "all 120ms",
                     }}
                   >
+                    {card.isVirtual && (
+                      <div className="label-sm" style={{
+                        display: "inline-block", marginBottom: 6,
+                        background: isSelected ? "var(--ink)" : "var(--pink)",
+                        color: "var(--cream)", padding: "2px 7px",
+                      }}>
+                        VIRTUAL
+                      </div>
+                    )}
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>

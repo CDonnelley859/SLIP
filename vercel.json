@@ -3,6 +3,10 @@
     {
       "path": "/api/cron-sync",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron-virtual-track",
+      "schedule": "0 */2 * * *"
     }
   ],
   "rewrites": [

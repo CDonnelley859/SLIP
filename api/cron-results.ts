@@ -56,6 +56,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let notified = 0;
 
   for (const cardDoc of cardsSnap.docs) {
+    // Skip the virtual test track — it has its own settlement cron
+    if (cardDoc.data().isVirtual) continue;
     const { trackName } = cardDoc.data();
     const normTrack = normaliseCourse(trackName);
 

@@ -74,7 +74,10 @@ const Gallop = () => {
         return sorted;
       }
 
-      try { await syncRunners(scrum.cardId); } catch { }
+      // Skip live sync for the virtual test track
+      if (!cardDoc.data()?.isVirtual) {
+        try { await syncRunners(scrum.cardId); } catch { }
+      }
       const loadedRaces = await loadRaces();
 
       const nowTs = Date.now();
