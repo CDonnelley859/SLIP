@@ -300,7 +300,7 @@ const Index = () => {
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
                       textAlign: "left", padding: "18px 16px 16px",
                       border: "3px solid var(--cream)",
-                      background: isSelected ? "var(--cream)" : "var(--green)",
+                      background: isSelected ? "var(--pink)" : "var(--green)",
                       color: isSelected ? "var(--ink)" : "var(--cream)",
                       cursor: "pointer", transition: "all 120ms",
                     }}

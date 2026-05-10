@@ -220,7 +220,7 @@ const Gallop = () => {
       {/* ── RACE TITLE ── */}
       <div style={{ padding: "16px 18px 10px" }}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <div className="display" style={{ fontSize: 64, lineHeight: 0.85, color: "var(--pink)", textShadow: "3px 3px 0 var(--ink)" }}>
+          <div className="display" style={{ fontSize: 64, lineHeight: 0.85, color: "var(--cream)", textShadow: "3px 3px 0 rgba(245,232,223,0.2)" }}>
             R{String(currentRace.raceNumber).padStart(2, "0")}
           </div>
           <div style={{ flex: 1, paddingTop: 4 }}>
