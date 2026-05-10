@@ -203,9 +203,9 @@ const Spindle = () => {
   }, [userId]);
 
   const label: React.CSSProperties = {
-    fontFamily: "Space Grotesk, system-ui, sans-serif",
-    fontWeight: 700, fontSize: 9, letterSpacing: "0.18em",
-    textTransform: "uppercase", opacity: 0.65, color: "var(--ink)",
+    fontFamily: "'Bowlby One SC', system-ui, sans-serif",
+    fontWeight: 400, fontSize: 9, letterSpacing: "0.18em",
+    textTransform: "uppercase", opacity: 0.65, color: "var(--cream)",
   };
 
   return (
@@ -225,7 +225,7 @@ const Spindle = () => {
         >
           ← PADDOCK
         </Link>
-        <span className="font-display" style={{ fontSize: 24, color: "var(--cream)" }}>THE SPINDLE</span>
+        <span className="display" style={{ fontSize: 24, color: "var(--cream)" }}>THE SPINDLE</span>
         <div style={{ minWidth: 70, textAlign: "right" }}>
           {slips.length > 0 && (
             <button
@@ -290,47 +290,45 @@ const Spindle = () => {
                   >
                     {/* ticket wrapper */}
                     <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
-                      {/* drop shadow */}
-                      <div style={{ position: "absolute", inset: "8px -6px -8px 6px", background: "var(--ink)", zIndex: 0 }} />
 
-                      <div style={{ position: "relative", zIndex: 1, background: "var(--cream)", border: "3px solid var(--ink)" }}>
+                      <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", boxShadow: "6px 6px 0 var(--cream)" }}>
 
                         {/* scalloped top */}
                         <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginTop: -1 }}>
                           {Array.from({ length: 25 }).map((_, i2) => (
-                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
+                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--green)" stroke="rgba(245,232,223,0.4)" strokeWidth="1.5" />
                           ))}
                         </svg>
 
                         {/* STUB */}
-                        <div style={{ padding: "14px 20px 18px", borderBottom: "2px dashed var(--ink)", position: "relative" }}>
-                          <div style={{ position: "absolute", left: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
-                          <div style={{ position: "absolute", right: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--cream-2)", border: "3px solid var(--ink)", transform: "translateY(-50%)" }} />
+                        <div style={{ padding: "14px 20px 18px", borderBottom: "2px dashed rgba(245,232,223,0.35)", position: "relative" }}>
+                          <div style={{ position: "absolute", left: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", transform: "translateY(-50%)" }} />
+                          <div style={{ position: "absolute", right: -12, top: "50%", width: 22, height: 22, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", transform: "translateY(-50%)" }} />
 
-                          <div className="font-display" style={{ fontSize: 40, lineHeight: 0.9, textAlign: "center", marginBottom: 4 }}>
+                          <div className="display" style={{ fontSize: 40, lineHeight: 0.9, textAlign: "center", marginBottom: 4, color: "var(--cream)" }}>
                             {s.trackName}
                           </div>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
                             <div className="perf" style={{ width: 30 }} />
-                            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                            <span className="mono" style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--cream)", opacity: 0.6 }}>
                               {s.scrumName}{dateStr ? ` · ${dateStr}` : ""}
                             </span>
                             <div className="perf" style={{ width: 30 }} />
                           </div>
-                          <div style={{ borderTop: "1px solid rgba(26,20,16,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                          <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                             <div>
                               <div style={label}>TOTAL</div>
-                              <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 var(--ink)" }}>
+                              <div className="display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 rgba(245,232,223,0.4)" }}>
                                 {s.totalPoints}
-                                <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>PTS</span>
+                                <span className="label" style={{ fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--cream)", textShadow: "none" }}>PTS</span>
                               </div>
                             </div>
                             {s.rank && (
                               <div style={{ textAlign: "right" }}>
                                 <div style={label}>RANK</div>
-                                <div className="font-display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--green)", textShadow: "2px 2px 0 var(--ink)" }}>
+                                <div className="display" style={{ fontSize: 50, lineHeight: 0.85, color: "var(--pink)", textShadow: "2px 2px 0 rgba(245,232,223,0.4)" }}>
                                   #{s.rank}
-                                  <span style={{ fontFamily: "Space Grotesk", fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--ink)", textShadow: "none" }}>OF {s.totalMembers}</span>
+                                  <span className="label" style={{ fontSize: 14, marginLeft: 6, opacity: 0.6, color: "var(--cream)", textShadow: "none" }}>OF {s.totalMembers}</span>
                                 </div>
                               </div>
                             )}
@@ -341,7 +339,7 @@ const Spindle = () => {
                         {isFlipped ? (
                           /* STANDINGS */
                           <div style={{ padding: "14px 18px 20px" }} className="animate-fade-in">
-                            <div className="font-display" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.3em", marginBottom: 12, opacity: 0.65, textTransform: "uppercase", color: "var(--ink)" }}>
+                            <div className="label" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.3em", marginBottom: 12, opacity: 0.65, color: "var(--cream)" }}>
                               FINAL STANDINGS
                             </div>
                             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -357,9 +355,9 @@ const Spindle = () => {
                                   }}
                                 >
                                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    <span className="font-display" style={{ fontSize: 16, opacity: 0.45, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>#{i + 1}</span>
+                                    <span className="display" style={{ fontSize: 16, opacity: 0.45, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>#{i + 1}</span>
                                     <div>
-                                      <div className="font-display" style={{ fontSize: 20, lineHeight: 0.9, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
+                                      <div className="display" style={{ fontSize: 20, lineHeight: 0.9, color: entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                         {entry.handle}
                                         {entry.isMe && <span style={{ fontFamily: "Space Grotesk", fontSize: 11, opacity: 0.5, marginLeft: 6 }}>(YOU)</span>}
                                       </div>
@@ -370,7 +368,7 @@ const Spindle = () => {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="font-display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--pink)" : entry.isMe ? "var(--ink)" : "var(--cream)" }}>
+                                  <div className="display" style={{ fontSize: 32, lineHeight: 0.85, color: i === 0 ? "var(--pink)" : entry.isMe ? "var(--ink)" : "var(--cream)" }}>
                                     {entry.points}
                                   </div>
                                 </div>
@@ -398,10 +396,10 @@ const Spindle = () => {
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                                        <span style={{
-                                          background: "var(--ink)", color: "var(--cream)",
-                                          fontFamily: "JetBrains Mono, monospace",
+                                        <span className="mono" style={{
+                                          background: "rgba(245,232,223,0.2)", color: "var(--cream)",
                                           fontSize: 9, letterSpacing: "0.18em", padding: "2px 6px",
+                                          border: "1px solid rgba(245,232,223,0.3)",
                                         }}>
                                           RACE {String(l.raceNumber).padStart(2, "0")}
                                         </span>
@@ -415,7 +413,7 @@ const Spindle = () => {
                                         </span>
                                       </div>
                                       <div
-                                        className="font-display"
+                                        className="display"
                                         style={{ fontSize: 16, lineHeight: 1, color: "var(--cream)", textDecoration: isOut ? "line-through" : "none" }}
                                       >
                                         {l.horseNumber}. {l.horseName}
@@ -456,7 +454,7 @@ const Spindle = () => {
                         {/* scalloped bottom */}
                         <svg viewBox="0 0 400 10" preserveAspectRatio="none" style={{ width: "100%", height: 10, display: "block", marginBottom: -1, transform: "scaleY(-1)" }}>
                           {Array.from({ length: 25 }).map((_, i2) => (
-                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--cream-2)" stroke="var(--ink)" strokeWidth="1.5" />
+                            <circle key={i2} cx={8 + i2 * 16} cy={0} r="5" fill="var(--green)" stroke="rgba(245,232,223,0.4)" strokeWidth="1.5" />
                           ))}
                         </svg>
                       </div>
