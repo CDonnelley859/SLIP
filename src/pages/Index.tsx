@@ -304,15 +304,15 @@ const Index = () => {
                   <button
                     key={card.id}
                     onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(card)}
-                    className="halftone-bg halftone-loose animate-fade-in"
+                    className="animate-fade-in"
                     style={{
                       textAlign: "left",
                       padding: "12px 12px 14px",
-                      border: isFeatured ? "3px solid var(--ink)" : "2px solid rgba(245,232,223,0.3)",
-                      background: isSelected ? "var(--cream)" : isFeatured ? "var(--pink)" : "var(--green)",
-                      color: isSelected ? "var(--ink)" : isFeatured ? "var(--ink)" : "var(--cream)",
+                      border: "3px solid var(--ink)",
+                      background: isSelected ? "var(--green)" : "var(--cream)",
+                      color: isSelected ? "var(--cream)" : "var(--ink)",
                       cursor: "pointer",
-                      boxShadow: isSelected ? "4px 4px 0 var(--ink)" : "none",
+                      boxShadow: isSelected ? "4px 4px 0 var(--pink)" : "4px 4px 0 var(--ink)",
                       transition: "all 120ms",
                     }}
                   >
@@ -368,9 +368,10 @@ const Index = () => {
               >✕</button>
             )}
           </div>
+          <div style={{ border: "3px solid var(--ink)", background: "var(--cream)", boxShadow: "4px 4px 0 var(--ink)", padding: "14px" }}>
 
           {selectedCard ? (
-            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <input
                 autoFocus
                 value={groupName}
@@ -379,10 +380,10 @@ const Index = () => {
                 maxLength={40}
                 className="mono"
                 style={{
-                  border: "3px solid var(--ink)", borderBottom: "1.5px solid var(--ink)",
-                  background: "var(--cream)", padding: "12px 14px",
+                  border: "2px solid var(--ink)",
+                  background: "var(--cream-2)", padding: "10px 12px",
                   fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
+                  color: "var(--ink)", outline: "none", width: "100%",
                 }}
               />
               <input
@@ -392,23 +393,22 @@ const Index = () => {
                 maxLength={30}
                 className="mono"
                 style={{
-                  border: "3px solid var(--ink)", borderTop: 0, borderBottom: "1.5px solid var(--ink)",
-                  background: "var(--cream)", padding: "12px 14px",
+                  border: "2px solid var(--ink)",
+                  background: "var(--cream-2)", padding: "10px 12px",
                   fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
+                  color: "var(--ink)", outline: "none", width: "100%",
                 }}
               />
               <button
                 type="submit"
                 disabled={creating || !groupName.trim() || !createName.trim()}
                 className="btn-retro btn-retro-green"
-                style={{ marginTop: 8 }}
               >
                 {creating ? "CREATING…" : "CREATE GROUP →"}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={joinCode}
@@ -417,8 +417,8 @@ const Index = () => {
                   maxLength={4}
                   className="mono"
                   style={{
-                    flex: 1, border: "3px solid var(--ink)",
-                    background: "var(--cream)", padding: "12px 14px",
+                    flex: 1, border: "2px solid var(--ink)",
+                    background: "var(--cream-2)", padding: "10px 12px",
                     fontSize: 20, letterSpacing: "0.3em", textTransform: "uppercase",
                     color: "var(--ink)", outline: "none",
                   }}
@@ -426,11 +426,10 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}
-                  className="btn-retro btn-retro-pink"
+                  className="btn-retro"
                   style={{
-                    width: "auto", padding: "12px 18px",
+                    width: "auto", padding: "10px 18px",
                     opacity: (joining || joinCode.length < 4) ? 0.4 : 1,
-                    boxShadow: "4px 4px 0 var(--ink)",
                   }}
                 >
                   {joining ? "…" : "JOIN"}
@@ -443,14 +442,15 @@ const Index = () => {
                 maxLength={30}
                 className="mono"
                 style={{
-                  border: "3px solid var(--ink)", borderTop: 0,
-                  background: "var(--cream)", padding: "12px 14px",
+                  border: "2px solid var(--ink)",
+                  background: "var(--cream-2)", padding: "10px 12px",
                   fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                  color: "var(--ink)", outline: "none",
+                  color: "var(--ink)", outline: "none", width: "100%",
                 }}
               />
             </form>
           )}
+          </div>
         </section>
 
         {/* ── ACTIVE SLIPS ── */}
