@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
+import { seedVirtualTrack } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -77,14 +78,13 @@ const Index = () => {
 
     // Seed or reset virtual track when missing or stale
     const virtualCard = cardList.find(c => c.isVirtual);
-    const shouldReset = !virtualCard || (() => {
+    const needsSeed = !virtualCard || (() => {
       const RACE_GAP_MS = 20 * 60 * 1000;
       const lastRaceTime = new Date(virtualCard.postTime).getTime() + (6 - 1) * RACE_GAP_MS;
       return Date.now() > lastRaceTime + 5 * 60 * 1000;
     })();
-    if (shouldReset) {
-      fetch("/api/cron-virtual-track").catch(() => {});
-      setTimeout(() => loadData(), 4000);
+    if (needsSeed) {
+      seedVirtualTrack().then(() => loadData()).catch(() => {});
     }
 
     if (!userId) return;
