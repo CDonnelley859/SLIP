@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron-virtual-track",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "rewrites": [

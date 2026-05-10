@@ -75,15 +75,16 @@ const Index = () => {
     })).sort((a, b) => a.postTime.localeCompare(b.postTime));
     setCards(cardList);
 
-    // Auto-reset virtual track if all its races have passed
+    // Seed or reset virtual track when missing or stale
     const virtualCard = cardList.find(c => c.isVirtual);
-    if (virtualCard && virtualCard.postTime) {
+    const shouldReset = !virtualCard || (() => {
       const RACE_GAP_MS = 20 * 60 * 1000;
       const lastRaceTime = new Date(virtualCard.postTime).getTime() + (6 - 1) * RACE_GAP_MS;
-      if (Date.now() > lastRaceTime + 5 * 60 * 1000) {
-        fetch("/api/cron-virtual-track").catch(() => {});
-        setTimeout(() => loadData(), 4000);
-      }
+      return Date.now() > lastRaceTime + 5 * 60 * 1000;
+    })();
+    if (shouldReset) {
+      fetch("/api/cron-virtual-track").catch(() => {});
+      setTimeout(() => loadData(), 4000);
     }
 
     if (!userId) return;
