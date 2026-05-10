@@ -470,7 +470,7 @@ const Index = () => {
         {/* ── ACTIVE SLIPS ── */}
         <section style={{ padding: "24px 18px 0" }}>
           <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>
-            ACTIVE SLIPS
+            ACTIVE GROUPS
           </span>
 
           {slipsLoading ? (
@@ -517,7 +517,7 @@ const Index = () => {
                   >
                     {/* Main content */}
                     <div
-                      onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                      onClick={() => navigate(`/scrum/${s.scrumId}/lobby`)}
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
                       <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>VENUE</div>

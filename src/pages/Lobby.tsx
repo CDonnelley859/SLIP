@@ -7,21 +7,6 @@ import {
 } from "firebase/firestore";
 import { toast } from "sonner";
 
-const HalftoneDisc = () => (
-  <div style={{
-    width: 56, height: 56, borderRadius: "50%",
-    background: "var(--pink)", border: "3px solid var(--ink)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    position: "relative", overflow: "hidden", flexShrink: 0,
-  }}>
-    <div style={{
-      position: "absolute", inset: 0,
-      backgroundImage: "radial-gradient(var(--ink) 1px, transparent 1.4px)",
-      backgroundSize: "6px 6px", opacity: 0.35, mixBlendMode: "multiply" as const,
-    }} />
-    <span className="label-sm" style={{ color: "var(--cream)", position: "relative", zIndex: 2 }}>CREW</span>
-  </div>
-);
 
 const Lobby = () => {
   const { id } = useParams();
@@ -191,7 +176,6 @@ const Lobby = () => {
                 {scrum.name}
               </div>
             </div>
-            <HalftoneDisc />
           </div>
         </div>
 
