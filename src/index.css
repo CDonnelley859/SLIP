@@ -206,8 +206,8 @@
   }
   .stamp-show {
     display: inline-block;
-    border: 2.5px solid var(--ink);
-    color: var(--ink);
+    border: 2.5px solid var(--cream);
+    color: var(--cream);
     padding: 3px 10px 2px;
     font-family: 'Bowlby One SC', system-ui, sans-serif;
     font-size: 15px;
@@ -217,14 +217,14 @@
   }
   .stamp-out {
     display: inline-block;
-    border: 2.5px dashed var(--ink-soft);
-    color: var(--ink-soft);
+    border: 2.5px dashed rgba(245,232,223,0.5);
+    color: rgba(245,232,223,0.5);
     padding: 3px 10px 2px;
     font-family: 'Bowlby One SC', system-ui, sans-serif;
     font-size: 15px;
     letter-spacing: 0.06em;
     transform: rotate(4deg);
-    opacity: 0.5;
+    opacity: 0.6;
     background: transparent;
   }
 
