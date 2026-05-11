@@ -116,15 +116,23 @@ const MegaHub = () => {
     const unsub = onSnapshot(
       query(collection(db, "picks"), where("scrumId", "in", mega.scrumIds)),
       (snap) => {
+        // Seed every member at 0 so they always appear in standings
         const byUser: Record<string, LeaderRow> = {};
+        members.forEach(m => {
+          byUser[m.userId] = {
+            userId: m.userId,
+            handle: m.handle,
+            total: 0, wins: 0, places: 0, shows: 0,
+            byTrack: {},
+          };
+        });
         snap.docs.forEach(p => {
           const { userId: uid, scrumId, points } = p.data();
           const pts = points ?? 0;
           if (!byUser[uid]) {
-            const member = members.find(m => m.userId === uid);
             byUser[uid] = {
               userId: uid,
-              handle: member?.handle ?? "—",
+              handle: members.find(m => m.userId === uid)?.handle ?? "—",
               total: 0, wins: 0, places: 0, shows: 0,
               byTrack: {},
             };
@@ -399,7 +407,7 @@ const MegaHub = () => {
 
           {leaderboard.length === 0 ? (
             <div style={{ border: "3px solid var(--cream)", padding: 24, textAlign: "center" }}>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No points yet — races yet to run.</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No players yet.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
