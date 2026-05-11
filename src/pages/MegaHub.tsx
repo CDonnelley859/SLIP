@@ -330,29 +330,35 @@ const MegaHub = () => {
           <div style={{ width: 60 }} />
         </div>
         <div style={{ textAlign: "center" }}>
-          <div className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1, marginBottom: 12 }}>{mega?.name}</div>
-          {/* Join code box */}
-          <div
-            style={{
-              background: "var(--pink)", border: "3px solid var(--ink)",
-              padding: "12px 24px 10px", display: "inline-block",
-              boxShadow: "4px 4px 0 var(--ink)",
-            }}
-          >
-            <div className="label-sm" style={{ color: "var(--ink)", opacity: 0.7, marginBottom: 2 }}>JOIN CODE</div>
-            <div className="mono" style={{ color: "var(--ink)", fontSize: 36, letterSpacing: "0.3em", fontWeight: 700, marginBottom: 8 }}>{mega?.joinCode}</div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
-              <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
-                COPY
-              </button>
-              <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.4 }}>·</span>
-              <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
-                SHARE
-              </button>
-            </div>
-          </div>
+          <div className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1 }}>{mega?.name}</div>
         </div>
       </header>
+
+      {/* JOIN CODE — full width, outside header, matches Pen style */}
+      <div
+        className="halftone-bg halftone-loose"
+        style={{
+          border: "3px solid var(--ink)", borderTop: 0,
+          background: "var(--pink)", color: "var(--ink)",
+          padding: "16px", textAlign: "center",
+          boxShadow: "5px 5px 0 var(--ink)",
+          margin: "0 18px",
+        }}
+      >
+        <div className="label-sm" style={{ opacity: 0.85, color: "var(--ink)" }}>JOIN CODE</div>
+        <div className="display" style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--ink)" }}>
+          {mega?.joinCode}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 6 }}>
+          <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+            COPY
+          </button>
+          <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.5 }}>·</span>
+          <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+            SHARE
+          </button>
+        </div>
+      </div>
 
       <main style={{ padding: "20px 18px 0" }}>
 
@@ -434,8 +440,8 @@ const MegaHub = () => {
                       {formatTime(t.postTime)} · {t.raceCount} RACES · {countdown}
                     </div>
                   </div>
-                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", padding: "8px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    {isHost ? (
+                  {isHost && (
+                    <div style={{ padding: "6px 16px 0", display: "flex", justifyContent: "flex-start" }}>
                       <button
                         onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
                         className="label-sm"
@@ -443,28 +449,28 @@ const MegaHub = () => {
                       >
                         REMOVE
                       </button>
-                    ) : <div />}
-                    <div style={{ display: "flex" }}>
+                    </div>
+                  )}
+                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
                       <button
                         onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
                         className="display"
                         style={{
-                          background: "var(--pink)", border: 0, cursor: "pointer",
-                          color: "var(--ink)", padding: "8px 14px",
-                          fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase",
-                          marginRight: 12,
+                          flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
+                          background: "var(--pink)", cursor: "pointer",
+                          color: "var(--ink)", padding: "14px 10px",
+                          fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
                         }}
                       >
                         PICK HORSES →
                       </button>
                       <button
                         onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
-                        className="label"
-                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                        className="display"
+                        style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", color: "var(--cream)", padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase" }}
                       >
                         SLIPS
                       </button>
-                    </div>
                   </div>
                 </div>
               );
