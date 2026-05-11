@@ -325,9 +325,18 @@ const Index = () => {
                 }
                 const card = c as Card;
                 const isSelected = selectedCard?.id === card.id;
-                const firstRace = card.postTime
-                  ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                  : "—";
+                const firstRace = (() => {
+                  if (!card.postTime) return "—";
+                  if (!card.isVirtual) {
+                    return new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  }
+                  // For virtual cards show the next upcoming race, not the first
+                  const VGAP = 2 * 60 * 60 * 1000;
+                  const post = new Date(card.postTime).getTime();
+                  const n = Math.ceil((Date.now() - post) / VGAP);
+                  const next = post + Math.max(0, n) * VGAP;
+                  return new Date(next).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                })();
                 return (
                   <button
                     key={card.id}
