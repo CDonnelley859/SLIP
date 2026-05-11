@@ -32,6 +32,21 @@ const Index = () => {
     return () => clearInterval(t);
   }, []);
 
+  // Auto-reload when the virtual card slot rolls over (check every 30s)
+  useEffect(() => {
+    const check = setInterval(() => {
+      const VCARD_MS = VIRTUAL_RACE_COUNT * VIRTUAL_RACE_GAP_MS;
+      const vDay = new Date(); vDay.setHours(0, 0, 0, 0);
+      const currentSlot = Math.floor((Date.now() + VIRTUAL_RACE_GAP_MS - vDay.getTime()) / VCARD_MS);
+      const currentSlotStart = vDay.getTime() + currentSlot * VCARD_MS;
+      const virtualCard = cards.find(c => c.id === "blotto-park");
+      if (virtualCard && new Date(virtualCard.postTime).getTime() !== currentSlotStart) {
+        loadData();
+      }
+    }, 30_000);
+    return () => clearInterval(check);
+  }, [cards]);
+
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
