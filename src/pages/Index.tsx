@@ -328,6 +328,16 @@ const Index = () => {
     }
   }
 
+  async function handleLeaveMega(mega: MegaSlip) {
+    if (!window.confirm("Are you sure you want to leave this Mega Group?")) return;
+    try {
+      await deleteDoc(doc(db, "megaSlipMembers", `${mega.id}_${userId}`));
+      setActiveMegas(prev => prev.filter(m => m.id !== mega.id));
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  }
+
   const filteredCards = cards.filter(c =>
     c.trackName.toLowerCase().includes(trackSearch.toLowerCase())
   );
@@ -648,12 +658,16 @@ const Index = () => {
                         {mega.scrumIds.length} TRACKS
                       </div>
                     </div>
-                    <div className="display" style={{ fontSize: 24, lineHeight: 1, marginBottom: 8 }}>{mega.name}</div>
-                    <div className="label-sm" style={{ opacity: 0.5, letterSpacing: "0.1em" }}>
-                      CODE: {mega.joinCode}
-                    </div>
+                    <div className="display" style={{ fontSize: 24, lineHeight: 1 }}>{mega.name}</div>
                   </div>
-                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "space-between" }}>
+                    <button
+                      onClick={() => handleLeaveMega(mega)}
+                      className="label"
+                      style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                    >
+                      LEAVE
+                    </button>
                     <button
                       onClick={() => navigate(`/mega/${mega.id}/hub`)}
                       className="label"
