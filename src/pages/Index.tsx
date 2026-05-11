@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
-import { seedVirtualTrack, settleVirtualRaces, RACE_COUNT as VIRTUAL_RACE_COUNT, RACE_GAP_MS as VIRTUAL_RACE_GAP_MS } from "@/lib/virtualTrack";
+import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -32,17 +32,12 @@ const Index = () => {
     return () => clearInterval(t);
   }, []);
 
-  // Auto-reload when the virtual card slot rolls over (check every 30s)
+  // Auto-reload when the active virtual card slots change (check every 30s)
   useEffect(() => {
     const check = setInterval(() => {
-      const VCARD_MS = VIRTUAL_RACE_COUNT * VIRTUAL_RACE_GAP_MS;
-      const vDay = new Date(); vDay.setHours(0, 0, 0, 0);
-      const currentSlot = Math.floor((Date.now() + VIRTUAL_RACE_GAP_MS - vDay.getTime()) / VCARD_MS);
-      const currentSlotStart = vDay.getTime() + currentSlot * VCARD_MS;
-      const virtualCard = cards.find(c => c.id === "blotto-park");
-      if (virtualCard && new Date(virtualCard.postTime).getTime() !== currentSlotStart) {
-        loadData();
-      }
+      const currentIds = activeVirtualCardIds();
+      const existingIds = new Set(cards.filter(c => c.isVirtual).map(c => c.id));
+      if (currentIds.some(id => !existingIds.has(id))) loadData();
     }, 30_000);
     return () => clearInterval(check);
   }, [cards]);
@@ -98,47 +93,40 @@ const Index = () => {
       isVirtual: d.data().isVirtual ?? false,
     })).sort((a, b) => a.postTime.localeCompare(b.postTime));
 
-    // Always include Blotto Park regardless of raceDate (timezone-proof)
-    if (!cardList.find(c => c.id === "blotto-park")) {
-      try {
-        const bpDoc = await getDoc(doc(db, "cards", "blotto-park"));
-        if (bpDoc.exists()) {
-          const d = bpDoc.data();
+    // Fetch all active virtual card IDs (current slot + 2 ahead)
+    const activeVIds = activeVirtualCardIds();
+    const existingVIds = new Set(cardList.filter(c => c.isVirtual).map(c => c.id));
+    const missingVIds = activeVIds.filter(id => !existingVIds.has(id));
+
+    if (missingVIds.length > 0) {
+      const missingDocs = await Promise.all(missingVIds.map(id => getDoc(doc(db, "cards", id))));
+      missingDocs.forEach((d, i) => {
+        if (d.exists()) {
+          const data = d.data();
           cardList.push({
-            id: "blotto-park",
-            trackName: d.trackName,
-            raceDate: d.raceDate,
-            postTime: d.postTime,
-            raceCount: d.raceCount ?? 0,
+            id: missingVIds[i],
+            trackName: data.trackName,
+            raceDate: data.raceDate,
+            postTime: data.postTime,
+            raceCount: data.raceCount ?? 0,
             isVirtual: true,
           });
-          cardList.sort((a, b) => a.postTime.localeCompare(b.postTime));
         }
-      } catch { }
+      });
+      cardList.sort((a, b) => a.postTime.localeCompare(b.postTime));
     }
 
     setCards(cardList);
 
-    // Work out the current slot — same +RACE_GAP_MS offset as seedVirtualTrack
-    // so the next card becomes visible 20 mins before its races start
-    const VCARD_MS = VIRTUAL_RACE_COUNT * VIRTUAL_RACE_GAP_MS; // 2 hours
-    const vDay = new Date(); vDay.setHours(0, 0, 0, 0);
-    const vSlot = Math.floor((Date.now() + VIRTUAL_RACE_GAP_MS - vDay.getTime()) / VCARD_MS);
-    const vSlotStart = vDay.getTime() + vSlot * VCARD_MS;
-
-    // Seed if the card in the list doesn't match the current slot
-    const virtualCard = cardList.find(c => c.id === "blotto-park");
-    const needsSeed = !virtualCard ||
-      new Date(virtualCard.postTime).getTime() !== vSlotStart;
-
-    // Use slot-specific sessionStorage keys so it re-seeds when the slot turns over
-    const seedKey = `blotto-seeded-${vSlotStart}`;
-    const settleKey = `blotto-settled-${vSlotStart}`;
-
+    // Seed any active slots that don't have a card yet
+    const cardIdSet = new Set(cardList.map(c => c.id));
+    const needsSeed = activeVIds.some(id => !cardIdSet.has(id));
+    const seedKey = `blotto-seeded-${activeVIds[0]}`;
     if (needsSeed && !sessionStorage.getItem(seedKey)) {
       sessionStorage.setItem(seedKey, "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
-    } else if (!needsSeed) {
+    } else {
+      const settleKey = `blotto-settled-${activeVIds[0]}`;
       if (!sessionStorage.getItem(settleKey)) {
         sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});
@@ -163,7 +151,7 @@ const Index = () => {
     const todayCardIds = new Set(cardList.map(c => c.id));
     await Promise.all(
       uniqueCardIds
-        .filter(cid => cid !== "blotto-park" && todayCardIds.has(cid))
+        .filter(cid => !cid.startsWith("blotto-park") && todayCardIds.has(cid))
         .map(cid => syncResults(cid).catch(() => {}))
     );
 

@@ -4,11 +4,12 @@ import {
   collection, query, where, updateDoc,
 } from "firebase/firestore";
 
-const CARD_ID = "blotto-park";
+const CARD_PREFIX = "blotto-park";
 export const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
 export const RACE_GAP_MS = 20 * 60 * 1000;          // 20 minutes between races
-const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card, then re-seeds
+export const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card
+const CARDS_AHEAD = 2;                                // show current + 2 upcoming = 3 total
 
 const HORSE_NAMES = [
   // British Pub Classics & Tavern Vibes
@@ -79,15 +80,42 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** Settle any finished races in the current Blotto Park card. Safe to call at any time. */
-async function settleFinishedRaces(): Promise<void> {
-  const now = Date.now();
+// ── Slot helpers ──────────────────────────────────────────────────────────────
 
-  // Fetch all race docs in parallel instead of one-by-one
-  const raceIds = Array.from({ length: RACE_COUNT }, (_, i) => `${CARD_ID}-r${i + 1}`);
+function dayStart(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function slotFor(now: number): number {
+  return Math.floor((now - dayStart()) / CARD_DURATION_MS);
+}
+
+function cardIdForSlot(slot: number): string {
+  return `${CARD_PREFIX}-s${slot}`;
+}
+
+function slotStartMs(slot: number): number {
+  return dayStart() + slot * CARD_DURATION_MS;
+}
+
+/**
+ * Returns the card IDs for the current slot and the next CARDS_AHEAD slots.
+ * These are the cards that should be visible in the carousel at any given time.
+ */
+export function activeVirtualCardIds(now = Date.now()): string[] {
+  const slot = slotFor(now);
+  return Array.from({ length: CARDS_AHEAD + 1 }, (_, i) => cardIdForSlot(slot + i));
+}
+
+// ── Settlement ────────────────────────────────────────────────────────────────
+
+async function settleCardRaces(cardId: string): Promise<void> {
+  const now = Date.now();
+  const raceIds = Array.from({ length: RACE_COUNT }, (_, i) => `${cardId}-r${i + 1}`);
   const raceSnaps = await Promise.all(raceIds.map(id => getDoc(doc(db, "races", id))));
 
-  // Filter to only races that need settling
   const racesToSettle = raceSnaps.filter(snap => {
     if (!snap.exists()) return false;
     const race = snap.data();
@@ -96,7 +124,6 @@ async function settleFinishedRaces(): Promise<void> {
     return true;
   });
 
-  // Settle each qualifying race in parallel
   await Promise.all(racesToSettle.map(async (raceSnap) => {
     const raceRef = raceSnap.ref;
     const raceId = raceSnap.id;
@@ -128,55 +155,28 @@ async function settleFinishedRaces(): Promise<void> {
   }));
 }
 
-/**
- * Call on every page load to settle any Blotto Park races whose off-time has passed.
- * Lightweight — skips races already marked settled.
- */
+/** Settle finished races across all currently-active virtual cards. Safe to call any time. */
 export async function settleVirtualRaces(): Promise<void> {
-  try { await settleFinishedRaces(); } catch { }
+  try {
+    const now = Date.now();
+    // Include the previous slot too — it may have just finished
+    const prevSlot = cardIdForSlot(slotFor(now) - 1);
+    const ids = [prevSlot, ...activeVirtualCardIds(now)];
+    await Promise.all(ids.map(id => settleCardRaces(id).catch(() => {})));
+  } catch { }
 }
 
-/**
- * Seeds or resets the Blotto Park test track.
- * Safe to call multiple times — skips if the card is still fresh.
- */
-export async function seedVirtualTrack(): Promise<void> {
-  const now = Date.now();
+// ── Seeding ───────────────────────────────────────────────────────────────────
 
-  // One-time migration: remove old "virtual-park" card if it still exists
-  try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
-
-  // One-time migration: delete old 12-race card data (races 7–12 and their horses)
-  try {
-    const staleR7 = await getDoc(doc(db, "races", `${CARD_ID}-r7`));
-    if (staleR7.exists()) {
-      const cleanupBatch = writeBatch(db);
-      for (let n = 7; n <= 12; n++) {
-        const staleRaceId = `${CARD_ID}-r${n}`;
-        cleanupBatch.delete(doc(db, "races", staleRaceId));
-        for (let h = 1; h <= HORSES_PER_RACE; h++) {
-          cleanupBatch.delete(doc(db, "horses", `${staleRaceId}-h${h}`));
-        }
-      }
-      await cleanupBatch.commit();
-    }
-  } catch { }
-
-  // Settle any finished races before checking freshness
-  try { await settleFinishedRaces(); } catch { }
-
-  // Work out which slot to show — offset by one race gap so the next card
-  // becomes visible 20 minutes before it starts (lines up with last race of current card)
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const slot = Math.floor((now + RACE_GAP_MS - startOfDay.getTime()) / CARD_DURATION_MS);
-  const firstRaceTime = startOfDay.getTime() + slot * CARD_DURATION_MS;
+async function seedSlot(slotNum: number): Promise<void> {
+  const cardId = cardIdForSlot(slotNum);
+  const firstRaceTime = slotStartMs(slotNum);
   const firstRaceISO = new Date(firstRaceTime).toISOString();
 
-  // Skip if the card in Firestore already matches this slot
-  const cardRef = doc(db, "cards", CARD_ID);
+  // Skip if already seeded — never overwrite an existing card
+  const cardRef = doc(db, "cards", cardId);
   const cardDoc = await getDoc(cardRef);
-  if (cardDoc.exists() && cardDoc.data().postTime === firstRaceISO) return;
+  if (cardDoc.exists()) return;
 
   await setDoc(cardRef, {
     trackName: "BLOTTO PARK",
@@ -187,17 +187,16 @@ export async function seedVirtualTrack(): Promise<void> {
     raceCount: RACE_COUNT,
   });
 
-  // Write all races and horse batches in parallel (was 24 sequential round-trips, now ~2)
   const allNames = shuffle(HORSE_NAMES);
 
   await Promise.all(
     Array.from({ length: RACE_COUNT }, (_, i) => {
       const raceNum = i + 1;
-      const raceId = `${CARD_ID}-r${raceNum}`;
+      const raceId = `${cardId}-r${raceNum}`;
       const offTime = new Date(firstRaceTime + i * RACE_GAP_MS).toISOString();
 
       const raceWrite = setDoc(doc(db, "races", raceId), {
-        cardId: CARD_ID,
+        cardId,
         raceNumber: raceNum,
         name: `RACE ${raceNum}`,
         offTime,
@@ -224,5 +223,42 @@ export async function seedVirtualTrack(): Promise<void> {
 
       return Promise.all([raceWrite, batch.commit()]);
     })
+  );
+}
+
+/**
+ * Seeds all currently-visible virtual cards (current slot + CARDS_AHEAD ahead).
+ * Skips any slot that already has a card in Firestore. Safe to call at any time.
+ */
+export async function seedVirtualTrack(): Promise<void> {
+  const now = Date.now();
+
+  // One-time migration: delete the old single-ID card and its races/horses
+  try {
+    const oldCard = await getDoc(doc(db, "cards", CARD_PREFIX));
+    if (oldCard.exists()) {
+      const cleanupBatch = writeBatch(db);
+      cleanupBatch.delete(doc(db, "cards", CARD_PREFIX));
+      for (let n = 1; n <= 12; n++) {
+        const oldRaceId = `${CARD_PREFIX}-r${n}`;
+        cleanupBatch.delete(doc(db, "races", oldRaceId));
+        for (let h = 1; h <= HORSES_PER_RACE; h++) {
+          cleanupBatch.delete(doc(db, "horses", `${oldRaceId}-h${h}`));
+        }
+      }
+      await cleanupBatch.commit();
+    }
+  } catch { }
+
+  // One-time migration: remove old "virtual-park" card if it still exists
+  try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
+
+  // Settle any finished races before seeding
+  try { await settleVirtualRaces(); } catch { }
+
+  // Seed all active slots in parallel
+  const currentSlot = slotFor(now);
+  await Promise.all(
+    Array.from({ length: CARDS_AHEAD + 1 }, (_, i) => seedSlot(currentSlot + i).catch(() => {}))
   );
 }
