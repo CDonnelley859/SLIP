@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore";
 
 const CARD_ID = "blotto-park";
-const RACE_COUNT = 12;
+export const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
 const RACE_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours between races
 

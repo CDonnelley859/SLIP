@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
-import { seedVirtualTrack, settleVirtualRaces } from "@/lib/virtualTrack";
+import { seedVirtualTrack, settleVirtualRaces, RACE_COUNT as VIRTUAL_RACE_COUNT } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -108,7 +108,7 @@ const Index = () => {
     const virtualCard = cardList.find(c => c.id === "blotto-park");
     const needsSeed = !virtualCard || (() => {
       const RACE_GAP_MS = 2 * 60 * 60 * 1000;
-      const lastRaceTime = new Date(virtualCard.postTime).getTime() + (12 - 1) * RACE_GAP_MS;
+      const lastRaceTime = new Date(virtualCard.postTime).getTime() + (VIRTUAL_RACE_COUNT - 1) * RACE_GAP_MS;
       return Date.now() > lastRaceTime + 5 * 60 * 1000;
     })();
     if (needsSeed && !sessionStorage.getItem("blotto-seeded")) {
@@ -355,8 +355,9 @@ const Index = () => {
                   // For virtual cards show the next upcoming race, not the first
                   const VGAP = 2 * 60 * 60 * 1000;
                   const post = new Date(card.postTime).getTime();
+                  const lastRace = post + (VIRTUAL_RACE_COUNT - 1) * VGAP;
                   const n = Math.ceil((Date.now() - post) / VGAP);
-                  const next = post + Math.max(0, n) * VGAP;
+                  const next = Math.min(post + Math.max(0, n) * VGAP, lastRace);
                   return new Date(next).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 })();
                 return (
