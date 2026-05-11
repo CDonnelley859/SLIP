@@ -37,6 +37,7 @@ const Index = () => {
   const [createName, setCreateName] = useState(handle);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [createStep, setCreateStep] = useState("");
 
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState(handle);
@@ -197,16 +198,20 @@ const Index = () => {
     if (!selectedCard || !groupName.trim() || !userId) return;
     setCreating(true);
     setCreateError("");
+    setCreateStep("Step 1: generating code…");
     try {
       const code = genCode();
       const scrumId = crypto.randomUUID();
+      setCreateStep("Step 2: saving group…");
       await setDoc(doc(db, "scrums", scrumId), {
         cardId: selectedCard.id, hostId: userId, name: groupName.trim(),
         joinCode: code, showDetails: false,
       });
+      setCreateStep("Step 3: adding you…");
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId, handle: createName.trim() || handle,
       });
+      setCreateStep("Step 4: navigating…");
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
       console.error("handleCreate failed:", err);
@@ -214,6 +219,7 @@ const Index = () => {
       setCreateError(msg);
     } finally {
       setCreating(false);
+      setCreateStep("");
     }
   }
 
@@ -462,6 +468,11 @@ const Index = () => {
                     }}
                   />
                 </div>
+                {createStep && (
+                  <div className="mono" style={{ padding: "8px 14px", background: "rgba(245,232,223,0.15)", color: "var(--cream)", fontSize: 10 }}>
+                    {createStep}
+                  </div>
+                )}
                 {createError && (
                   <div className="mono" style={{ padding: "10px 14px", background: "var(--pink)", color: "var(--ink)", fontSize: 11, wordBreak: "break-all" }}>
                     ERROR: {createError}
