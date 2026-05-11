@@ -355,10 +355,19 @@ const Index = () => {
                 }
                 const card = c as Card;
                 const isSelected = selectedCard?.id === card.id;
-                // Always show the card's start time so it's clear which slot this is
-                const firstRace = card.postTime
+                const firstRaceTime = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
+                // Next upcoming race for virtual cards (null if card hasn't started yet)
+                const nextRaceTime = (() => {
+                  if (!card.isVirtual || !card.postTime) return null;
+                  const post = new Date(card.postTime).getTime();
+                  if (Date.now() < post) return null; // not started yet
+                  const lastRace = post + (VIRTUAL_RACE_COUNT - 1) * VIRTUAL_RACE_GAP_MS;
+                  const n = Math.ceil((Date.now() - post) / VIRTUAL_RACE_GAP_MS);
+                  const next = Math.min(post + n * VIRTUAL_RACE_GAP_MS, lastRace);
+                  return new Date(next).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                })();
                 return (
                   <button
                     key={card.id}
@@ -373,21 +382,25 @@ const Index = () => {
                       cursor: "pointer", transition: "all 120ms",
                     }}
                   >
-                    {card.isVirtual && (
-                      <div className="label-sm" style={{
-                        display: "inline-block", marginBottom: 6,
-                        background: isSelected ? "var(--ink)" : "var(--pink)",
-                        color: "var(--cream)", padding: "2px 7px",
-                      }}>
-                        VIRTUAL
-                      </div>
-                    )}
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
-                    <div className="mono" style={{ fontSize: 11, marginTop: 8, opacity: 0.7, display: "flex", gap: 8 }}>
-                      <span>{firstRace}</span>
-                      <span>{card.raceCount} RACES</span>
+                    <div className="mono" style={{ fontSize: 11, marginTop: 8, opacity: 0.7, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      {card.isVirtual ? (
+                        <>
+                          <span>FIRST {firstRaceTime}</span>
+                          {nextRaceTime && <span>NEXT {nextRaceTime}</span>}
+                          <span style={{
+                            background: isSelected ? "var(--ink)" : "var(--pink)",
+                            color: "var(--cream)", padding: "1px 5px",
+                          }}>VIRTUAL</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{firstRaceTime}</span>
+                          <span>{card.raceCount} RACES</span>
+                        </>
+                      )}
                     </div>
                   </button>
                 );
