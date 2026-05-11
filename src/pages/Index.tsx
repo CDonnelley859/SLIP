@@ -36,6 +36,7 @@ const Index = () => {
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState(handle);
@@ -195,6 +196,7 @@ const Index = () => {
     e.preventDefault();
     if (!selectedCard || !groupName.trim() || !userId) return;
     setCreating(true);
+    setCreateError("");
     try {
       const code = genCode();
       const scrumId = crypto.randomUUID();
@@ -205,10 +207,11 @@ const Index = () => {
       await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
         scrumId, userId, handle: createName.trim() || handle,
       });
-      toast.success(`Group code: ${code}`);
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
-      toast.error(err?.message || "Failed to create group — please try again");
+      console.error("handleCreate failed:", err);
+      const msg = err?.message || err?.code || String(err) || "Unknown error";
+      setCreateError(msg);
     } finally {
       setCreating(false);
     }
@@ -459,6 +462,11 @@ const Index = () => {
                     }}
                   />
                 </div>
+                {createError && (
+                  <div className="mono" style={{ padding: "10px 14px", background: "var(--pink)", color: "var(--ink)", fontSize: 11, wordBreak: "break-all" }}>
+                    ERROR: {createError}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={creating || !groupName.trim() || !createName.trim()}
