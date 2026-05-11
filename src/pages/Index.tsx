@@ -50,6 +50,12 @@ const Index = () => {
 
   async function loadData() {
     const today = new Date().toISOString().slice(0, 10);
+
+    // Start fetching members immediately — runs in parallel with card fetching
+    const membersPromise = userId
+      ? getDocs(query(collection(db, "scrumMembers"), where("userId", "==", userId)))
+      : Promise.resolve(null);
+
     let cardsSnap = await getDocs(
       query(collection(db, "cards"), where("raceDate", "==", today))
     );
@@ -115,9 +121,9 @@ const Index = () => {
     }
 
     if (!userId) return;
-    const membersSnap = await getDocs(
-      query(collection(db, "scrumMembers"), where("userId", "==", userId))
-    );
+    // Await members — likely already resolved since it started in parallel
+    const membersSnap = await membersPromise;
+    if (!membersSnap) return;
 
     const scrumDocs = await Promise.all(
       membersSnap.docs.map(m => getDoc(doc(db, "scrums", m.data().scrumId)))
@@ -128,8 +134,13 @@ const Index = () => {
         .map((m, i) => scrumDocs[i].exists() ? scrumDocs[i].data().cardId : null)
         .filter(Boolean) as string[]
     )];
-    // Skip virtual card — its results are handled by cron-virtual-track
-    await Promise.all(uniqueCardIds.filter(cid => cid !== "blotto-park").map(cid => syncResults(cid).catch(() => {})));
+    // Only sync results for today's real cards — skip virtual and old/past cards
+    const todayCardIds = new Set(cardList.map(c => c.id));
+    await Promise.all(
+      uniqueCardIds
+        .filter(cid => cid !== "blotto-park" && todayCardIds.has(cid))
+        .map(cid => syncResults(cid).catch(() => {}))
+    );
 
     const slipResults = await Promise.all(
       membersSnap.docs.map(async (m, i) => {
