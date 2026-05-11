@@ -48,6 +48,12 @@ const MegaHub = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Add track panel
   const [showAddTrack, setShowAddTrack] = useState(false);
@@ -221,6 +227,17 @@ const MegaHub = () => {
     return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
+  function nextRaceCountdown(postTime: string): string {
+    const diff = new Date(postTime).getTime() - now;
+    if (diff <= 0) return "UNDERWAY";
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return h > 0
+      ? `${h}H ${String(m).padStart(2, "0")}M`
+      : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
   // ── Loading / error states ───────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
@@ -241,23 +258,25 @@ const MegaHub = () => {
 
       {/* HEADER */}
       <header style={{ background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.3)", padding: "16px 18px 14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← HOME</Link>
           <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>MEGA SLIP</span>
-          <button
-            onClick={handleShare}
-            className="label"
-            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-          >
-            SHARE
-          </button>
+          <div style={{ width: 60 }} />
         </div>
         <div style={{ textAlign: "center" }}>
-          <div className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1 }}>{mega?.name}</div>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <span className="mono" style={{ color: "var(--cream)", fontSize: 22, letterSpacing: "0.3em" }}>{mega?.joinCode}</span>
-            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>{members.length} {members.length === 1 ? "PLAYER" : "PLAYERS"}</span>
-          </div>
+          <div className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1, marginBottom: 12 }}>{mega?.name}</div>
+          {/* Clickable join code box */}
+          <button
+            onClick={handleShare}
+            style={{
+              background: "var(--pink)", border: "3px solid var(--ink)",
+              padding: "10px 24px", cursor: "pointer", display: "inline-block",
+              boxShadow: "4px 4px 0 var(--ink)",
+            }}
+          >
+            <div className="label-sm" style={{ color: "var(--ink)", opacity: 0.7, marginBottom: 2 }}>TAP TO SHARE</div>
+            <div className="mono" style={{ color: "var(--ink)", fontSize: 28, letterSpacing: "0.3em", fontWeight: 700 }}>{mega?.joinCode}</div>
+          </button>
         </div>
       </header>
 
@@ -320,8 +339,7 @@ const MegaHub = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {tracks.map((t, i) => {
               const isLast = i === tracks.length - 1;
-              const postMs = new Date(t.postTime).getTime();
-              const started = Date.now() >= postMs;
+              const countdown = nextRaceCountdown(t.postTime);
               return (
                 <div
                   key={t.scrumId}
@@ -339,7 +357,7 @@ const MegaHub = () => {
                       )}
                     </div>
                     <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
-                      {formatTime(t.postTime)} · {t.raceCount} RACES · {started ? "UNDERWAY" : "UPCOMING"}
+                      {formatTime(t.postTime)} · {t.raceCount} RACES · {countdown}
                     </div>
                   </div>
                   <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", padding: "8px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -418,26 +436,6 @@ const MegaHub = () => {
           )}
         </div>
 
-        {/* MEMBERS */}
-        <div style={{ marginTop: 28 }}>
-          <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>PLAYERS</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {members.map(m => (
-              <span
-                key={m.userId}
-                className="mono"
-                style={{
-                  border: "2px solid rgba(245,232,223,0.4)", padding: "4px 10px",
-                  fontSize: 11, letterSpacing: "0.1em",
-                  background: m.userId === userId ? "var(--pink)" : "transparent",
-                  color: m.userId === userId ? "var(--ink)" : "var(--cream)",
-                }}
-              >
-                {m.handle}
-              </span>
-            ))}
-          </div>
-        </div>
 
       </main>
     </div>
