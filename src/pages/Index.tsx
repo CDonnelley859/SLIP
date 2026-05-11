@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
 import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds, expectedVenueName } from "@/lib/virtualTrack";
+import { createMegaSlip, joinMegaSlip, getMegaSlipsForUser, type MegaSlip } from "@/lib/megaSlip";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -42,7 +43,7 @@ const Index = () => {
     return () => clearInterval(check);
   }, [cards]);
 
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
   const [creating, setCreating] = useState(false);
@@ -52,6 +53,10 @@ const Index = () => {
   const [joinName, setJoinName] = useState(handle);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
+
+  const [activeMegas, setActiveMegas] = useState<MegaSlip[]>([]);
+
+  const isMegaMode = selectedCards.length > 1;
 
   useEffect(() => { loadData(); }, [userId, location.key]);
 
@@ -204,6 +209,13 @@ const Index = () => {
     );
 
     setActiveSlips(slipResults.filter(Boolean) as ActiveSlip[]);
+
+    // Load active mega slips
+    try {
+      const megas = await getMegaSlipsForUser(userId);
+      setActiveMegas(megas);
+    } catch { }
+
     setSlipsLoading(false);
   }
 
@@ -221,27 +233,46 @@ const Index = () => {
   }
 
   function handleSelectCard(card: Card) {
-    setSelectedCard(card);
-    setGroupName("");
-    setCreateName(handle);
+    setSelectedCards(prev => {
+      const already = prev.find(c => c.id === card.id);
+      if (already) return prev.filter(c => c.id !== card.id);
+      const next = [...prev, card];
+      // Reset form when selection changes
+      setGroupName("");
+      setCreateName(handle);
+      return next;
+    });
   }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedCard || !groupName.trim() || !userId) return;
+    if (selectedCards.length === 0 || !groupName.trim() || !userId) return;
     setCreating(true);
     setCreateError("");
+    const displayName = createName.trim() || handle;
     try {
-      const code = genCode();
-      const scrumId = crypto.randomUUID();
-      await setDoc(doc(db, "scrums", scrumId), {
-        cardId: selectedCard.id, hostId: userId, name: groupName.trim(),
-        joinCode: code, showDetails: false,
-      });
-      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId, handle: createName.trim() || handle,
-      });
-      navigate(`/scrum/${scrumId}/lobby`);
+      if (isMegaMode) {
+        // Create a Mega Slip with all selected tracks
+        const megaSlipId = await createMegaSlip(
+          groupName.trim(),
+          selectedCards.map(c => ({ id: c.id, trackName: c.trackName })),
+          userId,
+          displayName,
+        );
+        navigate(`/mega/${megaSlipId}/hub`);
+      } else {
+        // Single track — existing scrum flow
+        const code = genCode();
+        const scrumId = crypto.randomUUID();
+        await setDoc(doc(db, "scrums", scrumId), {
+          cardId: selectedCards[0].id, hostId: userId, name: groupName.trim(),
+          joinCode: code, showDetails: false, megaSlipId: null,
+        });
+        await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+          scrumId, userId, handle: displayName,
+        });
+        navigate(`/scrum/${scrumId}/lobby`);
+      }
     } catch (err: any) {
       const msg = err?.message || "Failed to create — please try again";
       setCreateError(msg);
@@ -253,19 +284,28 @@ const Index = () => {
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!joinCode.trim() || joinCode.length < 4) return;
+    const code = joinCode.toUpperCase().trim();
+    if (code.length < 4) return;
     setJoining(true);
     setJoinError("");
+    const displayName = joinName.trim() || handle;
     try {
-      const snap = await getDocs(
-        query(collection(db, "scrums"), where("joinCode", "==", joinCode.toUpperCase().trim()))
-      );
-      if (snap.empty) throw new Error("Code not found");
-      const scrumId = snap.docs[0].id;
-      await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
-        scrumId, userId, handle: joinName.trim() || handle,
-      });
-      navigate(`/scrum/${scrumId}/lobby`);
+      if (code.length === 6) {
+        // 6-char code → Mega Slip
+        const megaSlipId = await joinMegaSlip(code, userId!, displayName);
+        navigate(`/mega/${megaSlipId}/hub`);
+      } else {
+        // 4-char code → regular scrum
+        const snap = await getDocs(
+          query(collection(db, "scrums"), where("joinCode", "==", code))
+        );
+        if (snap.empty) throw new Error("Code not found");
+        const scrumId = snap.docs[0].id;
+        await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
+          scrumId, userId, handle: displayName,
+        });
+        navigate(`/scrum/${scrumId}/lobby`);
+      }
     } catch (err: any) {
       const msg = err?.message || "Failed to join — please try again";
       setJoinError(msg);
@@ -364,19 +404,19 @@ const Index = () => {
                   );
                 }
                 const card = c as Card;
-                const isSelected = selectedCard?.id === card.id;
+                const isSelected = selectedCards.some(s => s.id === card.id);
                 const firstRaceTime = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
                 return (
                   <button
                     key={card.id}
-                    onClick={() => isSelected ? setSelectedCard(null) : handleSelectCard(card)}
+                    onClick={() => handleSelectCard(card)}
                     className="animate-fade-in"
                     style={{
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
                       textAlign: "left", padding: "18px 16px 16px",
-                      border: "3px solid var(--cream)",
+                      border: isSelected ? "3px solid var(--cream)" : "3px solid var(--cream)",
                       background: isSelected ? "var(--pink)" : "var(--green)",
                       color: isSelected ? "var(--ink)" : "var(--cream)",
                       cursor: "pointer", transition: "all 120ms",
@@ -385,7 +425,7 @@ const Index = () => {
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
-<div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                       <span style={{ opacity: 0.7 }}>FIRST {firstRaceTime}</span>
                       <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>
                       {card.isVirtual && (
@@ -433,15 +473,27 @@ const Index = () => {
 
         {/* ── JOIN / CREATE ── */}
         <section style={{ padding: "14px 18px 0" }}>
-          {selectedCard && (
+          {selectedCards.length > 0 && (
             <button
-              onClick={() => setSelectedCard(null)}
+              onClick={() => setSelectedCards([])}
               className="label-sm"
               style={{ background: "transparent", border: 0, color: "var(--cream)", opacity: 0.5, cursor: "pointer", marginBottom: 6 }}
             >
               ← BACK
             </button>
           )}
+
+          {/* Show selected tracks list in mega mode */}
+          {isMegaMode && (
+            <div style={{ marginBottom: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {selectedCards.map(c => (
+                <span key={c.id} className="label-sm" style={{ background: "rgba(245,232,223,0.15)", color: "var(--cream)", padding: "3px 8px", border: "1px solid rgba(245,232,223,0.3)" }}>
+                  {c.trackName}
+                </span>
+              ))}
+            </div>
+          )}
+
           <div style={{ border: "3px solid var(--cream)", position: "relative" }}>
             <div
               className="label-sm"
@@ -452,16 +504,20 @@ const Index = () => {
                 color: "var(--cream)", letterSpacing: "0.18em",
               }}
             >
-              {selectedCard ? `CREATE GROUP — ${selectedCard.trackName}` : "JOIN GROUP"}
+              {selectedCards.length === 0
+                ? "JOIN GROUP"
+                : isMegaMode
+                  ? `CREATE MEGA GROUP — ${selectedCards.length} TRACKS`
+                  : `CREATE GROUP — ${selectedCards[0].trackName}`}
             </div>
 
-            {selectedCard ? (
+            {selectedCards.length > 0 ? (
               <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column" }}>
                 <input
                   autoFocus
                   value={groupName}
                   onChange={e => setGroupName(e.target.value)}
-                  placeholder="ENTER GROUP NAME"
+                  placeholder={isMegaMode ? "ENTER MEGA GROUP NAME" : "ENTER GROUP NAME"}
                   maxLength={40}
                   className="mono"
                   style={{
@@ -503,7 +559,7 @@ const Index = () => {
                     cursor: "pointer", width: "100%", textTransform: "uppercase",
                   }}
                 >
-                  {creating ? "CREATING…" : "CREATE GROUP"}
+                  {creating ? "CREATING…" : isMegaMode ? "CREATE MEGA GROUP" : "CREATE GROUP"}
                 </button>
               </form>
             ) : (
@@ -512,7 +568,7 @@ const Index = () => {
                   value={joinCode}
                   onChange={e => setJoinCode(e.target.value)}
                   placeholder="ENTER JOIN CODE"
-                  maxLength={4}
+                  maxLength={6}
                   className="mono"
                   style={{
                     border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
@@ -566,6 +622,48 @@ const Index = () => {
             ACTIVE GROUPS
           </span>
 
+          {/* Mega Groups */}
+          {activeMegas.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 0 }}>
+              {activeMegas.map((mega, i) => (
+                <div
+                  key={mega.id}
+                  className="animate-fade-in"
+                  style={{
+                    border: "3px solid var(--cream)",
+                    borderBottom: (i < activeMegas.length - 1 || activeSlips.length > 0) ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
+                    color: "var(--cream)",
+                  }}
+                >
+                  <div
+                    onClick={() => navigate(`/mega/${mega.id}/hub`)}
+                    style={{ padding: "16px 16px 12px", cursor: "pointer" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                      <div className="label-sm" style={{ opacity: 0.6 }}>MEGA GROUP</div>
+                      <div className="label-sm" style={{ background: "var(--pink)", color: "var(--ink)", padding: "1px 6px", fontSize: 9 }}>
+                        {mega.scrumIds.length} TRACKS
+                      </div>
+                    </div>
+                    <div className="display" style={{ fontSize: 24, lineHeight: 1, marginBottom: 8 }}>{mega.name}</div>
+                    <div className="label-sm" style={{ opacity: 0.5, letterSpacing: "0.1em" }}>
+                      CODE: {mega.joinCode}
+                    </div>
+                  </div>
+                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => navigate(`/mega/${mega.id}/hub`)}
+                      className="label"
+                      style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                    >
+                      VIEW HUB →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {slipsLoading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {[0, 1].map(i => (
@@ -576,13 +674,13 @@ const Index = () => {
                 </div>
               ))}
             </div>
-          ) : activeSlips.length === 0 ? (
+          ) : activeSlips.length === 0 && activeMegas.length === 0 ? (
             <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
               <p className="label" style={{ color: "var(--cream)", opacity: 0.5 }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
-          ) : (
+          ) : activeSlips.length === 0 ? null : (
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {activeSlips.map((s, i) => {
                 const nextRaceDisplay = s.nextRaceTime

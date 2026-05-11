@@ -185,6 +185,20 @@ const Lobby = () => {
 
       <main style={{ padding: "0 18px 80px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
 
+        {/* Mega Slip banner */}
+        {scrum.megaSlipId && (
+          <button
+            onClick={() => navigate(`/mega/${scrum.megaSlipId}/hub`)}
+            style={{
+              width: "100%", textAlign: "left", background: "var(--ink)", border: "3px solid var(--cream)",
+              padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}
+          >
+            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>PART OF MEGA GROUP</span>
+            <span className="label" style={{ color: "var(--cream)", textDecoration: "underline" }}>VIEW HUB →</span>
+          </button>
+        )}
+
         {/* venue + group */}
         <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px 16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

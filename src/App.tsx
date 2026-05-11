@@ -16,6 +16,8 @@ import Spindle from "./pages/Spindle";
 import Stats from "./pages/Stats";
 import JoinViaLink from "./pages/JoinViaLink";
 import HostResults from "./pages/HostResults";
+import MegaHub from "./pages/MegaHub";
+import JoinMegaViaLink from "./pages/JoinMegaViaLink";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +78,8 @@ const AppRoutes = () => {
       <Route path="/spindle" element={<Spindle />} />
       <Route path="/stats" element={<Stats />} />
       <Route path="/join/:code" element={<JoinViaLink />} />
+      <Route path="/mega/:id/hub" element={<MegaHub />} />
+      <Route path="/join-mega/:code" element={<JoinMegaViaLink />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
