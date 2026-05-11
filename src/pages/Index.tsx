@@ -385,16 +385,16 @@ const Index = () => {
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
-                    <div className="mono" style={{ fontSize: 11, marginTop: 8, opacity: 0.7, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <span>FIRST {firstRaceTime}</span>
-                      {nextRaceTime && <span>NEXT {nextRaceTime}</span>}
+                    <div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      <span style={{ opacity: 0.7 }}>FIRST {firstRaceTime}</span>
+                      {nextRaceTime && <span style={{ opacity: 0.7 }}>NEXT {nextRaceTime}</span>}
                       {card.isVirtual ? (
                         <span style={{
                           background: isSelected ? "var(--ink)" : "var(--pink)",
                           color: "var(--cream)", padding: "1px 5px",
                         }}>VIRTUAL</span>
                       ) : (
-                        <span>{card.raceCount} RACES</span>
+                        <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>
                       )}
                     </div>
                   </button>
