@@ -228,16 +228,21 @@ const Lobby = () => {
 
         {/* ── VENUE CARD ── */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", background: "var(--green)", color: "var(--cream)" }}>
-          {/* Venue info */}
+          {/* Venue info — matches Hub track card style */}
           <div style={{ padding: "14px 16px 12px" }}>
-            <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>VENUE</div>
-            <div className="display" style={{ fontSize: 30, lineHeight: 1, marginBottom: 12 }}>{card?.trackName ?? "—"}</div>
-            {countdown && (
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                <span className="label-sm" style={{ opacity: 0.6 }}>{picksLocked ? "" : "FIRST RACE IN"}</span>
-                <span className="display" style={{ fontSize: 28 }}>{countdown}</span>
-              </div>
-            )}
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+              <div className="display" style={{ fontSize: 30, lineHeight: 1 }}>{card?.trackName ?? "—"}</div>
+              {card?.isVirtual && (
+                <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
+              )}
+            </div>
+            <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+              {[
+                card?.raceCount ? `${card.raceCount} RACES` : null,
+                card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
+                countdown && countdown !== "PICKS LOCKED" ? countdown : countdown === "PICKS LOCKED" ? "UNDERWAY" : null,
+              ].filter(Boolean).join(" · ")}
+            </div>
           </div>
           {/* Action buttons */}
           <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
@@ -247,8 +252,8 @@ const Lobby = () => {
               className="display"
               style={{
                 flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                background: picksLocked ? "rgba(245,232,223,0.08)" : "var(--pink)",
-                color: picksLocked ? "rgba(245,232,223,0.3)" : "var(--ink)",
+                background: picksLocked ? "rgba(245,232,223,0.08)" : "var(--ink)",
+                color: picksLocked ? "rgba(245,232,223,0.3)" : "var(--cream)",
                 padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em",
                 textTransform: "uppercase", cursor: picksLocked ? "default" : "pointer",
               }}
