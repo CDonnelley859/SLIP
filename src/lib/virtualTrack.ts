@@ -7,7 +7,8 @@ import {
 const CARD_ID = "blotto-park";
 export const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
-const RACE_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours between races
+export const RACE_GAP_MS = 20 * 60 * 1000;          // 20 minutes between races
+const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card, then re-seeds
 
 const HORSE_NAMES = [
   // British Pub Classics & Tavern Vibes
@@ -141,35 +142,24 @@ export async function settleVirtualRaces(): Promise<void> {
  */
 export async function seedVirtualTrack(): Promise<void> {
   const now = Date.now();
-  const today = new Date().toISOString().slice(0, 10);
 
   // One-time migration: remove old "virtual-park" card if it still exists
   try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
 
-  // Settle any finished races in the current cycle before checking freshness
+  // Settle any finished races before checking freshness
   try { await settleFinishedRaces(); } catch { }
 
-  // Check if the existing card is still fresh AND dated today
-  const cardRef = doc(db, "cards", CARD_ID);
-  const cardDoc = await getDoc(cardRef);
-  if (cardDoc.exists()) {
-    const data = cardDoc.data();
-    const postTime = new Date(data.postTime).getTime();
-    const lastRaceTime = postTime + (RACE_COUNT - 1) * RACE_GAP_MS;
-    const isToday = data.raceDate === today;
-    if (isToday && now < lastRaceTime + 5 * 60 * 1000) return; // still running or just finished
-    // If raceDate isn't today, fall through and overwrite with a fresh card
-  }
-
-  // Write new virtual card
-  // Anchor to today's midnight — 12 races every 2 h: 00, 02, 04 … 22.
-  // If today's last race (22:00) has already passed, roll to tomorrow's midnight.
+  // Work out which 2-hour slot we're in (anchored to local midnight)
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const todayLastRace = startOfDay.getTime() + (RACE_COUNT - 1) * RACE_GAP_MS;
-  if (now > todayLastRace) startOfDay.setDate(startOfDay.getDate() + 1);
-  const firstRaceTime = startOfDay.getTime();
+  const slot = Math.floor((now - startOfDay.getTime()) / CARD_DURATION_MS);
+  const firstRaceTime = startOfDay.getTime() + slot * CARD_DURATION_MS;
   const firstRaceISO = new Date(firstRaceTime).toISOString();
+
+  // Skip if the card in Firestore already matches this slot
+  const cardRef = doc(db, "cards", CARD_ID);
+  const cardDoc = await getDoc(cardRef);
+  if (cardDoc.exists() && cardDoc.data().postTime === firstRaceISO) return;
 
   await setDoc(cardRef, {
     trackName: "BLOTTO PARK",

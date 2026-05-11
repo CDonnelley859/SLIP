@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
-import { seedVirtualTrack, settleVirtualRaces, RACE_COUNT as VIRTUAL_RACE_COUNT } from "@/lib/virtualTrack";
+import { seedVirtualTrack, settleVirtualRaces, RACE_COUNT as VIRTUAL_RACE_COUNT, RACE_GAP_MS as VIRTUAL_RACE_GAP_MS } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -104,20 +104,27 @@ const Index = () => {
 
     setCards(cardList);
 
-    // Seed or reset virtual track — at most once per browser session
+    // Work out the current 2-hour slot (matches seedVirtualTrack logic)
+    const VCARD_MS = VIRTUAL_RACE_COUNT * VIRTUAL_RACE_GAP_MS; // 2 hours
+    const vDay = new Date(); vDay.setHours(0, 0, 0, 0);
+    const vSlot = Math.floor((Date.now() - vDay.getTime()) / VCARD_MS);
+    const vSlotStart = vDay.getTime() + vSlot * VCARD_MS;
+
+    // Seed if the card in the list doesn't match the current slot
     const virtualCard = cardList.find(c => c.id === "blotto-park");
-    const needsSeed = !virtualCard || (() => {
-      const RACE_GAP_MS = 2 * 60 * 60 * 1000;
-      const lastRaceTime = new Date(virtualCard.postTime).getTime() + (VIRTUAL_RACE_COUNT - 1) * RACE_GAP_MS;
-      return Date.now() > lastRaceTime + 5 * 60 * 1000;
-    })();
-    if (needsSeed && !sessionStorage.getItem("blotto-seeded")) {
-      sessionStorage.setItem("blotto-seeded", "1");
+    const needsSeed = !virtualCard ||
+      new Date(virtualCard.postTime).getTime() !== vSlotStart;
+
+    // Use slot-specific sessionStorage keys so it re-seeds when the slot turns over
+    const seedKey = `blotto-seeded-${vSlotStart}`;
+    const settleKey = `blotto-settled-${vSlotStart}`;
+
+    if (needsSeed && !sessionStorage.getItem(seedKey)) {
+      sessionStorage.setItem(seedKey, "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
     } else if (!needsSeed) {
-      // Settle finished races — fire and forget, once per session
-      if (!sessionStorage.getItem("blotto-settled")) {
-        sessionStorage.setItem("blotto-settled", "1");
+      if (!sessionStorage.getItem(settleKey)) {
+        sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});
       }
     }
@@ -353,11 +360,10 @@ const Index = () => {
                     return new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                   }
                   // For virtual cards show the next upcoming race, not the first
-                  const VGAP = 2 * 60 * 60 * 1000;
                   const post = new Date(card.postTime).getTime();
-                  const lastRace = post + (VIRTUAL_RACE_COUNT - 1) * VGAP;
-                  const n = Math.ceil((Date.now() - post) / VGAP);
-                  const next = Math.min(post + Math.max(0, n) * VGAP, lastRace);
+                  const lastRace = post + (VIRTUAL_RACE_COUNT - 1) * VIRTUAL_RACE_GAP_MS;
+                  const n = Math.ceil((Date.now() - post) / VIRTUAL_RACE_GAP_MS);
+                  const next = Math.min(post + Math.max(0, n) * VIRTUAL_RACE_GAP_MS, lastRace);
                   return new Date(next).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 })();
                 return (
