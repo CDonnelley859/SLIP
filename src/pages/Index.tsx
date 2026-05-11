@@ -104,10 +104,11 @@ const Index = () => {
 
     setCards(cardList);
 
-    // Work out the current 2-hour slot (matches seedVirtualTrack logic)
+    // Work out the current slot — same +RACE_GAP_MS offset as seedVirtualTrack
+    // so the next card becomes visible 20 mins before its races start
     const VCARD_MS = VIRTUAL_RACE_COUNT * VIRTUAL_RACE_GAP_MS; // 2 hours
     const vDay = new Date(); vDay.setHours(0, 0, 0, 0);
-    const vSlot = Math.floor((Date.now() - vDay.getTime()) / VCARD_MS);
+    const vSlot = Math.floor((Date.now() + VIRTUAL_RACE_GAP_MS - vDay.getTime()) / VCARD_MS);
     const vSlotStart = vDay.getTime() + vSlot * VCARD_MS;
 
     // Seed if the card in the list doesn't match the current slot

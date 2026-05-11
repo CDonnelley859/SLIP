@@ -149,10 +149,11 @@ export async function seedVirtualTrack(): Promise<void> {
   // Settle any finished races before checking freshness
   try { await settleFinishedRaces(); } catch { }
 
-  // Work out which 2-hour slot we're in (anchored to local midnight)
+  // Work out which slot to show — offset by one race gap so the next card
+  // becomes visible 20 minutes before it starts (lines up with last race of current card)
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const slot = Math.floor((now - startOfDay.getTime()) / CARD_DURATION_MS);
+  const slot = Math.floor((now + RACE_GAP_MS - startOfDay.getTime()) / CARD_DURATION_MS);
   const firstRaceTime = startOfDay.getTime() + slot * CARD_DURATION_MS;
   const firstRaceISO = new Date(firstRaceTime).toISOString();
 
