@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -36,6 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem('slip_handle') ?? ''
     setHandleState(saved)
     setLoading(false)
+    // Ensure Firebase Auth session exists so Firestore rules pass
+    const unsub = onAuthStateChanged(auth, user => {
+      if (!user) signInAnonymously(auth).catch(() => {})
+      unsub()
+    })
   }, [])
 
   function setHandle(name: string) {
