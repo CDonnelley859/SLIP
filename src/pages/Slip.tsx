@@ -318,15 +318,7 @@ const Slip = () => {
           ← PADDOCK
         </Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-          <button
-            onClick={() => navigate("/spindle")}
-            className="label"
-            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-          >
-            FLIP
-          </button>
-        </div>
+        <div style={{ flex: 1 }} />
       </div>
 
       {/* ── PLAYER DOTS ── */}
