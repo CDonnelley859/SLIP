@@ -311,11 +311,11 @@ const Slip = () => {
         }}
       >
         <Link
-          to={`/scrum/${id}/lobby`}
+          to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
           className="label"
           style={{ color: "var(--cream)", textDecoration: "none", flex: 1 }}
         >
-          ← PADDOCK
+          {scrum?.megaSlipId ? "← HUB" : "← PADDOCK"}
         </Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
@@ -496,14 +496,14 @@ const Slip = () => {
         )}
 
         <Link
-          to={`/scrum/${id}/lobby`}
+          to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
           className="label"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "var(--cream)", textDecoration: "underline", padding: "12px",
           }}
         >
-          BACK TO THE PEN
+          {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
         </Link>
       </div>
     </div>

@@ -22,6 +22,7 @@ const Gallop = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
   const [card, setCard] = useState<any>(null);
+  const [megaSlipId, setMegaSlipId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(true);
   const [races, setRaces] = useState<Race[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
@@ -34,6 +35,7 @@ const Gallop = () => {
       const scrumDoc = await getDoc(doc(db, "scrums", id));
       if (!scrumDoc.exists()) return;
       const scrum = scrumDoc.data();
+      setMegaSlipId(scrum.megaSlipId ?? null);
 
       const [cardDoc, racesSnap] = await Promise.all([
         getDoc(doc(db, "cards", scrum.cardId)),
@@ -159,7 +161,11 @@ const Gallop = () => {
         });
       });
       await batch.commit();
-      navigate(`/scrum/${id}/slip`);
+      if (megaSlipId) {
+        navigate(`/mega/${megaSlipId}/hub`);
+      } else {
+        navigate(`/scrum/${id}/slip`);
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -193,11 +199,11 @@ const Gallop = () => {
         {/* top row */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
           <button
-            onClick={() => navigate(`/scrum/${id}/lobby`)}
+            onClick={() => megaSlipId ? navigate(`/mega/${megaSlipId}/hub`) : navigate(`/scrum/${id}/lobby`)}
             className="label"
             style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)" }}
           >
-            ← PEN
+            {megaSlipId ? "← HUB" : "← PEN"}
           </button>
           <span className="display" style={{ fontSize: 36, lineHeight: 0.9, color: "var(--cream)" }}>
             {card?.trackName ?? "—"}

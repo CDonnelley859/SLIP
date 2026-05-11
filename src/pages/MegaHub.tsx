@@ -331,32 +331,42 @@ const MegaHub = () => {
                     color: "var(--cream)",
                   }}
                 >
-                  <div
-                    onClick={() => navigate(`/scrum/${t.scrumId}/lobby`)}
-                    style={{ padding: "14px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                  >
-                    <div>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                        <div className="display" style={{ fontSize: 20, lineHeight: 1 }}>{t.trackName}</div>
-                        {t.isVirtual && (
-                          <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
-                        )}
-                      </div>
-                      <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
-                        {formatTime(t.postTime)} · {t.raceCount} RACES · {started ? "UNDERWAY" : "UPCOMING"}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                      {isHost && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRemoveTrack(t.scrumId, t.trackName); }}
-                          className="label-sm"
-                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", opacity: 0.45, textDecoration: "underline" }}
-                        >
-                          REMOVE
-                        </button>
+                  <div style={{ padding: "14px 16px 10px" }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                      <div className="display" style={{ fontSize: 20, lineHeight: 1 }}>{t.trackName}</div>
+                      {t.isVirtual && (
+                        <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
                       )}
-                      <span className="label" style={{ opacity: 0.6 }}>→</span>
+                    </div>
+                    <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                      {formatTime(t.postTime)} · {t.raceCount} RACES · {started ? "UNDERWAY" : "UPCOMING"}
+                    </div>
+                  </div>
+                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", padding: "8px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    {isHost ? (
+                      <button
+                        onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
+                        className="label-sm"
+                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", opacity: 0.45, textDecoration: "underline" }}
+                      >
+                        REMOVE
+                      </button>
+                    ) : <div />}
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <button
+                        onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
+                        className="label"
+                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                      >
+                        PICK HORSES
+                      </button>
+                      <button
+                        onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
+                        className="label"
+                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                      >
+                        SLIPS
+                      </button>
                     </div>
                   </div>
                 </div>
