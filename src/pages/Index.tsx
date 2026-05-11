@@ -174,6 +174,9 @@ const Index = () => {
         if (!scrumDoc.exists()) return null;
         const scrum = scrumDoc.data();
 
+        // Skip scrums that belong to a Mega Slip — the mega group shows instead
+        if (scrum.megaSlipId) return null;
+
         const [cardDoc, racesSnap, picksSnap] = await Promise.all([
           getDoc(doc(db, "cards", scrum.cardId)),
           getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
