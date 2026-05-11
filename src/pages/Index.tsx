@@ -380,12 +380,7 @@ const Index = () => {
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
-                    {card.tagline && (
-                      <div className="mono" style={{ fontSize: 10, marginTop: 5, opacity: 0.6, lineHeight: 1.4 }}>
-                        {card.tagline}
-                      </div>
-                    )}
-                    <div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+<div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                       <span style={{ opacity: 0.7 }}>FIRST {firstRaceTime}</span>
                       <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>
                       {card.isVirtual && (
