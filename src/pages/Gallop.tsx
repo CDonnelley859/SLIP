@@ -98,11 +98,33 @@ const Gallop = () => {
   function goPrev() { slideDir.current = "back";    setCurrentIdx(i => Math.max(0, i - 1)); }
 
   const touchStartX = useRef<number | null>(null);
-  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX; }
+  const touchStartY = useRef<number | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Attach a non-passive touchmove so we can preventDefault on horizontal swipes,
+  // stopping the page from wobbling while the user swipes between races.
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return;
+      const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+      if (dx > dy) e.preventDefault();
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+  }, []);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
+    touchStartY.current = null;
     if (Math.abs(dx) < 50) return;
     if (dx < 0) { slideDir.current = "forward"; setCurrentIdx(i => Math.min(races.length - 1, i + 1)); }
     else { slideDir.current = "back"; setCurrentIdx(i => Math.max(0, i - 1)); }
@@ -254,6 +276,7 @@ const Gallop = () => {
 
       {/* ── HORSE LIST ── */}
       <main
+        ref={mainRef}
         className="flex-grow"
         style={{ padding: "10px 18px 24px" }}
         onTouchStart={onTouchStart}
