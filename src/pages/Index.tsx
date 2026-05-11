@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-type Card = { id: string; trackName: string; raceDate: string; postTime: string; raceCount: number; isVirtual?: boolean };
+type Card = { id: string; trackName: string; tagline?: string; raceDate: string; postTime: string; raceCount: number; isVirtual?: boolean };
 type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null };
 
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -87,6 +87,7 @@ const Index = () => {
     const cardList: Card[] = cardsSnap.docs.map(d => ({
       id: d.id,
       trackName: d.data().trackName,
+      tagline: d.data().tagline ?? undefined,
       raceDate: d.data().raceDate,
       postTime: d.data().postTime,
       raceCount: d.data().raceCount ?? 0,
@@ -106,6 +107,7 @@ const Index = () => {
           cardList.push({
             id: missingVIds[i],
             trackName: data.trackName,
+            tagline: data.tagline ?? undefined,
             raceDate: data.raceDate,
             postTime: data.postTime,
             raceCount: data.raceCount ?? 0,
@@ -378,6 +380,11 @@ const Index = () => {
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
+                    {card.tagline && (
+                      <div className="mono" style={{ fontSize: 10, marginTop: 5, opacity: 0.6, lineHeight: 1.4 }}>
+                        {card.tagline}
+                      </div>
+                    )}
                     <div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                       <span style={{ opacity: 0.7 }}>FIRST {firstRaceTime}</span>
                       <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>

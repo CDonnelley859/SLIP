@@ -11,6 +11,57 @@ export const RACE_GAP_MS = 20 * 60 * 1000;          // 20 minutes between races
 export const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card
 const CARDS_AHEAD = 2;                                // show current + 2 upcoming = 3 total
 
+const VENUES = [
+  {
+    name: "BLOTTO PARK",
+    tagline: "The home of virtual racing. Where every race is a reason to pour another.",
+  },
+  {
+    name: "CHUG-CHILL DOWNS",
+    tagline: "The crown jewel of the circuit. Famous for its Twin Spires beer towers and high-stakes sprinting.",
+  },
+  {
+    name: "ALE-TREE",
+    tagline: "Home of the Grand National Gulp. The ultimate test of endurance featuring massive, keg-shaped obstacles.",
+  },
+  {
+    name: "ASSHOT PARK",
+    tagline: "The pinnacle of high-society racing. Known for its strict dress code, expensive gin, and royal pedigree.",
+  },
+  {
+    name: "FILL-ME-UP-TON",
+    tagline: "Known as The Race that Stops a Nation. The gates don't open until every spectator has a full cup.",
+  },
+  {
+    name: "EMPTY-SOME DOWNS",
+    tagline: "The original Derby venue. Named for the hollow feeling of an empty glass at the final furlong.",
+  },
+  {
+    name: "LONG-GLASS-CHAMP",
+    tagline: "Europe's most elegant venue. Famous for its Yard of Ale straightaway and vintage wine celebrations.",
+  },
+  {
+    name: "SELTZERNHAM",
+    tagline: "The Olympics of jump racing. An electric, high-energy atmosphere fuelled by endless rows of hard seltzer.",
+  },
+  {
+    name: "HOPPY VALLEY",
+    tagline: "An iconic urban night-track. Surrounded by skyscrapers and powered by a relentless flow of craft beer.",
+  },
+  {
+    name: "BEER-MONT PARK",
+    tagline: "Known as The Test of the Champion's Liver. Features the longest straightaway in North American racing.",
+  },
+  {
+    name: "MEAD-AN",
+    tagline: "The most futuristic and luxurious track in existence. Famous for its massive prize pools and ancient honey-wine.",
+  },
+  {
+    name: "RUM-INGTON PARK",
+    tagline: "A professional circuit staple. Known for its high-proof atmosphere and spirits that keep the race pace blistering.",
+  },
+];
+
 const HORSE_NAMES = [
   // British Pub Classics & Tavern Vibes
   "THE TIPSY TAILOR", "HOPS AND GLORY", "THE PINT-SIZED PONY", "RUSTY ANCHOR",
@@ -178,8 +229,11 @@ async function seedSlot(slotNum: number): Promise<void> {
   const cardDoc = await getDoc(cardRef);
   if (cardDoc.exists()) return;
 
+  const venue = VENUES[slotNum % VENUES.length];
+
   await setDoc(cardRef, {
-    trackName: "BLOTTO PARK",
+    trackName: venue.name,
+    tagline: venue.tagline,
     raceDate: new Date(firstRaceTime).toISOString().slice(0, 10),
     postTime: firstRaceISO,
     status: "upcoming",
