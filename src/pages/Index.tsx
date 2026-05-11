@@ -361,16 +361,6 @@ const Index = () => {
                 const firstRaceTime = card.postTime
                   ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                   : "—";
-                // Next upcoming race for virtual cards (null if card hasn't started yet)
-                const nextRaceTime = (() => {
-                  if (!card.isVirtual || !card.postTime) return null;
-                  const post = new Date(card.postTime).getTime();
-                  if (Date.now() < post) return null; // not started yet
-                  const lastRace = post + (VIRTUAL_RACE_COUNT - 1) * VIRTUAL_RACE_GAP_MS;
-                  const n = Math.ceil((Date.now() - post) / VIRTUAL_RACE_GAP_MS);
-                  const next = Math.min(post + n * VIRTUAL_RACE_GAP_MS, lastRace);
-                  return new Date(next).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                })();
                 return (
                   <button
                     key={card.id}
