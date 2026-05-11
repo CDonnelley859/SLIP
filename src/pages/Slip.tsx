@@ -301,7 +301,7 @@ const Slip = () => {
   return (
     <div
       className="min-h-screen halftone-bg halftone-loose flex flex-col items-center"
-      style={{ background: "var(--green)", padding: "0 0 80px" }}
+      style={{ background: "var(--green)", padding: "0 0 80px", touchAction: "pan-y" }}
     >
       {/* ── PAGE HEADER ── */}
       <div
