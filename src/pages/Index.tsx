@@ -96,18 +96,22 @@ const Index = () => {
 
     setCards(cardList);
 
-    // Seed or reset virtual track when missing or stale
+    // Seed or reset virtual track — at most once per browser session
     const virtualCard = cardList.find(c => c.id === "blotto-park");
     const needsSeed = !virtualCard || (() => {
       const RACE_GAP_MS = 2 * 60 * 60 * 1000;
       const lastRaceTime = new Date(virtualCard.postTime).getTime() + (12 - 1) * RACE_GAP_MS;
       return Date.now() > lastRaceTime + 5 * 60 * 1000;
     })();
-    if (needsSeed) {
+    if (needsSeed && !sessionStorage.getItem("blotto-seeded")) {
+      sessionStorage.setItem("blotto-seeded", "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
-    } else {
-      // Settle any finished races in the current card on every load
-      settleVirtualRaces().catch(() => {});
+    } else if (!needsSeed) {
+      // Settle finished races — fire and forget, once per session
+      if (!sessionStorage.getItem("blotto-settled")) {
+        sessionStorage.setItem("blotto-settled", "1");
+        settleVirtualRaces().catch(() => {});
+      }
     }
 
     if (!userId) return;
