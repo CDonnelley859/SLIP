@@ -36,10 +36,12 @@ const Index = () => {
   const [groupName, setGroupName] = useState("");
   const [createName, setCreateName] = useState(handle);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
 
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState(handle);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   useEffect(() => { loadData(); }, [userId, location.key]);
 
@@ -210,6 +212,7 @@ const Index = () => {
     e.preventDefault();
     if (!selectedCard || !groupName.trim() || !userId) return;
     setCreating(true);
+    setCreateError("");
     try {
       const code = genCode();
       const scrumId = crypto.randomUUID();
@@ -222,7 +225,9 @@ const Index = () => {
       });
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
-      toast.error(err?.message || "Failed to create group — please try again");
+      const msg = err?.message || "Failed to create — please try again";
+      setCreateError(msg);
+      toast.error(msg);
     } finally {
       setCreating(false);
     }
@@ -232,6 +237,7 @@ const Index = () => {
     e.preventDefault();
     if (!joinCode.trim() || joinCode.length < 4) return;
     setJoining(true);
+    setJoinError("");
     try {
       const snap = await getDocs(
         query(collection(db, "scrums"), where("joinCode", "==", joinCode.toUpperCase().trim()))
@@ -243,7 +249,9 @@ const Index = () => {
       });
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
-      toast.error(err?.message || "Failed to join group — please try again");
+      const msg = err?.message || "Failed to join — please try again";
+      setJoinError(msg);
+      toast.error(msg);
     } finally {
       setJoining(false);
     }
@@ -473,6 +481,11 @@ const Index = () => {
                     }}
                   />
                 </div>
+                {createError && (
+                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
+                    ⚠ {createError}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={creating || !groupName.trim() || !createName.trim()}
@@ -518,6 +531,11 @@ const Index = () => {
                     }}
                   />
                 </div>
+                {joinError && (
+                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
+                    ⚠ {joinError}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}

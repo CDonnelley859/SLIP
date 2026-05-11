@@ -20,6 +20,7 @@ const Lobby = () => {
   const [countdown, setCountdown] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<{ handle: string; points: number; userId: string }[]>([]);
   const [togglingDetails, setTogglingDetails] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     if (!card?.postTime) return;
@@ -41,58 +42,66 @@ const Lobby = () => {
 
   useEffect(() => {
     if (!id) return;
+    let unsubFn: (() => void) | undefined;
     (async () => {
-      const scrumDoc = await getDoc(doc(db, "scrums", id));
-      if (!scrumDoc.exists()) { navigate("/"); return; }
-      const scrumData = scrumDoc.data();
-      setScrum(scrumData);
-
-      const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
-      setCard(cardDoc.data());
-
-      const membersSnap = await getDocs(
-        query(collection(db, "scrumMembers"), where("scrumId", "==", id))
-      );
-      const picksSnap = await getDocs(
-        query(collection(db, "picks"), where("scrumId", "==", id))
-      );
-      const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
-      const memberList = membersSnap.docs.map(d => ({
-        handle: d.data().handle ?? "Anonymous",
-        userId: d.data().userId,
-        submitted: submittedUserIds.has(d.data().userId),
-      }));
-      setMembers(memberList);
-
-      const handleMap: Record<string, string> = {};
-      memberList.forEach(m => { handleMap[m.userId] = m.handle; });
-
-      const unsub = onSnapshot(
-        query(collection(db, "picks"), where("scrumId", "==", id)),
-        (snap) => {
-          const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
-          snap.docs.forEach(p => {
-            const uid = p.data().userId;
-            const pts = p.data().points ?? 0;
-            if (!statsByUser[uid]) statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
-            statsByUser[uid].points += pts;
-            if (pts === 5) statsByUser[uid].wins++;
-            else if (pts === 3) statsByUser[uid].places++;
-            else if (pts === 1) statsByUser[uid].shows++;
-          });
-          const board = Object.entries(statsByUser)
-            .map(([uid, s]) => ({ userId: uid, handle: handleMap[uid] ?? "—", ...s }))
-            .sort((a, b) => {
-              if (b.points !== a.points) return b.points - a.points;
-              if (b.wins !== a.wins) return b.wins - a.wins;
-              if (b.places !== a.places) return b.places - a.places;
-              return b.shows - a.shows;
-            });
-          setLeaderboard(board);
+      try {
+        const scrumDoc = await getDoc(doc(db, "scrums", id));
+        if (!scrumDoc.exists()) {
+          setLoadError("Group not found. It may still be loading — try going back and tapping the group again.");
+          return;
         }
-      );
-      return unsub;
+        const scrumData = scrumDoc.data();
+        setScrum(scrumData);
+
+        const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
+        setCard(cardDoc.data());
+
+        const membersSnap = await getDocs(
+          query(collection(db, "scrumMembers"), where("scrumId", "==", id))
+        );
+        const picksSnap = await getDocs(
+          query(collection(db, "picks"), where("scrumId", "==", id))
+        );
+        const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
+        const memberList = membersSnap.docs.map(d => ({
+          handle: d.data().handle ?? "Anonymous",
+          userId: d.data().userId,
+          submitted: submittedUserIds.has(d.data().userId),
+        }));
+        setMembers(memberList);
+
+        const handleMap: Record<string, string> = {};
+        memberList.forEach(m => { handleMap[m.userId] = m.handle; });
+
+        unsubFn = onSnapshot(
+          query(collection(db, "picks"), where("scrumId", "==", id)),
+          (snap) => {
+            const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
+            snap.docs.forEach(p => {
+              const uid = p.data().userId;
+              const pts = p.data().points ?? 0;
+              if (!statsByUser[uid]) statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
+              statsByUser[uid].points += pts;
+              if (pts === 5) statsByUser[uid].wins++;
+              else if (pts === 3) statsByUser[uid].places++;
+              else if (pts === 1) statsByUser[uid].shows++;
+            });
+            const board = Object.entries(statsByUser)
+              .map(([uid, s]) => ({ userId: uid, handle: handleMap[uid] ?? "—", ...s }))
+              .sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                if (b.places !== a.places) return b.places - a.places;
+                return b.shows - a.shows;
+              });
+            setLeaderboard(board);
+          }
+        );
+      } catch (err: any) {
+        setLoadError(err?.message || "Failed to load group — please go back and try again.");
+      }
     })();
+    return () => { if (unsubFn) unsubFn(); };
   }, [id]);
 
   async function handleLeave() {
@@ -134,8 +143,21 @@ const Lobby = () => {
   }
 
   if (!scrum) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
-      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)", padding: "32px 24px" }}>
+      {loadError ? (
+        <div style={{ textAlign: "center", maxWidth: 320 }}>
+          <p className="label" style={{ color: "var(--pink)", marginBottom: 16 }}>⚠ {loadError}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="label"
+            style={{ background: "transparent", border: "2px solid var(--cream)", color: "var(--cream)", padding: "10px 20px", cursor: "pointer" }}
+          >
+            ← BACK TO PADDOCK
+          </button>
+        </div>
+      ) : (
+        <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
+      )}
     </div>
   );
 
