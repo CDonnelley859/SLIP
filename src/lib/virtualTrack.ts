@@ -141,13 +141,16 @@ export async function seedVirtualTrack(): Promise<void> {
   // Settle any finished races in the current cycle before checking freshness
   await settleFinishedRaces();
 
-  // Check if the existing card is still fresh
+  // Check if the existing card is still fresh AND dated today
   const cardRef = doc(db, "cards", CARD_ID);
   const cardDoc = await getDoc(cardRef);
   if (cardDoc.exists()) {
-    const postTime = new Date(cardDoc.data().postTime).getTime();
+    const data = cardDoc.data();
+    const postTime = new Date(data.postTime).getTime();
     const lastRaceTime = postTime + (RACE_COUNT - 1) * RACE_GAP_MS;
-    if (now < lastRaceTime + 5 * 60 * 1000) return; // still running or just finished
+    const isToday = data.raceDate === today;
+    if (isToday && now < lastRaceTime + 5 * 60 * 1000) return; // still running or just finished
+    // If raceDate isn't today, fall through and overwrite with a fresh card
   }
 
   // Write new virtual card
