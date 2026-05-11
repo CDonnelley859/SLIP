@@ -90,6 +90,7 @@ const Slip = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [slideDir, setSlideDir] = useState<"forward" | "back">("forward");
   const [slideKey, setSlideKey] = useState(0);
+  const [ready, setReady] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const currentPlayer = players[playerIdx];
@@ -145,6 +146,7 @@ const Slip = () => {
 
     const sorted = built.sort((a, b) => a.raceNumber - b.raceNumber);
     setLines(sorted);
+    setReady(true);
 
     const myTotal = sorted.reduce((sum, l) => sum + l.points, 0);
     const myWins = sorted.filter(l => l.status === "WIN").length;
@@ -350,6 +352,15 @@ const Slip = () => {
       )}
 
       {/* ── TICKET ── */}
+      {!ready ? (
+        <div style={{ width: "calc(100% - 36px)", maxWidth: 420, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ height: 28, width: "60%", background: "rgba(245,232,223,0.12)", margin: "0 auto 8px" }} />
+          <div style={{ height: 80, background: "rgba(245,232,223,0.1)", border: "1.5px solid rgba(245,232,223,0.2)" }} />
+          {[0, 1, 2, 4, 5, 6].map(i => (
+            <div key={i} style={{ height: 64, background: "rgba(245,232,223,0.08)", border: "1.5px solid rgba(245,232,223,0.15)" }} />
+          ))}
+        </div>
+      ) : (
       <div
         key={slideKey}
         className={slideKey === 0 ? "animate-print" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}
@@ -464,6 +475,7 @@ const Slip = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* swipe hint */}
       {players.length > 1 && (

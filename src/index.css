@@ -237,11 +237,11 @@
 
   /* ===== animations ===== */
   .animate-print {
-    animation: ticketPrint 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: ticketPrint 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   @keyframes ticketPrint {
-    0%   { transform: translateY(-100%); opacity: 0; }
-    100% { transform: translateY(0);     opacity: 1; }
+    0%   { clip-path: inset(0 0 100% 0); }
+    100% { clip-path: inset(0 0 0% 0); }
   }
 
   .animate-fade-in {
