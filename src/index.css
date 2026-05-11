@@ -237,7 +237,7 @@
 
   /* ===== animations ===== */
   .animate-print {
-    animation: ticketPrint 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: ticketPrint 2.4s linear forwards;
   }
   @keyframes ticketPrint {
     0%   { clip-path: inset(0 0 100% 0); }

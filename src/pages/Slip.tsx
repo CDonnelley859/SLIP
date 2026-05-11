@@ -345,11 +345,20 @@ const Slip = () => {
 
       {/* ── TICKET ── */}
       {!ready ? (
-        <div style={{ width: "calc(100% - 36px)", maxWidth: 420, display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ height: 28, width: "60%", background: "rgba(245,232,223,0.12)", margin: "0 auto 8px" }} />
-          <div style={{ height: 80, background: "rgba(245,232,223,0.1)", border: "1.5px solid rgba(245,232,223,0.2)" }} />
-          {[0, 1, 2, 4, 5, 6].map(i => (
-            <div key={i} style={{ height: 64, background: "rgba(245,232,223,0.08)", border: "1.5px solid rgba(245,232,223,0.15)" }} />
+        <div style={{
+          width: "calc(100% - 36px)", maxWidth: 420,
+          border: "3px solid rgba(245,232,223,0.4)",
+          boxShadow: "6px 6px 0 var(--cream)",
+          background: "var(--green)",
+          padding: "20px 18px 22px",
+          display: "flex", flexDirection: "column", gap: 12,
+        }}>
+          <div style={{ height: 14, width: "45%", background: "rgba(245,232,223,0.12)", margin: "0 auto" }} />
+          <div style={{ height: 36, width: "70%", background: "rgba(245,232,223,0.1)", margin: "0 auto" }} />
+          <div style={{ height: 10, width: "50%", background: "rgba(245,232,223,0.08)", margin: "0 auto" }} />
+          <div style={{ height: 1, background: "rgba(245,232,223,0.15)", margin: "8px 0" }} />
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <div key={i} style={{ height: 72, background: "rgba(245,232,223,0.06)", border: "1.5px solid rgba(245,232,223,0.12)" }} />
           ))}
         </div>
       ) : (
