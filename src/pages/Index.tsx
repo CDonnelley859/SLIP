@@ -652,13 +652,9 @@ const Index = () => {
                     onClick={() => navigate(`/mega/${mega.id}/hub`)}
                     style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                      <div className="label-sm" style={{ opacity: 0.6 }}>MEGA GROUP</div>
-                      <div className="label-sm" style={{ background: "var(--pink)", color: "var(--ink)", padding: "1px 6px", fontSize: 9 }}>
-                        {mega.scrumIds.length} TRACKS
-                      </div>
-                    </div>
-                    <div className="display" style={{ fontSize: 24, lineHeight: 1 }}>{mega.name}</div>
+                    <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>MEGA GROUP</div>
+                    <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 4 }}>{mega.name}</div>
+                    <div className="label-sm" style={{ opacity: 0.5 }}>{mega.scrumIds.length} TRACKS</div>
                   </div>
                   <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "space-between" }}>
                     <button

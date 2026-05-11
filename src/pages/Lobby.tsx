@@ -252,7 +252,7 @@ const Lobby = () => {
               className="display"
               style={{
                 flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                background: picksLocked ? "rgba(245,232,223,0.08)" : "var(--ink)",
+                background: picksLocked ? "rgba(245,232,223,0.08)" : "var(--green)",
                 color: picksLocked ? "rgba(245,232,223,0.3)" : "var(--cream)",
                 padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em",
                 textTransform: "uppercase", cursor: picksLocked ? "default" : "pointer",

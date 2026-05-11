@@ -61,6 +61,7 @@ const MegaHub = () => {
   const [addingCard, setAddingCard] = useState<string | null>(null);
 
   // Host settings
+  const [showHostSettings, setShowHostSettings] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [togglingDetails, setTogglingDetails] = useState(false);
 
@@ -363,52 +364,7 @@ const MegaHub = () => {
         </div>
 
         {/* TRACKS */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span className="label" style={{ color: "var(--cream)" }}>TRACKS</span>
-          {isHost && (
-            <button
-              onClick={() => { setShowAddTrack(s => !s); if (!showAddTrack) loadAvailableCards(); }}
-              className="label"
-              style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-            >
-              {showAddTrack ? "CANCEL" : "+ ADD TRACK"}
-            </button>
-          )}
-        </div>
-
-        {/* Add track panel */}
-        {showAddTrack && (
-          <div style={{ border: "3px solid var(--cream)", marginBottom: 12 }}>
-            <div className="label-sm" style={{ padding: "8px 12px", borderBottom: "1.5px solid rgba(245,232,223,0.3)", color: "var(--cream)", opacity: 0.7 }}>
-              SELECT A TRACK TO ADD
-            </div>
-            {availableCards.length === 0 ? (
-              <p className="label-sm" style={{ padding: "16px 12px", color: "var(--cream)", opacity: 0.5 }}>No other tracks available today.</p>
-            ) : (
-              availableCards.map(card => (
-                <button
-                  key={card.id}
-                  onClick={() => handleAddTrack(card)}
-                  disabled={addingCard === card.id}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "12px", display: "flex",
-                    justifyContent: "space-between", alignItems: "center",
-                    background: "transparent", border: 0, borderBottom: "1px solid rgba(245,232,223,0.15)",
-                    color: "var(--cream)", cursor: "pointer", opacity: addingCard === card.id ? 0.5 : 1,
-                  }}
-                >
-                  <div>
-                    <div className="display" style={{ fontSize: 16 }}>{card.trackName}</div>
-                    <div className="mono" style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
-                  </div>
-                  <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>
-                    {addingCard === card.id ? "ADDING…" : "ADD →"}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
-        )}
+        <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>TRACKS</span>
 
         {/* Track list */}
         {tracks.length === 0 ? (
@@ -437,40 +393,29 @@ const MegaHub = () => {
                       )}
                     </div>
                     <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
-                      {formatTime(t.postTime)} · {t.raceCount} RACES · {countdown}
+                      {t.raceCount} RACES · {formatTime(t.postTime)} · {countdown}
                     </div>
                   </div>
-                  {isHost && (
-                    <div style={{ padding: "6px 16px 0", display: "flex", justifyContent: "flex-start" }}>
-                      <button
-                        onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
-                        className="label-sm"
-                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", opacity: 0.45, textDecoration: "underline" }}
-                      >
-                        REMOVE
-                      </button>
-                    </div>
-                  )}
                   <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
-                      <button
-                        onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
-                        className="display"
-                        style={{
-                          flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                          background: "var(--ink)", cursor: "pointer",
-                          color: "var(--cream)", padding: "14px 10px",
-                          fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
-                        }}
-                      >
-                        PICK HORSES →
-                      </button>
-                      <button
-                        onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
-                        className="display"
-                        style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", color: "var(--cream)", padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase" }}
-                      >
-                        SLIPS
-                      </button>
+                    <button
+                      onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
+                      className="display"
+                      style={{
+                        flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
+                        background: "var(--green)", cursor: "pointer",
+                        color: "var(--cream)", padding: "14px 10px",
+                        fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
+                      }}
+                    >
+                      PICK HORSES →
+                    </button>
+                    <button
+                      onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
+                      className="display"
+                      style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", color: "var(--cream)", padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase" }}
+                    >
+                      SLIPS
+                    </button>
                   </div>
                 </div>
               );
@@ -522,45 +467,125 @@ const MegaHub = () => {
         </div>
 
 
-        {/* ── HOST SETTINGS ── */}
+        {/* ── HOST SETTINGS (collapsible) ── */}
         {isHost && (
           <div style={{ marginTop: 28, border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)" }}>
-            <div className="label-sm" style={{ padding: "10px 14px 6px", opacity: 0.5, color: "var(--cream)" }}>HOST SETTINGS</div>
-            {/* Horse data toggle — applies to all tracks */}
-            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-              <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
-              <button
-                onClick={handleToggleDetails}
-                disabled={togglingDetails}
-                style={{
-                  border: "2px solid rgba(245,232,223,0.5)",
-                  background: showDetails ? "var(--cream)" : "transparent",
-                  color: showDetails ? "var(--ink)" : "var(--cream)",
-                  fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
-                  textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
-                  opacity: togglingDetails ? 0.4 : 1,
-                }}
-              >
-                {showDetails ? "FULL CARD" : "NAME ONLY"}
-              </button>
-            </div>
-            {/* Enter results per track */}
-            {tracks.map((t, i) => (
-              <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
-                <button
-                  onClick={() => navigate(`/scrum/${t.scrumId}/host-results`)}
-                  className="label"
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    width: "100%", background: "transparent", border: 0, cursor: "pointer",
-                    color: "var(--cream)", padding: "10px 0", textAlign: "left",
-                  }}
-                >
-                  <span>Enter Results — {t.trackName}</span>
-                  <span style={{ opacity: 0.5 }}>→</span>
-                </button>
-              </div>
-            ))}
+            {/* Header — tap to toggle */}
+            <button
+              onClick={() => setShowHostSettings(s => !s)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "transparent", border: 0, cursor: "pointer",
+                padding: "12px 14px",
+              }}
+            >
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>HOST SETTINGS</span>
+              <span className="mono" style={{ color: "var(--cream)", opacity: 0.5, fontSize: 14 }}>
+                {showHostSettings ? "▲" : "▼"}
+              </span>
+            </button>
+
+            {showHostSettings && (
+              <>
+                {/* Horse data toggle */}
+                <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+                  <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
+                  <button
+                    onClick={handleToggleDetails}
+                    disabled={togglingDetails}
+                    style={{
+                      border: "2px solid rgba(245,232,223,0.5)",
+                      background: showDetails ? "var(--cream)" : "transparent",
+                      color: showDetails ? "var(--ink)" : "var(--cream)",
+                      fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                      textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
+                      opacity: togglingDetails ? 0.4 : 1,
+                    }}
+                  >
+                    {showDetails ? "FULL CARD" : "NAME ONLY"}
+                  </button>
+                </div>
+
+                {/* Add track */}
+                <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
+                  <button
+                    onClick={() => { setShowAddTrack(s => !s); if (!showAddTrack) loadAvailableCards(); }}
+                    className="label"
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      width: "100%", background: "transparent", border: 0, cursor: "pointer",
+                      color: "var(--cream)", padding: "10px 0", textAlign: "left",
+                    }}
+                  >
+                    <span>Add Track</span>
+                    <span style={{ opacity: 0.5 }}>{showAddTrack ? "CANCEL" : "+"}</span>
+                  </button>
+                  {showAddTrack && (
+                    <div style={{ borderTop: "1px solid rgba(245,232,223,0.1)", paddingBottom: 8 }}>
+                      {availableCards.length === 0 ? (
+                        <p className="label-sm" style={{ padding: "12px 0", color: "var(--cream)", opacity: 0.5 }}>No other tracks available today.</p>
+                      ) : availableCards.map(card => (
+                        <button
+                          key={card.id}
+                          onClick={() => handleAddTrack(card)}
+                          disabled={addingCard === card.id}
+                          style={{
+                            width: "100%", textAlign: "left", padding: "10px 0", display: "flex",
+                            justifyContent: "space-between", alignItems: "center",
+                            background: "transparent", border: 0, borderBottom: "1px solid rgba(245,232,223,0.1)",
+                            color: "var(--cream)", cursor: "pointer", opacity: addingCard === card.id ? 0.5 : 1,
+                          }}
+                        >
+                          <div>
+                            <div className="display" style={{ fontSize: 15 }}>{card.trackName}</div>
+                            <div className="mono" style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
+                          </div>
+                          <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>
+                            {addingCard === card.id ? "ADDING…" : "ADD →"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Remove tracks */}
+                {tracks.map(t => (
+                  <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
+                    <button
+                      onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
+                      className="label"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", background: "transparent", border: 0, cursor: "pointer",
+                        color: "var(--cream)", padding: "10px 0", textAlign: "left", opacity: 0.7,
+                      }}
+                    >
+                      <span>Remove — {t.trackName}</span>
+                      <span style={{ opacity: 0.5 }}>✕</span>
+                    </button>
+                  </div>
+                ))}
+
+                {/* Enter results per track */}
+                {tracks.map(t => (
+                  <div key={`res-${t.scrumId}`} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
+                    <button
+                      onClick={() => navigate(`/scrum/${t.scrumId}/host-results`)}
+                      className="label"
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", background: "transparent", border: 0, cursor: "pointer",
+                        color: "var(--cream)", padding: "10px 0", textAlign: "left",
+                      }}
+                    >
+                      <span>Enter Results — {t.trackName}</span>
+                      <span style={{ opacity: 0.5 }}>→</span>
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
 
