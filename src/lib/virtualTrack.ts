@@ -146,6 +146,22 @@ export async function seedVirtualTrack(): Promise<void> {
   // One-time migration: remove old "virtual-park" card if it still exists
   try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
 
+  // One-time migration: delete old 12-race card data (races 7–12 and their horses)
+  try {
+    const staleR7 = await getDoc(doc(db, "races", `${CARD_ID}-r7`));
+    if (staleR7.exists()) {
+      const cleanupBatch = writeBatch(db);
+      for (let n = 7; n <= 12; n++) {
+        const staleRaceId = `${CARD_ID}-r${n}`;
+        cleanupBatch.delete(doc(db, "races", staleRaceId));
+        for (let h = 1; h <= HORSES_PER_RACE; h++) {
+          cleanupBatch.delete(doc(db, "horses", `${staleRaceId}-h${h}`));
+        }
+      }
+      await cleanupBatch.commit();
+    }
+  } catch { }
+
   // Settle any finished races before checking freshness
   try { await settleFinishedRaces(); } catch { }
 
