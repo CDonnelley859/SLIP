@@ -21,6 +21,7 @@ const Lobby = () => {
   const [countdown, setCountdown] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
   const [togglingDetails, setTogglingDetails] = useState(false);
+  const [showHostSettings, setShowHostSettings] = useState(false);
   const [loadError, setLoadError] = useState("");
 
   // Countdown timer
@@ -318,34 +319,50 @@ const Lobby = () => {
         {/* ── HOST SETTINGS ── */}
         {userId === scrum.hostId ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)" }}>
-            <div className="label-sm" style={{ padding: "10px 14px 6px", opacity: 0.5, color: "var(--cream)" }}>HOST SETTINGS</div>
-            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
-              <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
-              <button
-                onClick={handleToggleDetails}
-                disabled={togglingDetails}
-                style={{
-                  border: "2px solid rgba(245,232,223,0.5)",
-                  background: (scrum.showDetails ?? false) ? "var(--cream)" : "transparent",
-                  color: (scrum.showDetails ?? false) ? "var(--ink)" : "var(--cream)",
-                  fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
-                  textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
-                  opacity: togglingDetails ? 0.4 : 1,
-                }}
-              >
-                {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
-              </button>
-            </div>
-            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
-              <Link
-                to={`/scrum/${id}/host-results`}
-                className="label"
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--cream)", textDecoration: "none", padding: "10px 0" }}
-              >
-                <span>Enter Results</span>
-                <span style={{ opacity: 0.5 }}>→</span>
-              </Link>
-            </div>
+            {/* Header — tap to toggle */}
+            <button
+              onClick={() => setShowHostSettings(s => !s)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "transparent", border: 0, cursor: "pointer", padding: "12px 14px",
+              }}
+            >
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>HOST SETTINGS</span>
+              <span className="mono" style={{ color: "var(--cream)", opacity: 0.5, fontSize: 14 }}>
+                {showHostSettings ? "▲" : "▼"}
+              </span>
+            </button>
+            {showHostSettings && (
+              <>
+                <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+                  <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
+                  <button
+                    onClick={handleToggleDetails}
+                    disabled={togglingDetails}
+                    style={{
+                      border: "2px solid rgba(245,232,223,0.5)",
+                      background: (scrum.showDetails ?? false) ? "var(--cream)" : "transparent",
+                      color: (scrum.showDetails ?? false) ? "var(--ink)" : "var(--cream)",
+                      fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                      textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
+                      opacity: togglingDetails ? 0.4 : 1,
+                    }}
+                  >
+                    {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
+                  </button>
+                </div>
+                <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
+                  <Link
+                    to={`/scrum/${id}/host-results`}
+                    className="label"
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--cream)", textDecoration: "none", padding: "10px 0" }}
+                  >
+                    <span>Enter Results</span>
+                    <span style={{ opacity: 0.5 }}>→</span>
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
