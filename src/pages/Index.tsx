@@ -193,7 +193,7 @@ const Index = () => {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedCard || !groupName.trim()) return;
+    if (!selectedCard || !groupName.trim() || !userId) return;
     setCreating(true);
     try {
       const code = genCode();
@@ -208,7 +208,7 @@ const Index = () => {
       toast.success(`Group code: ${code}`);
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err?.message || "Failed to create group — please try again");
     } finally {
       setCreating(false);
     }
@@ -229,7 +229,7 @@ const Index = () => {
       });
       navigate(`/scrum/${scrumId}/lobby`);
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err?.message || "Failed to join group — please try again");
     } finally {
       setJoining(false);
     }
