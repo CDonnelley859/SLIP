@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
-  doc, getDoc, getDocs, collection, query, where, onSnapshot,
+  doc, getDoc, getDocs, collection, query, where, onSnapshot, deleteDoc, writeBatch, updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import {
@@ -60,6 +60,14 @@ const MegaHub = () => {
   const [availableCards, setAvailableCards] = useState<AvailableCard[]>([]);
   const [addingCard, setAddingCard] = useState<string | null>(null);
 
+  // Host settings
+  const [showDetails, setShowDetails] = useState(false);
+  const [togglingDetails, setTogglingDetails] = useState(false);
+
+  // Leave
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
   const isHost = mega?.hostId === userId;
 
   // ── Load mega slip + tracks ──────────────────────────────────────────────────
@@ -69,6 +77,14 @@ const MegaHub = () => {
       const megaData = await getMegaSlip(megaSlipId);
       if (!megaData) { setError("Mega Slip not found."); return; }
       setMega(megaData);
+
+      // Load showDetails from first scrum
+      if (megaData.scrumIds.length > 0) {
+        try {
+          const firstScrum = await getDoc(doc(db, "scrums", megaData.scrumIds[0]));
+          if (firstScrum.exists()) setShowDetails(firstScrum.data().showDetails ?? false);
+        } catch { }
+      }
 
       // Load card details for each track
       const trackEntries: TrackEntry[] = [];
@@ -221,13 +237,55 @@ const MegaHub = () => {
     }
   }
 
+  function handleCopyCode() {
+    if (!mega) return;
+    navigator.clipboard.writeText(mega.joinCode).then(() => toast.success("Code copied!"));
+  }
+
   function handleShare() {
     if (!mega) return;
+    const url = `${window.location.origin}/join-mega/${mega.joinCode}`;
     if (navigator.share) {
-      navigator.share({ title: mega.name, text: `Join my Mega Slip! Code: ${mega.joinCode}`, url: `${window.location.origin}/join-mega/${mega.joinCode}` });
+      navigator.share({ title: mega.name, text: `Join my Mega Slip! Code: ${mega.joinCode}`, url }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(mega.joinCode);
-      toast.success("Code copied");
+      navigator.clipboard.writeText(url).then(() => toast.success("Invite link copied!"));
+    }
+  }
+
+  async function handleToggleDetails() {
+    if (!mega) return;
+    setTogglingDetails(true);
+    const next = !showDetails;
+    try {
+      const batch = writeBatch(db);
+      mega.scrumIds.forEach(scrumId => {
+        batch.update(doc(db, "scrums", scrumId), { showDetails: next });
+      });
+      await batch.commit();
+      setShowDetails(next);
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to update");
+    } finally {
+      setTogglingDetails(false);
+    }
+  }
+
+  async function handleLeave() {
+    if (!megaSlipId || !userId || !mega) return;
+    setLeaving(true);
+    try {
+      // Remove from mega slip members
+      await deleteDoc(doc(db, "megaSlipMembers", `${megaSlipId}_${userId}`));
+      // Remove from all track scrums
+      const batch = writeBatch(db);
+      mega.scrumIds.forEach(scrumId => {
+        batch.delete(doc(db, "scrumMembers", `${scrumId}_${userId}`));
+      });
+      await batch.commit();
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to leave");
+      setLeaving(false);
     }
   }
 
@@ -273,18 +331,26 @@ const MegaHub = () => {
         </div>
         <div style={{ textAlign: "center" }}>
           <div className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1, marginBottom: 12 }}>{mega?.name}</div>
-          {/* Clickable join code box */}
-          <button
-            onClick={handleShare}
+          {/* Join code box */}
+          <div
             style={{
               background: "var(--pink)", border: "3px solid var(--ink)",
-              padding: "10px 24px", cursor: "pointer", display: "inline-block",
+              padding: "12px 24px 10px", display: "inline-block",
               boxShadow: "4px 4px 0 var(--ink)",
             }}
           >
-            <div className="label-sm" style={{ color: "var(--ink)", opacity: 0.7, marginBottom: 2 }}>TAP TO SHARE</div>
-            <div className="mono" style={{ color: "var(--ink)", fontSize: 28, letterSpacing: "0.3em", fontWeight: 700 }}>{mega?.joinCode}</div>
-          </button>
+            <div className="label-sm" style={{ color: "var(--ink)", opacity: 0.7, marginBottom: 2 }}>JOIN CODE</div>
+            <div className="mono" style={{ color: "var(--ink)", fontSize: 36, letterSpacing: "0.3em", fontWeight: 700, marginBottom: 8 }}>{mega?.joinCode}</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
+              <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+                COPY
+              </button>
+              <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.4 }}>·</span>
+              <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+                SHARE
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -378,13 +444,18 @@ const MegaHub = () => {
                         REMOVE
                       </button>
                     ) : <div />}
-                    <div style={{ display: "flex", gap: 16 }}>
+                    <div style={{ display: "flex" }}>
                       <button
                         onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
-                        className="label"
-                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                        className="display"
+                        style={{
+                          background: "var(--pink)", border: 0, cursor: "pointer",
+                          color: "var(--ink)", padding: "8px 14px",
+                          fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase",
+                          marginRight: 12,
+                        }}
                       >
-                        PICK HORSES
+                        PICK HORSES →
                       </button>
                       <button
                         onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
@@ -444,6 +515,97 @@ const MegaHub = () => {
           )}
         </div>
 
+
+        {/* ── HOST SETTINGS ── */}
+        {isHost && (
+          <div style={{ marginTop: 28, border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)" }}>
+            <div className="label-sm" style={{ padding: "10px 14px 6px", opacity: 0.5, color: "var(--cream)" }}>HOST SETTINGS</div>
+            {/* Horse data toggle — applies to all tracks */}
+            <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
+              <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
+              <button
+                onClick={handleToggleDetails}
+                disabled={togglingDetails}
+                style={{
+                  border: "2px solid rgba(245,232,223,0.5)",
+                  background: showDetails ? "var(--cream)" : "transparent",
+                  color: showDetails ? "var(--ink)" : "var(--cream)",
+                  fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                  textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
+                  opacity: togglingDetails ? 0.4 : 1,
+                }}
+              >
+                {showDetails ? "FULL CARD" : "NAME ONLY"}
+              </button>
+            </div>
+            {/* Enter results per track */}
+            {tracks.map((t, i) => (
+              <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
+                <button
+                  onClick={() => navigate(`/scrum/${t.scrumId}/host-results`)}
+                  className="label"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    width: "100%", background: "transparent", border: 0, cursor: "pointer",
+                    color: "var(--cream)", padding: "10px 0", textAlign: "left",
+                  }}
+                >
+                  <span>Enter Results — {t.trackName}</span>
+                  <span style={{ opacity: 0.5 }}>→</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── LEAVE ── */}
+        <div style={{ marginTop: 28 }}>
+          {confirmLeave ? (
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)", padding: "14px" }}>
+              <p className="label" style={{ textAlign: "center", marginBottom: 12, color: "var(--cream)" }}>
+                Are you sure you want to leave this Mega Group?
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => setConfirmLeave(false)}
+                  className="display"
+                  style={{
+                    flex: 1, border: "3px solid rgba(245,232,223,0.35)", background: "transparent",
+                    fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
+                    color: "var(--cream)", padding: "10px", cursor: "pointer",
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleLeave}
+                  disabled={leaving}
+                  className="display"
+                  style={{
+                    flex: 1, border: "3px solid var(--ink)", background: "var(--pink)",
+                    fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
+                    color: "var(--cream)", padding: "10px", cursor: "pointer",
+                    opacity: leaving ? 0.4 : 1,
+                  }}
+                >
+                  {leaving ? "LEAVING…" : "YES, LEAVE"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmLeave(true)}
+              className="label"
+              style={{
+                border: "2px dashed rgba(245,232,223,0.35)", background: "transparent",
+                color: "var(--cream)", padding: "12px", width: "100%",
+                cursor: "pointer", opacity: 0.55,
+              }}
+            >
+              LEAVE GROUP
+            </button>
+          )}
+        </div>
 
       </main>
     </div>
