@@ -163,6 +163,17 @@ export function activeVirtualCardIds(now = Date.now()): string[] {
   return Array.from({ length: CARDS_AHEAD + 1 }, (_, i) => cardIdForSlot(slot + i));
 }
 
+/**
+ * Returns the expected track name for a given virtual card ID.
+ * Used to detect stale cards that need reseeding.
+ */
+export function expectedVenueName(cardId: string): string | null {
+  const match = cardId.match(/^blotto-park-s(\d+)$/);
+  if (!match) return null;
+  const slotNum = parseInt(match[1], 10);
+  return VENUES[slotNum % VENUES.length].name;
+}
+
 // ── Settlement ────────────────────────────────────────────────────────────────
 
 async function settleCardRaces(cardId: string): Promise<void> {

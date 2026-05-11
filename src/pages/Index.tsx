@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
-import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds } from "@/lib/virtualTrack";
+import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds, expectedVenueName } from "@/lib/virtualTrack";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
 } from "firebase/firestore";
@@ -120,9 +120,14 @@ const Index = () => {
 
     setCards(cardList);
 
-    // Seed any active slots that don't have a card yet
+    // Seed if any active slot is missing OR has a stale venue name
     const cardIdSet = new Set(cardList.map(c => c.id));
-    const needsSeed = activeVIds.some(id => !cardIdSet.has(id));
+    const needsSeed = activeVIds.some(id => {
+      if (!cardIdSet.has(id)) return true;
+      const card = cardList.find(c => c.id === id);
+      const expected = expectedVenueName(id);
+      return !!expected && !!card && card.trackName !== expected;
+    });
     const seedKey = `blotto-seeded-v2-${activeVIds[0]}`;
     if (needsSeed && !sessionStorage.getItem(seedKey)) {
       sessionStorage.setItem(seedKey, "1");
