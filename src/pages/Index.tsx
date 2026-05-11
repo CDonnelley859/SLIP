@@ -123,12 +123,12 @@ const Index = () => {
     // Seed any active slots that don't have a card yet
     const cardIdSet = new Set(cardList.map(c => c.id));
     const needsSeed = activeVIds.some(id => !cardIdSet.has(id));
-    const seedKey = `blotto-seeded-${activeVIds[0]}`;
+    const seedKey = `blotto-seeded-v2-${activeVIds[0]}`;
     if (needsSeed && !sessionStorage.getItem(seedKey)) {
       sessionStorage.setItem(seedKey, "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
     } else {
-      const settleKey = `blotto-settled-${activeVIds[0]}`;
+      const settleKey = `blotto-settled-v2-${activeVIds[0]}`;
       if (!sessionStorage.getItem(settleKey)) {
         sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});

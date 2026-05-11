@@ -290,25 +290,35 @@ async function seedSlot(slotNum: number): Promise<void> {
 export async function seedVirtualTrack(): Promise<void> {
   const now = Date.now();
 
-  // One-time migration: delete the old single-ID card and its races/horses
+  // One-time migration: hard-reset all virtual cards for the new venue rotation.
+  // Deletes every isVirtual card plus its races and horses, then reseeds fresh.
   try {
-    const oldCard = await getDoc(doc(db, "cards", CARD_PREFIX));
-    if (oldCard.exists()) {
-      const cleanupBatch = writeBatch(db);
-      cleanupBatch.delete(doc(db, "cards", CARD_PREFIX));
-      for (let n = 1; n <= 12; n++) {
-        const oldRaceId = `${CARD_PREFIX}-r${n}`;
-        cleanupBatch.delete(doc(db, "races", oldRaceId));
-        for (let h = 1; h <= HORSES_PER_RACE; h++) {
-          cleanupBatch.delete(doc(db, "horses", `${oldRaceId}-h${h}`));
+    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v2"));
+    if (!resetMarker.exists()) {
+      await setDoc(doc(db, "_meta", "virtual-reset-v2"), { done: true });
+      const allVirtual = await getDocs(
+        query(collection(db, "cards"), where("isVirtual", "==", true))
+      );
+      // Delete each card's races and horses in its own batch (avoids 500-op limit)
+      await Promise.all(allVirtual.docs.map(async (cardDoc) => {
+        const cid = cardDoc.id;
+        const batch = writeBatch(db);
+        batch.delete(doc(db, "cards", cid));
+        for (let n = 1; n <= 12; n++) {
+          const raceId = `${cid}-r${n}`;
+          batch.delete(doc(db, "races", raceId));
+          for (let h = 1; h <= HORSES_PER_RACE; h++) {
+            batch.delete(doc(db, "horses", `${raceId}-h${h}`));
+          }
         }
-      }
-      await cleanupBatch.commit();
+        await batch.commit();
+      }));
     }
   } catch { }
 
-  // One-time migration: remove old "virtual-park" card if it still exists
+  // Legacy: remove old flat-ID cards
   try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
+  try { await deleteDoc(doc(db, "cards", CARD_PREFIX)); } catch { }
 
   // Settle any finished races before seeding
   try { await settleVirtualRaces(); } catch { }
