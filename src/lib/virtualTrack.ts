@@ -81,26 +81,34 @@ function shuffle<T>(arr: T[]): T[] {
 /** Settle any finished races in the current Blotto Park card. Safe to call at any time. */
 async function settleFinishedRaces(): Promise<void> {
   const now = Date.now();
-  for (let raceNum = 1; raceNum <= RACE_COUNT; raceNum++) {
-    const raceId = `${CARD_ID}-r${raceNum}`;
-    const raceRef = doc(db, "races", raceId);
-    const raceSnap = await getDoc(raceRef);
-    if (!raceSnap.exists()) continue;
-    const race = raceSnap.data();
-    if (race.status === "settled") continue;
-    if (!race.offTime || new Date(race.offTime).getTime() > now) continue;
 
-    // Pick random winners
+  // Fetch all race docs in parallel instead of one-by-one
+  const raceIds = Array.from({ length: RACE_COUNT }, (_, i) => `${CARD_ID}-r${i + 1}`);
+  const raceSnaps = await Promise.all(raceIds.map(id => getDoc(doc(db, "races", id))));
+
+  // Filter to only races that need settling
+  const racesToSettle = raceSnaps.filter(snap => {
+    if (!snap.exists()) return false;
+    const race = snap.data();
+    if (race.status === "settled") return false;
+    if (!race.offTime || new Date(race.offTime).getTime() > now) return false;
+    return true;
+  });
+
+  // Settle each qualifying race in parallel
+  await Promise.all(racesToSettle.map(async (raceSnap) => {
+    const raceRef = raceSnap.ref;
+    const raceId = raceSnap.id;
+
     const horsesSnap = await getDocs(
       query(collection(db, "horses"), where("raceId", "==", raceId))
     );
     const horseIds = shuffle(horsesSnap.docs.map(h => h.id));
-    if (horseIds.length < 3) continue;
+    if (horseIds.length < 3) return;
 
     const winners = { first: horseIds[0], second: horseIds[1], third: horseIds[2] };
     await updateDoc(raceRef, { status: "settled", winners });
 
-    // Score picks
     const picksSnap = await getDocs(
       query(collection(db, "picks"), where("raceId", "==", raceId))
     );
@@ -116,7 +124,7 @@ async function settleFinishedRaces(): Promise<void> {
       });
       await batch.commit();
     }
-  }
+  }));
 }
 
 /**
@@ -172,38 +180,42 @@ export async function seedVirtualTrack(): Promise<void> {
     raceCount: RACE_COUNT,
   });
 
-  // Write new races and horses
+  // Write all races and horse batches in parallel (was 24 sequential round-trips, now ~2)
   const allNames = shuffle(HORSE_NAMES);
 
-  for (let raceNum = 1; raceNum <= RACE_COUNT; raceNum++) {
-    const raceId = `${CARD_ID}-r${raceNum}`;
-    const offTime = new Date(firstRaceTime + (raceNum - 1) * RACE_GAP_MS).toISOString();
+  await Promise.all(
+    Array.from({ length: RACE_COUNT }, (_, i) => {
+      const raceNum = i + 1;
+      const raceId = `${CARD_ID}-r${raceNum}`;
+      const offTime = new Date(firstRaceTime + i * RACE_GAP_MS).toISOString();
 
-    await setDoc(doc(db, "races", raceId), {
-      cardId: CARD_ID,
-      raceNumber: raceNum,
-      name: `RACE ${raceNum}`,
-      offTime,
-      status: "upcoming",
-      winners: null,
-      isVirtual: true,
-    });
-
-    const raceHorses = allNames.slice((raceNum - 1) * HORSES_PER_RACE, raceNum * HORSES_PER_RACE);
-    const batch = writeBatch(db);
-    raceHorses.forEach((name, idx) => {
-      batch.set(doc(db, "horses", `${raceId}-h${idx + 1}`), {
-        raceId,
-        number: idx + 1,
-        name,
-        jockey: JOCKEYS[idx % JOCKEYS.length],
-        trainer: TRAINERS[idx % TRAINERS.length],
-        owner: null,
-        form: null,
-        lbs: null,
-        odds: null,
+      const raceWrite = setDoc(doc(db, "races", raceId), {
+        cardId: CARD_ID,
+        raceNumber: raceNum,
+        name: `RACE ${raceNum}`,
+        offTime,
+        status: "upcoming",
+        winners: null,
+        isVirtual: true,
       });
-    });
-    await batch.commit();
-  }
+
+      const raceHorses = allNames.slice(i * HORSES_PER_RACE, (i + 1) * HORSES_PER_RACE);
+      const batch = writeBatch(db);
+      raceHorses.forEach((name, idx) => {
+        batch.set(doc(db, "horses", `${raceId}-h${idx + 1}`), {
+          raceId,
+          number: idx + 1,
+          name,
+          jockey: JOCKEYS[idx % JOCKEYS.length],
+          trainer: TRAINERS[idx % TRAINERS.length],
+          owner: null,
+          form: null,
+          lbs: null,
+          odds: null,
+        });
+      });
+
+      return Promise.all([raceWrite, batch.commit()]);
+    })
+  );
 }
