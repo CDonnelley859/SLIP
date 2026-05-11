@@ -5,7 +5,7 @@ import {
 } from "firebase/firestore";
 
 const CARD_ID = "blotto-park";
-const RACE_COUNT = 8;
+const RACE_COUNT = 12;
 const HORSES_PER_RACE = 8;
 const RACE_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours between races
 
@@ -151,16 +151,18 @@ export async function seedVirtualTrack(): Promise<void> {
   }
 
   // Write new virtual card
-  // Anchor to 10:00 AM — races run every 2 h landing on the hour: 10, 12, 14, 16, 18, 20, 22, 00
-  const tenAM = new Date();
-  tenAM.setHours(10, 0, 0, 0);
-  if (tenAM.getTime() <= now) tenAM.setDate(tenAM.getDate() + 1); // already past today's 10 AM
-  const firstRaceTime = tenAM.getTime();
+  // Anchor to today's midnight — 12 races every 2 h: 00, 02, 04 … 22.
+  // If today's last race (22:00) has already passed, roll to tomorrow's midnight.
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const todayLastRace = startOfDay.getTime() + (RACE_COUNT - 1) * RACE_GAP_MS;
+  if (now > todayLastRace) startOfDay.setDate(startOfDay.getDate() + 1);
+  const firstRaceTime = startOfDay.getTime();
   const firstRaceISO = new Date(firstRaceTime).toISOString();
 
   await setDoc(cardRef, {
     trackName: "BLOTTO PARK",
-    raceDate: today,
+    raceDate: new Date(firstRaceTime).toISOString().slice(0, 10),
     postTime: firstRaceISO,
     status: "upcoming",
     isVirtual: true,
