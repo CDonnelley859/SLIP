@@ -74,10 +74,30 @@ const Index = () => {
       raceCount: d.data().raceCount ?? 0,
       isVirtual: d.data().isVirtual ?? false,
     })).sort((a, b) => a.postTime.localeCompare(b.postTime));
+
+    // Always include Blotto Park regardless of raceDate (timezone-proof)
+    if (!cardList.find(c => c.id === "blotto-park")) {
+      try {
+        const bpDoc = await getDoc(doc(db, "cards", "blotto-park"));
+        if (bpDoc.exists()) {
+          const d = bpDoc.data();
+          cardList.push({
+            id: "blotto-park",
+            trackName: d.trackName,
+            raceDate: d.raceDate,
+            postTime: d.postTime,
+            raceCount: d.raceCount ?? 0,
+            isVirtual: true,
+          });
+          cardList.sort((a, b) => a.postTime.localeCompare(b.postTime));
+        }
+      } catch { }
+    }
+
     setCards(cardList);
 
     // Seed or reset virtual track when missing or stale
-    const virtualCard = cardList.find(c => c.isVirtual);
+    const virtualCard = cardList.find(c => c.id === "blotto-park");
     const needsSeed = !virtualCard || (() => {
       const RACE_GAP_MS = 2 * 60 * 60 * 1000;
       const lastRaceTime = new Date(virtualCard.postTime).getTime() + (12 - 1) * RACE_GAP_MS;

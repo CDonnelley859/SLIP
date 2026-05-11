@@ -139,7 +139,7 @@ export async function seedVirtualTrack(): Promise<void> {
   try { await deleteDoc(doc(db, "cards", "virtual-park")); } catch { }
 
   // Settle any finished races in the current cycle before checking freshness
-  await settleFinishedRaces();
+  try { await settleFinishedRaces(); } catch { }
 
   // Check if the existing card is still fresh AND dated today
   const cardRef = doc(db, "cards", CARD_ID);
