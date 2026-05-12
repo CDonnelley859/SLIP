@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import {
   collection, query, where, getDocs, doc, getDoc, writeBatch,
 } from "firebase/firestore";
+import { settleVirtualRaces } from "@/lib/virtualTrack";
 
 type LineStatus = "WIN" | "PLACE" | "SHOW" | "OUT";
 type Line = {
@@ -212,6 +213,10 @@ const Spindle = () => {
   useEffect(() => {
     if (!userId) return;
     (async () => {
+      // Settle any finished virtual races before loading — ensures slips appear
+      // in the Spindle even if the user hasn't visited the Paddock recently.
+      try { await settleVirtualRaces(); } catch { }
+
       const today = new Date().toISOString().slice(0, 10);
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("userId", "==", userId))
