@@ -9,7 +9,7 @@ export const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
 export const RACE_GAP_MS = 20 * 60 * 1000;          // 20 minutes between races
 export const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card
-const CARDS_AHEAD = 2;                                // show current + 2 upcoming = 3 total
+const CARDS_AHEAD = 11;                               // show current + 11 upcoming = 12 total (full day)
 
 // Ordered east → west by time zone so each slot roughly matches
 // when UK punters would watch these venues live. Blotto Park is fixed
@@ -304,9 +304,9 @@ export async function seedVirtualTrack(): Promise<void> {
   // One-time migration: hard-reset all virtual cards for the new venue rotation.
   // Deletes every isVirtual card plus its races and horses, then reseeds fresh.
   try {
-    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v3"));
+    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v4"));
     if (!resetMarker.exists()) {
-      await setDoc(doc(db, "_meta", "virtual-reset-v3"), { done: true });
+      await setDoc(doc(db, "_meta", "virtual-reset-v4"), { done: true });
       const allVirtual = await getDocs(
         query(collection(db, "cards"), where("isVirtual", "==", true))
       );
