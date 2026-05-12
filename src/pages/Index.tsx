@@ -89,8 +89,9 @@ const Index = () => {
       }
     }
 
+    // Real cards only — exclude virtual by both field and ID prefix
     const cardList: Card[] = cardsSnap.docs
-      .filter(d => !d.data().isVirtual)   // virtual tracks are added via active-slot fetch below
+      .filter(d => !d.data().isVirtual && !d.id.startsWith("blotto-park"))
       .map(d => ({
         id: d.id,
         trackName: d.data().trackName,
@@ -101,29 +102,24 @@ const Index = () => {
         isVirtual: false,
       })).sort((a, b) => a.postTime.localeCompare(b.postTime));
 
-    // Fetch all active virtual card IDs (current slot + 2 ahead)
+    // Always fetch the 3 active virtual slots directly by ID — never rely on the date query for these
     const activeVIds = activeVirtualCardIds();
-    const existingVIds = new Set(cardList.filter(c => c.isVirtual).map(c => c.id));
-    const missingVIds = activeVIds.filter(id => !existingVIds.has(id));
-
-    if (missingVIds.length > 0) {
-      const missingDocs = await Promise.all(missingVIds.map(id => getDoc(doc(db, "cards", id))));
-      missingDocs.forEach((d, i) => {
-        if (d.exists()) {
-          const data = d.data();
-          cardList.push({
-            id: missingVIds[i],
-            trackName: data.trackName,
-            tagline: data.tagline ?? undefined,
-            raceDate: data.raceDate,
-            postTime: data.postTime,
-            raceCount: data.raceCount ?? 0,
-            isVirtual: true,
-          });
-        }
-      });
-      cardList.sort((a, b) => a.postTime.localeCompare(b.postTime));
-    }
+    const virtualDocs = await Promise.all(activeVIds.map(id => getDoc(doc(db, "cards", id))));
+    virtualDocs.forEach((d, i) => {
+      if (d.exists()) {
+        const data = d.data();
+        cardList.push({
+          id: activeVIds[i],
+          trackName: data.trackName,
+          tagline: data.tagline ?? undefined,
+          raceDate: data.raceDate,
+          postTime: data.postTime,
+          raceCount: data.raceCount ?? 0,
+          isVirtual: true,
+        });
+      }
+    });
+    cardList.sort((a, b) => a.postTime.localeCompare(b.postTime));
 
     setCards(cardList);
 

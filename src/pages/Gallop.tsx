@@ -28,6 +28,13 @@ const Gallop = () => {
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  // Live clock so isLocked updates in real time as races start
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -134,11 +141,19 @@ const Gallop = () => {
 
   const currentRace = races[currentIdx];
   const isLastRace = currentIdx === races.length - 1;
-  const raceIsLocked = (r: Race) => new Date(r.offTime).getTime() <= Date.now();
+  const raceIsLocked = (r: Race) => new Date(r.offTime).getTime() <= now;
   const pickableRaces = races.filter(r => !raceIsLocked(r));
   const allPicked = pickableRaces.length > 0 && pickableRaces.every(r => picks[r.id]);
   const currentPick = currentRace ? picks[currentRace.id] : undefined;
   const isLocked = currentRace ? raceIsLocked(currentRace) : false;
+
+  function jumpToNextOpen() {
+    // Find the next open race after currentIdx, wrapping to any open race if none after
+    const after = races.findIndex((r, i) => i > currentIdx && !raceIsLocked(r));
+    if (after !== -1) { setCurrentIdx(after); return; }
+    const any = races.findIndex(r => !raceIsLocked(r));
+    if (any !== -1) setCurrentIdx(any);
+  }
 
   async function handlePick(raceId: string, horseId: string) {
     if (navigator.vibrate) navigator.vibrate(40);
@@ -293,7 +308,37 @@ const Gallop = () => {
           style={{ display: "flex", flexDirection: "column", gap: 0 }}
           className={slideDir.current === "forward" ? "animate-slide-forward" : "animate-slide-back"}
         >
-          {currentRace.horses.length === 0 && (
+          {/* Banner when this race has already started */}
+          {isLocked && (
+            <div style={{
+              border: "2px dashed rgba(245,232,223,0.35)",
+              padding: "24px 18px",
+              marginBottom: 16,
+              textAlign: "center",
+            }}>
+              <div className="display" style={{ fontSize: 22, color: "var(--cream)", marginBottom: 6 }}>
+                RACE STARTED
+              </div>
+              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: pickableRaces.length > 0 ? 16 : 0 }}>
+                This race has already begun.
+              </div>
+              {pickableRaces.length > 0 && (
+                <button
+                  onClick={jumpToNextOpen}
+                  className="label"
+                  style={{
+                    background: "var(--cream)", color: "var(--ink)",
+                    border: 0, padding: "10px 18px", cursor: "pointer",
+                    fontSize: 12, letterSpacing: "0.1em",
+                  }}
+                >
+                  NEXT OPEN RACE →
+                </button>
+              )}
+            </div>
+          )}
+
+          {currentRace.horses.length === 0 && !isLocked && (
             [...Array(6)].map((_, i) => (
               <div
                 key={i}
