@@ -17,7 +17,7 @@ type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; compl
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 const Index = () => {
-  const { userId, handle } = useAuth();
+  const { userId, handle, setHandle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -256,6 +256,7 @@ const Index = () => {
     setCreateError("");
     const displayName = createName.trim() || handle;
     try {
+      setHandle(displayName);
       if (isMegaMode) {
         // Create a Mega Slip with all selected tracks
         const megaSlipId = await createMegaSlip(
@@ -295,6 +296,7 @@ const Index = () => {
     setJoinError("");
     const displayName = joinName.trim() || handle;
     try {
+      setHandle(displayName);
       if (code.length === 6) {
         // 6-char code → Mega Slip
         const megaSlipId = await joinMegaSlip(code, userId!, displayName);

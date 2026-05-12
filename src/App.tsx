@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { NamePrompt } from "@/components/NamePrompt";
 import Index from "./pages/Index";
 import NewScrum from "./pages/NewScrum";
 import JoinScrum from "./pages/JoinScrum";
@@ -57,7 +56,7 @@ class ErrorBoundary extends Component<
 }
 
 const AppRoutes = () => {
-  const { hasHandle, loading } = useAuth();
+  const { loading } = useAuth();
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#f5e8df", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <span style={{ fontFamily: "monospace", fontSize: 12, opacity: 0.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -65,7 +64,6 @@ const AppRoutes = () => {
       </span>
     </div>
   );
-  if (!hasHandle) return <NamePrompt />;
   return (
     <Routes>
       <Route path="/" element={<Index />} />
