@@ -249,17 +249,16 @@ const Lobby = () => {
           <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
             <button
               onClick={() => navigate(`/scrum/${id}/gallop`)}
-              disabled={picksLocked}
               className="display"
               style={{
                 flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                background: picksLocked ? "rgba(245,232,223,0.08)" : "var(--green)",
-                color: picksLocked ? "rgba(245,232,223,0.3)" : "var(--cream)",
+                background: "var(--green)",
+                color: "var(--cream)",
                 padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em",
-                textTransform: "uppercase", cursor: picksLocked ? "default" : "pointer",
+                textTransform: "uppercase", cursor: "pointer",
               }}
             >
-              {picksLocked ? "LOCKED" : "START PICKING →"}
+              {picksLocked ? "PICK OPEN RACES →" : "START PICKING →"}
             </button>
             <button
               onClick={() => navigate(`/scrum/${id}/slip`)}

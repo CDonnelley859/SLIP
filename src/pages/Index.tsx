@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -27,11 +27,31 @@ const Index = () => {
   const [syncing, setSyncing] = useState(false);
   const [slipsLoading, setSlipsLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const hasAutoScrolled = useRef(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Scroll carousel to next upcoming race on first load
+  useEffect(() => {
+    if (cards.length === 0 || !carouselRef.current || hasAutoScrolled.current) return;
+    hasAutoScrolled.current = true;
+    const nowMs = Date.now();
+    // First card whose postTime is still in the future
+    let targetIdx = cards.findIndex(c => new Date(c.postTime).getTime() > nowMs);
+    // All started → show the most recently started one (last in sorted list)
+    if (targetIdx === -1) targetIdx = cards.length - 1;
+    if (targetIdx === 0) return; // already at the right position
+    requestAnimationFrame(() => {
+      const el = carouselRef.current;
+      if (!el) return;
+      const targetEl = el.children[targetIdx] as HTMLElement | undefined;
+      if (targetEl) el.scrollTo({ left: targetEl.offsetLeft, behavior: "instant" as ScrollBehavior });
+    });
+  }, [cards]);
 
   // Auto-reload when the active virtual card slots change (check every 30s)
   useEffect(() => {
@@ -402,7 +422,7 @@ const Index = () => {
               <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
-            <div style={{
+            <div ref={carouselRef} style={{
               display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory",
               WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
               paddingBottom: 4,

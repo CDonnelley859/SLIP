@@ -312,15 +312,16 @@ const Gallop = () => {
           {isLocked && (
             <div style={{
               border: "2px dashed rgba(245,232,223,0.35)",
-              padding: "24px 18px",
+              padding: "14px 18px",
               marginBottom: 16,
               textAlign: "center",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
             }}>
-              <div className="display" style={{ fontSize: 22, color: "var(--cream)", marginBottom: 6 }}>
-                RACE STARTED
-              </div>
-              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: pickableRaces.length > 0 ? 16 : 0 }}>
-                This race has already begun.
+              <div>
+                <div className="display" style={{ fontSize: 16, color: "var(--cream)" }}>RACE STARTED</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 2 }}>
+                  Picking is closed.
+                </div>
               </div>
               {pickableRaces.length > 0 && (
                 <button
@@ -328,11 +329,11 @@ const Gallop = () => {
                   className="label"
                   style={{
                     background: "var(--cream)", color: "var(--ink)",
-                    border: 0, padding: "10px 18px", cursor: "pointer",
-                    fontSize: 12, letterSpacing: "0.1em",
+                    border: 0, padding: "8px 14px", cursor: "pointer",
+                    fontSize: 11, letterSpacing: "0.1em", whiteSpace: "nowrap", flexShrink: 0,
                   }}
                 >
-                  NEXT OPEN RACE →
+                  NEXT OPEN →
                 </button>
               )}
             </div>

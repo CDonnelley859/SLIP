@@ -49,6 +49,7 @@ const MegaHub = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
+  const [myPickCounts, setMyPickCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -143,9 +144,13 @@ const MegaHub = () => {
             byTrack: {},
           };
         });
+        const myCounts: Record<string, number> = {};
         snap.docs.forEach(p => {
           const { userId: uid, scrumId, points } = p.data();
           const pts = points ?? 0;
+          if (uid === userId) {
+            myCounts[scrumId] = (myCounts[scrumId] ?? 0) + 1;
+          }
           if (!byUser[uid]) {
             byUser[uid] = {
               userId: uid,
@@ -160,6 +165,7 @@ const MegaHub = () => {
           else if (pts === 3) byUser[uid].places++;
           else if (pts === 1) byUser[uid].shows++;
         });
+        setMyPickCounts(myCounts);
         const sorted = Object.values(byUser).sort((a, b) => {
           if (b.total !== a.total) return b.total - a.total;
           if (b.wins !== a.wins) return b.wins - a.wins;
@@ -376,6 +382,9 @@ const MegaHub = () => {
             {tracks.map((t, i) => {
               const isLast = i === tracks.length - 1;
               const countdown = nextRaceCountdown(t.postTime);
+              const picked = myPickCounts[t.scrumId] ?? 0;
+              const total = t.raceCount;
+              const allPicked = total > 0 && picked >= total;
               return (
                 <div
                   key={t.scrumId}
@@ -391,6 +400,42 @@ const MegaHub = () => {
                       {t.isVirtual && (
                         <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
                       )}
+                      <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+                        {allPicked ? (
+                          <span
+                            className="mono"
+                            style={{
+                              fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
+                              background: "var(--cream)", color: "var(--ink)",
+                              padding: "2px 7px",
+                            }}
+                          >
+                            {picked}/{total} ✓
+                          </span>
+                        ) : picked > 0 ? (
+                          <span
+                            className="mono"
+                            style={{
+                              fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
+                              background: "var(--pink)", color: "var(--cream)",
+                              padding: "2px 7px",
+                            }}
+                          >
+                            {picked}/{total}
+                          </span>
+                        ) : (
+                          <span
+                            className="mono"
+                            style={{
+                              fontSize: 10, letterSpacing: "0.06em",
+                              color: "rgba(245,232,223,0.35)",
+                              padding: "2px 7px",
+                            }}
+                          >
+                            0/{total}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
                       {t.raceCount} RACES · {formatTime(t.postTime)} · {countdown}
