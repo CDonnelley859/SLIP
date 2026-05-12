@@ -16,52 +16,52 @@ const CARDS_AHEAD = 2;                                // show current + 2 upcomi
 // at index 10 = the 20:00 slot.
 const VENUES = [
   {
-    name: "FILL-ME-UP-TON",
-    tagline: "Known as The Race that Stops a Nation. The gates don't open until every spectator has a full cup.",
+    name: "TOP-SHELFINGTON PARK",
+    tagline: "",
   },
   {
-    name: "HOPPY VALLEY",
-    tagline: "An iconic urban night-track. Surrounded by skyscrapers and powered by a relentless flow of craft beer.",
+    name: "ON-THE-ROCKSBURY DOWNS",
+    tagline: "",
   },
   {
-    name: "MEAD-AN",
-    tagline: "The most futuristic and luxurious track in existence. Famous for its massive prize pools and ancient honey-wine.",
+    name: "JUNIPER-WICK PARK",
+    tagline: "",
   },
   {
-    name: "ALE-TREE",
-    tagline: "Home of the Grand National Gulp. The ultimate test of endurance featuring massive, keg-shaped obstacles.",
+    name: "PROOFLEY-ON-STIR",
+    tagline: "",
   },
   {
-    name: "EMPTY-SOME DOWNS",
-    tagline: "The original Derby venue. Named for the hollow feeling of an empty glass at the final furlong.",
+    name: "MALT-ON-THE-HILL",
+    tagline: "",
   },
   {
-    name: "SELTZERNHAM",
-    tagline: "The Olympics of jump racing. An electric, high-energy atmosphere fuelled by endless rows of hard seltzer.",
+    name: "DASHWORTH VALLEY",
+    tagline: "",
   },
   {
-    name: "ASSHOT PARK",
-    tagline: "The pinnacle of high-society racing. Known for its strict dress code, expensive gin, and royal pedigree.",
+    name: "SLOE-GINBURY FIELDS",
+    tagline: "",
   },
   {
-    name: "LONG-GLASS-CHAMP",
-    tagline: "Europe's most elegant venue. Famous for its Yard of Ale straightaway and vintage wine celebrations.",
+    name: "LAST-CALL-WORTH",
+    tagline: "",
   },
   {
-    name: "BEER-MONT PARK",
-    tagline: "Known as The Test of the Champion's Liver. Features the longest straightaway in North American racing.",
+    name: "JIGGER-WORTH STRAIGHT",
+    tagline: "",
   },
   {
-    name: "RUM-INGTON PARK",
-    tagline: "A professional circuit staple. Known for its high-proof atmosphere and spirits that keep the race pace blistering.",
+    name: "HYDRATION-WICK PARK",
+    tagline: "",
   },
   {
     name: "BLOTTO PARK",
     tagline: "The home of virtual racing. Where every race is a reason to pour another.",
   },
   {
-    name: "CHUG-CHILL DOWNS",
-    tagline: "The crown jewel of the circuit. Famous for its Twin Spires beer towers and high-stakes sprinting.",
+    name: "BOTTOMLESS-BURY",
+    tagline: "",
   },
 ];
 
@@ -304,9 +304,9 @@ export async function seedVirtualTrack(): Promise<void> {
   // One-time migration: hard-reset all virtual cards for the new venue rotation.
   // Deletes every isVirtual card plus its races and horses, then reseeds fresh.
   try {
-    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v2"));
+    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v3"));
     if (!resetMarker.exists()) {
-      await setDoc(doc(db, "_meta", "virtual-reset-v2"), { done: true });
+      await setDoc(doc(db, "_meta", "virtual-reset-v3"), { done: true });
       const allVirtual = await getDocs(
         query(collection(db, "cards"), where("isVirtual", "==", true))
       );
