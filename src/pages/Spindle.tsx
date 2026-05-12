@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -78,7 +78,7 @@ type MegaGroupSlip = {
 type CarouselItem =
   | { kind: "single"; data: CompletedSlip }
   | { kind: "mega-summary"; data: MegaGroupSlip }
-  | { kind: "mega-track"; data: CompletedSlip; groupName: string };
+  | { kind: "mega-track"; data: CompletedSlip; groupName: string; megaSlipId: string };
 
 function itemKey(item: CarouselItem): string {
   if (item.kind === "mega-summary") return `mega:${item.data.megaSlipId}`;
@@ -138,6 +138,40 @@ const Spindle = () => {
   const [visibleIdx, setVisibleIdx] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [expandedMegas, setExpandedMegas] = useState<Set<string>>(new Set());
+  const [scrollToKey, setScrollToKey] = useState<string | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Visible carousel items — track slips only shown when their mega group is expanded
+  const visibleItems: CarouselItem[] = items.filter(item =>
+    item.kind === "mega-track" ? expandedMegas.has(item.megaSlipId) : true
+  );
+
+  // After collapse, scroll back to the mega card
+  useEffect(() => {
+    if (!scrollToKey || !carouselRef.current) return;
+    const idx = visibleItems.findIndex(item => itemKey(item) === scrollToKey);
+    if (idx === -1) return;
+    const el = carouselRef.current;
+    requestAnimationFrame(() => {
+      el.scrollTo({ left: idx * el.clientWidth, behavior: "instant" as ScrollBehavior });
+      setVisibleIdx(idx);
+      setScrollToKey(null);
+    });
+  }, [visibleItems, scrollToKey]);
+
+  function toggleExpand(megaSlipId: string) {
+    const isOpen = expandedMegas.has(megaSlipId);
+    if (isOpen) {
+      // Collapsing — scroll back to mega card after items shrink
+      setScrollToKey(`mega:${megaSlipId}`);
+    }
+    setExpandedMegas(prev => {
+      const next = new Set(prev);
+      next.has(megaSlipId) ? next.delete(megaSlipId) : next.add(megaSlipId);
+      return next;
+    });
+  }
 
   function onCarouselScroll(e: React.UIEvent<HTMLDivElement>) {
     const el = e.currentTarget;
@@ -386,7 +420,7 @@ const Spindle = () => {
 
         // Mega summary card first, then individual track slips
         megaItems.push({ kind: "mega-summary", data: summary });
-        tracks.forEach(t => megaItems.push({ kind: "mega-track", data: t, groupName }));
+        tracks.forEach(t => megaItems.push({ kind: "mega-track", data: t, groupName, megaSlipId }));
       }
 
       // ── Final order: singles → mega groups ─────────────────────────────────
@@ -405,7 +439,7 @@ const Spindle = () => {
     textTransform: "uppercase", opacity: 0.65, color: "var(--cream)",
   };
 
-  const currentItem = items[visibleIdx];
+  const currentItem = visibleItems[visibleIdx];
   const currentKey = currentItem ? itemKey(currentItem) : "";
   const isCurrentFlipped = flipped.has(currentKey);
 
@@ -577,7 +611,7 @@ const Spindle = () => {
   }
 
   // ── Render mega summary card ────────────────────────────────────────────────
-  function renderMegaSummaryCard(mega: MegaGroupSlip, isFlipped: boolean) {
+  function renderMegaSummaryCard(mega: MegaGroupSlip, isFlipped: boolean, isExpanded: boolean) {
     return (
       <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", boxShadow: "6px 6px 0 var(--cream)" }}>
         <ScallopTop />
@@ -592,9 +626,18 @@ const Spindle = () => {
             {mega.groupName}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-            <span className="mono" style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--cream)", opacity: 0.5 }}>
-              {mega.tracks.length} TRACK{mega.tracks.length !== 1 ? "S" : ""}
-            </span>
+            <button
+              onClick={() => toggleExpand(mega.megaSlipId)}
+              className="mono"
+              style={{
+                background: "transparent", border: "1px solid rgba(245,232,223,0.35)",
+                color: "var(--cream)", cursor: "pointer",
+                fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+                padding: "4px 10px", opacity: 0.75,
+              }}
+            >
+              {mega.tracks.length} TRACK{mega.tracks.length !== 1 ? "S" : ""} {isExpanded ? "▲" : "▼"}
+            </button>
           </div>
           <div style={{ borderTop: "1px solid rgba(245,232,223,0.15)", paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
             <div>
@@ -720,7 +763,7 @@ const Spindle = () => {
         </Link>
         <span className="display" style={{ fontSize: 24, color: "var(--cream)" }}>THE SPINDLE</span>
         <div style={{ minWidth: 70, textAlign: "right" }}>
-          {items.length > 0 && currentItem && (
+          {visibleItems.length > 0 && currentItem && (
             <button
               onClick={() => toggleFlip(currentKey)}
               className="label"
@@ -747,7 +790,7 @@ const Spindle = () => {
               ))}
             </div>
           </div>
-        ) : items.length === 0 ? (
+        ) : visibleItems.length === 0 ? (
           <div
             style={{
               margin: "0 18px", border: "3px solid rgba(245,232,223,0.25)",
@@ -764,11 +807,12 @@ const Spindle = () => {
         ) : (
           <>
             <div
+              ref={carouselRef}
               className="flex overflow-x-auto snap-x snap-mandatory"
               style={{ scrollbarWidth: "none", paddingBottom: 16 }}
               onScroll={onCarouselScroll}
             >
-              {items.map((item) => {
+              {visibleItems.map((item) => {
                 const key = itemKey(item);
                 const isFlipped = flipped.has(key);
 
@@ -780,7 +824,7 @@ const Spindle = () => {
                   >
                     <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
                       {item.kind === "mega-summary"
-                        ? renderMegaSummaryCard(item.data, isFlipped)
+                        ? renderMegaSummaryCard(item.data, isFlipped, expandedMegas.has(item.data.megaSlipId))
                         : item.kind === "mega-track"
                           ? renderSlipCard(item.data, isFlipped, `PART OF ${item.groupName}`)
                           : renderSlipCard(item.data, isFlipped)
@@ -792,9 +836,9 @@ const Spindle = () => {
             </div>
 
             {/* dot indicators */}
-            {items.length > 1 && (
+            {visibleItems.length > 1 && (
               <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 8 }}>
-                {items.map((item, i) => (
+                {visibleItems.map((item, i) => (
                   <div
                     key={itemKey(item)}
                     style={{
