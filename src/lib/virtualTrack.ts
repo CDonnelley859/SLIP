@@ -9,7 +9,7 @@ export const RACE_COUNT = 6;
 const HORSES_PER_RACE = 8;
 export const RACE_GAP_MS = 20 * 60 * 1000;          // 20 minutes between races
 export const CARD_DURATION_MS = RACE_COUNT * RACE_GAP_MS;  // 2 hours per card
-const CARDS_AHEAD = 11;                               // show current + 11 upcoming = 12 total (full day)
+const TOTAL_DAILY_SLOTS = 12;                         // all 12 venues visible all day
 
 // Ordered east → west by time zone so each slot roughly matches
 // when UK punters would watch these venues live. Blotto Park is fixed
@@ -155,12 +155,12 @@ function slotStartMs(slot: number): number {
 }
 
 /**
- * Returns the card IDs for the current slot and the next CARDS_AHEAD slots.
- * These are the cards that should be visible in the carousel at any given time.
+ * Returns all 12 card IDs for today (slots 0–11).
+ * Slot 0 = 00:00, slot 1 = 02:00, … slot 11 = 22:00.
+ * Always the full day's schedule regardless of current time.
  */
-export function activeVirtualCardIds(now = Date.now()): string[] {
-  const slot = slotFor(now);
-  return Array.from({ length: CARDS_AHEAD + 1 }, (_, i) => cardIdForSlot(slot + i));
+export function activeVirtualCardIds(_now = Date.now()): string[] {
+  return Array.from({ length: TOTAL_DAILY_SLOTS }, (_, i) => cardIdForSlot(i));
 }
 
 /**
@@ -304,9 +304,9 @@ export async function seedVirtualTrack(): Promise<void> {
   // One-time migration: hard-reset all virtual cards for the new venue rotation.
   // Deletes every isVirtual card plus its races and horses, then reseeds fresh.
   try {
-    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v4"));
+    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v5"));
     if (!resetMarker.exists()) {
-      await setDoc(doc(db, "_meta", "virtual-reset-v4"), { done: true });
+      await setDoc(doc(db, "_meta", "virtual-reset-v5"), { done: true });
       const allVirtual = await getDocs(
         query(collection(db, "cards"), where("isVirtual", "==", true))
       );
@@ -334,9 +334,8 @@ export async function seedVirtualTrack(): Promise<void> {
   // Settle any finished races before seeding
   try { await settleVirtualRaces(); } catch { }
 
-  // Seed all active slots in parallel
-  const currentSlot = slotFor(now);
+  // Seed all 12 daily slots in parallel (0 = 00:00 through 11 = 22:00)
   await Promise.all(
-    Array.from({ length: CARDS_AHEAD + 1 }, (_, i) => seedSlot(currentSlot + i).catch(() => {}))
+    Array.from({ length: TOTAL_DAILY_SLOTS }, (_, i) => seedSlot(i).catch(() => {}))
   );
 }
