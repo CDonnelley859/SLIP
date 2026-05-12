@@ -197,8 +197,20 @@ const Spindle = () => {
         ]);
 
         const cardData = cardDocReal?.data();
+        const cardExists = cardDocReal?.exists() === true;
         const isPreviousDay = cardData?.raceDate && cardData.raceDate < today;
-        if (!isPreviousDay) {
+
+        if (!cardExists) {
+          // Card was deleted (e.g. virtual track wiped by a migration reset).
+          // Treat as complete only if all of the user's picks have settled points stored.
+          const allSettled = myPicksSnap.size > 0 &&
+            myPicksSnap.docs.every(p => {
+              const pts = p.data().points;
+              return pts !== undefined && pts !== null;
+            });
+          if (!allSettled) return null;
+          // Falls through — lines/leaderboard built from stored pick data below.
+        } else if (!isPreviousDay) {
           const racesSnap = await getDocs(
             query(collection(db, "races"), where("cardId", "==", scrum.cardId))
           );
@@ -228,17 +240,24 @@ const Spindle = () => {
         });
 
         const lines: Line[] = pickData.map((pick, i) => {
-          const race = raceDocs[i].data();
-          const horse = horseDocs[i].data();
-          const winners = race?.winners;
-          const status = statusFor(winners, pick.horseId);
+          const raceSnap = raceDocs[i];
+          const horseSnap = horseDocs[i];
+          const race = raceSnap.exists() ? raceSnap.data() : null;
+          const horse = horseSnap.exists() ? horseSnap.data() : null;
+          const winners = race?.winners ?? null;
+          // If race doc was deleted, derive status from the stored points on the pick
+          const storedPts: number = pick.points ?? 0;
+          const statusFromStored = (): LineStatus =>
+            storedPts === 5 ? "WIN" : storedPts === 3 ? "PLACE" : storedPts === 1 ? "SHOW" : "OUT";
+          const status = race ? statusFor(winners, pick.horseId) : statusFromStored();
+          const pts = race ? pointsFor(status) : storedPts;
           return {
-            raceNumber: race?.raceNumber ?? 0,
+            raceNumber: race?.raceNumber ?? (i + 1),
             horseName: horse?.name ?? "—",
             horseNumber: horse?.number ?? 0,
             offTime: race?.offTime ?? null,
             status,
-            points: pointsFor(status),
+            points: pts,
             podium: {
               first: winners?.first ? (winnerMap[winners.first] ?? null) : null,
               second: winners?.second ? (winnerMap[winners.second] ?? null) : null,
@@ -276,12 +295,14 @@ const Spindle = () => {
         const myEntry = leaderboard.find(e => e.isMe);
         const rank = myEntry ? leaderboard.indexOf(myEntry) + 1 : null;
 
+        // Fallback values when card doc no longer exists (e.g. deleted by migration)
+        const fallbackDate = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
         return {
           scrumId,
           megaSlipId: scrum.megaSlipId ?? undefined,
           scrumName: scrum.name,
-          trackName: cardData?.trackName ?? "—",
-          date: cardData?.raceDate ?? "",
+          trackName: cardData?.trackName ?? "VIRTUAL TRACK",
+          date: cardData?.raceDate ?? fallbackDate,
           totalPoints, rank, totalMembers: leaderboard.length,
           lines, leaderboard,
         } as CompletedSlip;
