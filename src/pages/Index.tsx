@@ -231,10 +231,27 @@ const Index = () => {
 
     setActiveSlips(slipResults.filter(Boolean) as ActiveSlip[]);
 
-    // Load active mega slips
+    // Load active mega slips — exclude any where all races are fully settled
     try {
-      const megas = await getMegaSlipsForUser(userId);
-      setActiveMegas(megas);
+      const allMegas = await getMegaSlipsForUser(userId);
+      const activeMegaList = (await Promise.all(
+        allMegas.map(async (mega) => {
+          if (mega.cardIds.length === 0) return mega; // no tracks yet, keep it
+          const raceSnaps = await Promise.all(
+            mega.cardIds.map(cardId =>
+              getDocs(query(collection(db, "races"), where("cardId", "==", cardId)))
+            )
+          );
+          const totalRaces = raceSnaps.reduce((sum, s) => sum + s.size, 0);
+          const settledRaces = raceSnaps.reduce(
+            (sum, s) => sum + s.docs.filter(r => r.data().status === "settled").length, 0
+          );
+          // All races settled → mega is done, move to Spindle
+          if (totalRaces > 0 && settledRaces >= totalRaces) return null;
+          return mega;
+        })
+      )).filter(Boolean) as typeof allMegas;
+      setActiveMegas(activeMegaList);
     } catch { }
 
     setSlipsLoading(false);
