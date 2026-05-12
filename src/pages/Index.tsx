@@ -89,15 +89,17 @@ const Index = () => {
       }
     }
 
-    const cardList: Card[] = cardsSnap.docs.map(d => ({
-      id: d.id,
-      trackName: d.data().trackName,
-      tagline: d.data().tagline ?? undefined,
-      raceDate: d.data().raceDate,
-      postTime: d.data().postTime,
-      raceCount: d.data().raceCount ?? 0,
-      isVirtual: d.data().isVirtual ?? false,
-    })).sort((a, b) => a.postTime.localeCompare(b.postTime));
+    const cardList: Card[] = cardsSnap.docs
+      .filter(d => !d.data().isVirtual)   // virtual tracks are added via active-slot fetch below
+      .map(d => ({
+        id: d.id,
+        trackName: d.data().trackName,
+        tagline: d.data().tagline ?? undefined,
+        raceDate: d.data().raceDate,
+        postTime: d.data().postTime,
+        raceCount: d.data().raceCount ?? 0,
+        isVirtual: false,
+      })).sort((a, b) => a.postTime.localeCompare(b.postTime));
 
     // Fetch all active virtual card IDs (current slot + 2 ahead)
     const activeVIds = activeVirtualCardIds();
