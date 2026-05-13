@@ -125,6 +125,11 @@ const TRAINERS = [
   "E. TRACK", "F. FURLONG", "G. STRAIGHT", "H. BEND", "I. PADDOCK",
 ];
 
+/** Returns a date as YYYY-MM-DD in the device's local timezone (not UTC) */
+function localDateStr(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -237,7 +242,8 @@ async function seedSlot(slotNum: number): Promise<void> {
   const cardId = cardIdForSlot(slotNum);
   const firstRaceTime = slotStartMs(slotNum);
   const firstRaceISO = new Date(firstRaceTime).toISOString();
-  const today = new Date().toISOString().slice(0, 10);
+  // Use local date — UTC date shifts at midnight UTC, not midnight local time
+  const today = localDateStr();
 
   const cardRef = doc(db, "cards", cardId);
   const cardDoc = await getDoc(cardRef);
@@ -263,7 +269,7 @@ async function seedSlot(slotNum: number): Promise<void> {
   await setDoc(cardRef, {
     trackName: venue.name,
     tagline: venue.tagline,
-    raceDate: new Date(firstRaceTime).toISOString().slice(0, 10),
+    raceDate: localDateStr(new Date(firstRaceTime)),
     postTime: firstRaceISO,
     status: "upcoming",
     isVirtual: true,

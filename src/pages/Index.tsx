@@ -143,23 +143,29 @@ const Index = () => {
 
     setCards(cardList);
 
+    // Use local date (not UTC) to match how virtualTrack.ts stores raceDate
+    const localToday = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })();
+
     // Seed if any active slot is missing, has a stale venue name, or is from a previous day
     const cardIdSet = new Set(cardList.map(c => c.id));
     const needsSeed = activeVIds.some(id => {
       if (!cardIdSet.has(id)) return true;
       const card = cardList.find(c => c.id === id);
       if (!card) return true;
-      if (card.raceDate !== today) return true; // stale from previous day
+      if (card.raceDate !== localToday) return true; // stale from previous day
       const expected = expectedVenueName(id);
       return !!expected && card.trackName !== expected;
     });
-    // Include today's date in the key so it resets each day even within the same session
-    const seedKey = `blotto-seeded-v3-${today}`;
+    // Include today's local date in the key so it resets each calendar day
+    const seedKey = `blotto-seeded-v4-${localToday}`;
     if (needsSeed && !sessionStorage.getItem(seedKey)) {
       sessionStorage.setItem(seedKey, "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
     } else {
-      const settleKey = `blotto-settled-v3-${today}`;
+      const settleKey = `blotto-settled-v4-${localToday}`;
       if (!sessionStorage.getItem(settleKey)) {
         sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});
