@@ -159,13 +159,13 @@ const Index = () => {
       const expected = expectedVenueName(id);
       return !!expected && card.trackName !== expected;
     });
-    // Include today's local date in the key so it resets each calendar day
-    const seedKey = `blotto-seeded-v4-${localToday}`;
-    if (needsSeed && !sessionStorage.getItem(seedKey)) {
-      sessionStorage.setItem(seedKey, "1");
+    if (needsSeed) {
+      // Always reseed when cards are stale — don't let sessionStorage block it.
+      // seedSlot() is idempotent (skips if already fresh), so this is safe to call every load.
       seedVirtualTrack().then(() => loadData()).catch(() => {});
     } else {
-      const settleKey = `blotto-settled-v4-${localToday}`;
+      // Cards are fresh — just settle finished races once per session
+      const settleKey = `blotto-settled-v5-${localToday}`;
       if (!sessionStorage.getItem(settleKey)) {
         sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});
