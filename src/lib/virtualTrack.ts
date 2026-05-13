@@ -237,11 +237,26 @@ async function seedSlot(slotNum: number): Promise<void> {
   const cardId = cardIdForSlot(slotNum);
   const firstRaceTime = slotStartMs(slotNum);
   const firstRaceISO = new Date(firstRaceTime).toISOString();
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Skip if already seeded — never overwrite an existing card
   const cardRef = doc(db, "cards", cardId);
   const cardDoc = await getDoc(cardRef);
-  if (cardDoc.exists()) return;
+
+  if (cardDoc.exists()) {
+    // Already seeded for today — nothing to do
+    if (cardDoc.data().raceDate === today) return;
+    // Stale card from a previous day — wipe it and reseed fresh
+    const staleBatch = writeBatch(db);
+    staleBatch.delete(cardRef);
+    for (let n = 1; n <= RACE_COUNT; n++) {
+      const raceId = `${cardId}-r${n}`;
+      staleBatch.delete(doc(db, "races", raceId));
+      for (let h = 1; h <= HORSES_PER_RACE; h++) {
+        staleBatch.delete(doc(db, "horses", `${raceId}-h${h}`));
+      }
+    }
+    await staleBatch.commit();
+  }
 
   const venue = VENUES[slotNum % VENUES.length];
 
