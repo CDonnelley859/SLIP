@@ -322,12 +322,13 @@ async function seedSlot(slotNum: number): Promise<void> {
 export async function seedVirtualTrack(): Promise<void> {
   const now = Date.now();
 
-  // One-time migration: hard-reset all virtual cards for the new venue rotation.
-  // Deletes every isVirtual card plus its races and horses, then reseeds fresh.
+  // Daily reset: wipe all virtual cards at the start of each new day, then reseed fresh.
+  // This ensures yesterday's cards never bleed into today regardless of slot-level failures.
   try {
-    const resetMarker = await getDoc(doc(db, "_meta", "virtual-reset-v5"));
-    if (!resetMarker.exists()) {
-      await setDoc(doc(db, "_meta", "virtual-reset-v5"), { done: true });
+    const dailyResetKey = `virtual-reset-daily-${localDateStr()}`;
+    const dailyMarker = await getDoc(doc(db, "_meta", dailyResetKey));
+    if (!dailyMarker.exists()) {
+      await setDoc(doc(db, "_meta", dailyResetKey), { done: true });
       const allVirtual = await getDocs(
         query(collection(db, "cards"), where("isVirtual", "==", true))
       );
@@ -336,7 +337,7 @@ export async function seedVirtualTrack(): Promise<void> {
         const cid = cardDoc.id;
         const batch = writeBatch(db);
         batch.delete(doc(db, "cards", cid));
-        for (let n = 1; n <= 12; n++) {
+        for (let n = 1; n <= RACE_COUNT; n++) {
           const raceId = `${cid}-r${n}`;
           batch.delete(doc(db, "races", raceId));
           for (let h = 1; h <= HORSES_PER_RACE; h++) {
