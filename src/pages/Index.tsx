@@ -143,20 +143,23 @@ const Index = () => {
 
     setCards(cardList);
 
-    // Seed if any active slot is missing OR has a stale venue name
+    // Seed if any active slot is missing, has a stale venue name, or is from a previous day
     const cardIdSet = new Set(cardList.map(c => c.id));
     const needsSeed = activeVIds.some(id => {
       if (!cardIdSet.has(id)) return true;
       const card = cardList.find(c => c.id === id);
+      if (!card) return true;
+      if (card.raceDate !== today) return true; // stale from previous day
       const expected = expectedVenueName(id);
-      return !!expected && !!card && card.trackName !== expected;
+      return !!expected && card.trackName !== expected;
     });
-    const seedKey = `blotto-seeded-v2-${activeVIds[0]}`;
+    // Include today's date in the key so it resets each day even within the same session
+    const seedKey = `blotto-seeded-v3-${today}`;
     if (needsSeed && !sessionStorage.getItem(seedKey)) {
       sessionStorage.setItem(seedKey, "1");
       seedVirtualTrack().then(() => loadData()).catch(() => {});
     } else {
-      const settleKey = `blotto-settled-v2-${activeVIds[0]}`;
+      const settleKey = `blotto-settled-v3-${today}`;
       if (!sessionStorage.getItem(settleKey)) {
         sessionStorage.setItem(settleKey, "1");
         settleVirtualRaces().catch(() => {});
