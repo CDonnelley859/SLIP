@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +106,16 @@ const Slip = () => {
 
   // Keep the ref in sync with the derived value
   useEffect(() => { viewUserIdRef.current = viewUserId ?? ""; }, [viewUserId]);
+
+  // Print animation y-keyframes — computed from screen height so the ticket
+  // always starts fully off the top of the screen regardless of device size.
+  const printY = useMemo(() => {
+    const vh = window.innerHeight;
+    const start = -(vh + 200);               // 200px above top of screen
+    const mid1  = -Math.round(vh * 0.72);    // bottom ~28% of ticket visible
+    const mid2  = -Math.round(vh * 0.30);    // most of ticket visible
+    return [start, mid1, mid1, mid2, mid2, 0];
+  }, []);
 
   async function buildLines(forUserId: string) {
     if (!id) return;
@@ -442,10 +452,8 @@ const Slip = () => {
       >
         {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
         <motion.div
-          initial={slideKey === 0 ? { y: -900 } : false}
-          animate={slideKey === 0 ? {
-            y: [-900, -580, -580, -260, -260, 0],
-          } : false}
+          initial={slideKey === 0 ? { y: printY[0] } : false}
+          animate={slideKey === 0 ? { y: printY } : false}
           transition={slideKey === 0 ? {
             delay:    1.0,
             duration: 2.4,
