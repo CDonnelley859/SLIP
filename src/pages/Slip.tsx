@@ -440,19 +440,11 @@ const Slip = () => {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Print slot — bottom visible first, top reveals as receipt feeds downward out of slot */}
+        {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
         <motion.div
-          initial={slideKey === 0 ? { clipPath: "inset(88% 0 0 0)", y: -50 } : false}
+          initial={slideKey === 0 ? { y: -900 } : false}
           animate={slideKey === 0 ? {
-            clipPath: [
-              "inset(88% 0 0 0)",
-              "inset(55% 0 0 0)",
-              "inset(55% 0 0 0)",
-              "inset(22% 0 0 0)",
-              "inset(22% 0 0 0)",
-              "inset(0% 0 0 0)",
-            ],
-            y: [-50, -30, -30, -12, -12, 0],
+            y: [-900, -580, -580, -260, -260, 0],
           } : false}
           transition={slideKey === 0 ? {
             delay:    1.0,
