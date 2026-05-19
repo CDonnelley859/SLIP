@@ -1,10 +1,11 @@
 import { Component, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { AnimatePresence, motion } from "framer-motion";
 import Index from "./pages/Index";
 import NewScrum from "./pages/NewScrum";
 import JoinScrum from "./pages/JoinScrum";
@@ -59,8 +60,16 @@ class ErrorBoundary extends Component<
   }
 }
 
+const pageVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.25, 0, 0.25, 1] } },
+  exit:    { opacity: 0,        transition: { duration: 0.12, ease: [0.25, 0, 0.25, 1] } },
+};
+
 const AppRoutes = () => {
   const { loading } = useAuth();
+  const location = useLocation();
+
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#f5e8df", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <span style={{ fontFamily: "monospace", fontSize: 12, opacity: 0.5, letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -68,26 +77,38 @@ const AppRoutes = () => {
       </span>
     </div>
   );
+
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/scrum/new" element={<NewScrum />} />
-      <Route path="/scrum/join" element={<JoinScrum />} />
-      <Route path="/scrum/:id/lobby" element={<Lobby />} />
-      <Route path="/scrum/:id/gallop" element={<Gallop />} />
-      <Route path="/scrum/:id/slip" element={<Slip />} />
-      <Route path="/scrum/:id/host-results" element={<HostResults />} />
-      <Route path="/spindle" element={<Spindle />} />
-      <Route path="/stats" element={<Stats />} />
-      <Route path="/join/:code" element={<JoinViaLink />} />
-      <Route path="/mega/:id/hub" element={<MegaHub />} />
-      <Route path="/join-mega/:code" element={<JoinMegaViaLink />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/how-to-play" element={<HowToPlay />} />
-      <Route path="/crew/:crewId" element={<CrewPage />} />
-      <Route path="/profile/:friendUserId" element={<FriendProfile />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        style={{ minHeight: "100vh" }}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/scrum/new" element={<NewScrum />} />
+          <Route path="/scrum/join" element={<JoinScrum />} />
+          <Route path="/scrum/:id/lobby" element={<Lobby />} />
+          <Route path="/scrum/:id/gallop" element={<Gallop />} />
+          <Route path="/scrum/:id/slip" element={<Slip />} />
+          <Route path="/scrum/:id/host-results" element={<HostResults />} />
+          <Route path="/spindle" element={<Spindle />} />
+          <Route path="/stats" element={<Stats />} />
+          <Route path="/join/:code" element={<JoinViaLink />} />
+          <Route path="/mega/:id/hub" element={<MegaHub />} />
+          <Route path="/join-mega/:code" element={<JoinMegaViaLink />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/how-to-play" element={<HowToPlay />} />
+          <Route path="/crew/:crewId" element={<CrewPage />} />
+          <Route path="/profile/:friendUserId" element={<FriendProfile />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -421,10 +422,20 @@ const Slip = () => {
       )}
 
       {/* ── TICKET ── */}
+      <AnimatePresence mode="wait" custom={slideDir}>
       {ready && (
-      <div
+      <motion.div
         key={slideKey}
-        className={slideKey === 0 ? "animate-print" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}
+        custom={slideDir}
+        variants={{
+          enter: (dir: string) => ({ x: dir === "forward" ? 48 : -48, opacity: 0 }),
+          center: { x: 0, opacity: 1 },
+          exit: (dir: string) => ({ x: dir === "forward" ? -48 : 48, opacity: 0 }),
+        }}
+        initial={slideKey === 0 ? { opacity: 0, y: 16 } : "enter"}
+        animate={slideKey === 0 ? { opacity: 1, y: 0 } : "center"}
+        exit="exit"
+        transition={{ duration: 0.22, ease: [0.25, 0, 0.25, 1] }}
         style={{ width: "calc(100% - 36px)", maxWidth: 420 }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -535,8 +546,9 @@ const Slip = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
       )}
+      </AnimatePresence>
 
       {/* swipe hint */}
       {players.length > 1 && (

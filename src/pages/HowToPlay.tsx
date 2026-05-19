@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Step = {
   number: number;
@@ -277,9 +278,19 @@ const HowToPlay = () => {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div
+        <AnimatePresence mode="wait" custom={slideDir}>
+        <motion.div
           key={slideKey}
-          className={slideKey === 0 ? "animate-fade-in" : slideDir === "forward" ? "animate-slide-forward" : "animate-slide-back"}
+          custom={slideDir}
+          variants={{
+            enter: (dir: string) => ({ x: dir === "forward" ? 40 : -40, opacity: 0 }),
+            center: { x: 0, opacity: 1 },
+            exit: (dir: string) => ({ x: dir === "forward" ? -40 : 40, opacity: 0 }),
+          }}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.2, ease: [0.25, 0, 0.25, 1] }}
           style={{ flex: 1, display: "flex", flexDirection: "column" }}
         >
           {/* step number */}
@@ -310,7 +321,8 @@ const HowToPlay = () => {
               {current.body}
             </div>
           </div>
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* ── FIXED FOOTER ── */}

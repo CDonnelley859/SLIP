@@ -7,6 +7,7 @@ import {
   doc, getDoc, getDocs, collection, query, where, setDoc, writeBatch,
 } from "firebase/firestore";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Horse = { id: string; number: number; name: string; jockey: string | null; trainer: string | null; owner: string | null; form: string | null; lbs: number | null; odds: string | null };
 
@@ -387,27 +388,27 @@ const Gallop = () => {
           {currentRace.horses.map((h) => {
             const selected = currentPick === h.id;
             return (
-              <button
+              <motion.button
                 key={h.id}
                 type="button"
                 disabled={isLocked}
                 onClick={() => !isLocked && handlePick(currentRace.id, h.id, h.name, currentRace.raceNumber)}
+                whileTap={isLocked ? {} : { scale: 0.97 }}
+                animate={{
+                  background: selected ? "var(--cream)" : "var(--green)",
+                  boxShadow: selected ? "5px 5px 0 var(--pink)" : "0px 0px 0 var(--pink)",
+                }}
+                transition={{ duration: 0.12 }}
                 style={{
                   width: "100%", display: "flex", alignItems: "flex-start", gap: 12,
                   padding: "12px", textAlign: "left", marginBottom: 10,
                   border: selected ? "3px solid var(--cream)" : "2px solid rgba(245,232,223,0.25)",
-                  background: selected ? "var(--cream)" : "var(--green)",
                   color: selected ? "var(--ink)" : "var(--cream)",
                   cursor: isLocked ? "not-allowed" : "pointer",
                   opacity: isLocked ? 0.6 : 1,
-                  boxShadow: selected ? "5px 5px 0 var(--pink)" : "none",
-                  transition: "background 80ms",
                 }}
               >
-                <span
-                  className="display"
-                  style={{ fontSize: 30, lineHeight: 0.9, minWidth: 36 }}
-                >
+                <span className="display" style={{ fontSize: 30, lineHeight: 0.9, minWidth: 36 }}>
                   {h.number}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -421,25 +422,26 @@ const Gallop = () => {
                     </div>
                   )}
                 </div>
-                {selected && (
-                  <div style={{ flexShrink: 0, display: "flex", alignItems: "flex-start", paddingTop: 2 }}>
-                    <span
-                      className="display"
-                      style={{
-                        display: "inline-block",
-                        border: "2px solid var(--pink)",
-                        color: "var(--pink)",
-                        padding: "2px 6px",
-                        fontSize: 12, letterSpacing: "0.06em",
-                        transform: "rotate(-6deg)",
-                        background: "transparent",
-                      }}
+                <AnimatePresence>
+                  {selected && (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0, rotate: -14 }}
+                      animate={{ scale: 1, opacity: 1, rotate: -6 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 340, damping: 22 }}
+                      style={{ flexShrink: 0, paddingTop: 2 }}
                     >
-                      INKED
-                    </span>
-                  </div>
-                )}
-              </button>
+                      <span className="display" style={{
+                        display: "inline-block", border: "2px solid var(--pink)",
+                        color: "var(--pink)", padding: "2px 6px",
+                        fontSize: 12, letterSpacing: "0.06em", background: "transparent",
+                      }}>
+                        INKED
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             );
           })}
         </div>
