@@ -440,12 +440,18 @@ const Slip = () => {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Print slide-in wrapper — delays 1s then feeds down in three bursts */}
+        {/* Print slot — reveals ticket top-to-bottom in bursts, like a thermal receipt printer */}
         <motion.div
-          initial={slideKey === 0 ? { y: -520, opacity: 0 } : false}
+          initial={slideKey === 0 ? { clipPath: "inset(0 0 100% 0)" } : false}
           animate={slideKey === 0 ? {
-            y:       [-520, -340, -340, -160, -160,  0],
-            opacity: [   0,    1,    1,    1,    1,  1],
+            clipPath: [
+              "inset(0 0 100% 0)",
+              "inset(0 0 65% 0)",
+              "inset(0 0 65% 0)",
+              "inset(0 0 30% 0)",
+              "inset(0 0 30% 0)",
+              "inset(0 0 0% 0)",
+            ],
           } : false}
           transition={slideKey === 0 ? {
             delay:    1.0,
