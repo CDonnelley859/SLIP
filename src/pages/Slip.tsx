@@ -432,14 +432,39 @@ const Slip = () => {
           center: { x: 0, opacity: 1 },
           exit: (dir: string) => ({ x: dir === "forward" ? -48 : 48, opacity: 0 }),
         }}
-        initial={slideKey === 0 ? { opacity: 0, y: 16 } : "enter"}
-        animate={slideKey === 0 ? { opacity: 1, y: 0 } : "center"}
+        initial={slideKey === 0 ? { opacity: 1, x: 0 } : "enter"}
+        animate={slideKey === 0 ? { opacity: 1, x: 0 } : "center"}
         exit="exit"
         transition={{ duration: 0.22, ease: [0.25, 0, 0.25, 1] }}
         style={{ width: "calc(100% - 36px)", maxWidth: 420 }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        {/* Print reveal wrapper — clips ticket from bottom, exposing top-to-bottom */}
+        <motion.div
+          initial={{ clipPath: slideKey === 0 ? "inset(0 0 100% 0)" : "inset(0 0 0% 0)" }}
+          animate={{ clipPath: "inset(0 0 0% 0)" }}
+          transition={slideKey === 0 ? {
+            duration: 1.15,
+            times: [0, 0.18, 0.42, 0.68, 0.88, 1],
+            ease: "linear",
+          } : { duration: 0 }}
+          style={{ position: "relative" }}
+        >
+          {/* Print-head scan line — tracks the reveal edge */}
+          {slideKey === 0 && (
+            <motion.div
+              initial={{ top: "0%", opacity: 1 }}
+              animate={{ top: "101%", opacity: 0 }}
+              transition={{ duration: 1.15, ease: "linear", opacity: { delay: 1.05, duration: 0.1 } }}
+              style={{
+                position: "absolute", left: -3, right: -3, height: 3, zIndex: 20, pointerEvents: "none",
+                background: "linear-gradient(to right, transparent 5%, rgba(245,232,223,0.7) 30%, var(--cream) 50%, rgba(245,232,223,0.7) 70%, transparent 95%)",
+                boxShadow: "0 0 6px 2px rgba(245,232,223,0.35)",
+              }}
+            />
+          )}
+
         {/* Ticket */}
         <div style={{ position: "relative" }}>
           {/* ticket */}
@@ -546,6 +571,7 @@ const Slip = () => {
             </div>
           </div>
         </div>
+        </motion.div>{/* /print reveal */}
       </motion.div>
       )}
       </AnimatePresence>
