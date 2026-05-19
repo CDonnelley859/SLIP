@@ -155,12 +155,13 @@ const Gallop = () => {
     if (any !== -1) setCurrentIdx(any);
   }
 
-  async function handlePick(raceId: string, horseId: string) {
+  async function handlePick(raceId: string, horseId: string, horseName: string, raceNumber: number) {
     if (navigator.vibrate) navigator.vibrate(40);
     setPicks(p => ({ ...p, [raceId]: horseId }));
     try {
       await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {
         scrumId: id, raceId, horseId, userId, points: null,
+        horseName, raceNumber,
       });
     } catch { }
   }
@@ -170,9 +171,15 @@ const Gallop = () => {
     setSubmitting(true);
     try {
       const batch = writeBatch(db);
+      // Build a quick lookup so we can embed horseName + raceNumber in each pick
+      const raceMap = Object.fromEntries(races.map(r => [r.id, r]));
       Object.entries(picks).forEach(([raceId, horseId]) => {
+        const race = raceMap[raceId];
+        const horse = race?.horses.find(h => h.id === horseId);
         batch.set(doc(db, "picks", `${id}_${userId}_${raceId}`), {
           scrumId: id, raceId, horseId, userId, points: null,
+          horseName: horse?.name ?? null,
+          raceNumber: race?.raceNumber ?? null,
         });
       });
       await batch.commit();
@@ -363,7 +370,7 @@ const Gallop = () => {
                 key={h.id}
                 type="button"
                 disabled={isLocked}
-                onClick={() => !isLocked && handlePick(currentRace.id, h.id)}
+                onClick={() => !isLocked && handlePick(currentRace.id, h.id, h.name, currentRace.raceNumber)}
                 style={{
                   width: "100%", display: "flex", alignItems: "flex-start", gap: 12,
                   padding: "12px", textAlign: "left", marginBottom: 10,

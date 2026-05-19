@@ -158,12 +158,13 @@ const Slip = () => {
         status = getStatus(race?.status ?? "upcoming", pick.horseId, winners);
       }
 
-      // Extract race number from the raceId when the race doc is gone
-      const raceNumFallback = parseInt(pick.raceId?.match(/-r(\d+)$/)?.[1] ?? "0", 10);
+      // Fallbacks from data stored on the pick itself at pick time
+      const raceNumFallback = pick.raceNumber
+        ?? parseInt(pick.raceId?.match(/-r(\d+)$/)?.[1] ?? "0", 10);
 
       return {
         raceNumber: race?.raceNumber ?? raceNumFallback,
-        horseName: horse?.name ?? "—",
+        horseName: horse?.name ?? pick.horseName ?? "—",
         horseNumber: horseExists ? (horse?.number ?? 0) : 0,
         offTime: race?.offTime ?? null,
         status,
