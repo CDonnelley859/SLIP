@@ -7,7 +7,7 @@ import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds, expectedVen
 import { createMegaSlip, joinMegaSlip, getMegaSlipsForUser, type MegaSlip } from "@/lib/megaSlip";
 import { getCrewsForUser, type Crew } from "@/lib/crews";
 import {
-  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc, writeBatch,
+  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc, writeBatch, updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -323,6 +323,10 @@ const Index = () => {
           userId,
           displayName,
         );
+        // Tag the mega slip with the crewId so crew stats can track it
+        if (selectedCrewId) {
+          await updateDoc(doc(db, "megaSlips", megaSlipId), { crewId: selectedCrewId });
+        }
         // Auto-enrol crew members if one is selected
         if (selectedCrewId) {
           const crew = crews.find(c => c.id === selectedCrewId);
@@ -352,6 +356,7 @@ const Index = () => {
         await setDoc(doc(db, "scrums", scrumId), {
           cardId: selectedCards[0].id, hostId: userId, name: groupName.trim(),
           joinCode: code, showDetails: false, megaSlipId: null,
+          crewId: selectedCrewId ?? null,
         });
         await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
           scrumId, userId, handle: displayName,

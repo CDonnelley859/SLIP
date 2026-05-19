@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { saveCrew } from "@/lib/crews";
+import { addFriend, getFriends } from "@/lib/friends";
 
 type LeaderRow = { userId: string; handle: string; points: number; wins: number; places: number; shows: number };
 
@@ -24,6 +25,7 @@ const Lobby = () => {
   const [togglingDetails, setTogglingDetails] = useState(false);
   const [showHostSettings, setShowHostSettings] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [showSaveCrew, setShowSaveCrew] = useState(false);
   const [crewName, setCrewName] = useState("");
   const [savingCrew, setSavingCrew] = useState(false);
@@ -78,6 +80,11 @@ const Lobby = () => {
           submitted: submittedUserIds.has(d.data().userId),
         }));
         setMembers(memberList);
+
+        // Load existing friends so we know who's already saved
+        if (userId) {
+          getFriends(userId).then(f => setFriendIds(new Set(f.map(fr => fr.friendUserId)))).catch(() => {});
+        }
 
         const handleMap: Record<string, string> = {};
         memberList.forEach(m => { handleMap[m.userId] = m.handle; });
@@ -143,6 +150,17 @@ const Lobby = () => {
   function handleCopyCode() {
     if (!scrum?.joinCode) return;
     navigator.clipboard.writeText(scrum.joinCode).then(() => toast.success("Code copied!"));
+  }
+
+  async function handleAddFriend(friendUserId: string, friendHandle: string) {
+    if (!userId) return;
+    try {
+      await addFriend(userId, friendUserId, friendHandle);
+      setFriendIds(prev => new Set([...prev, friendUserId]));
+      toast.success(`${friendHandle} saved to friends`);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   }
 
   async function handleSaveCrew() {
@@ -330,6 +348,21 @@ const Lobby = () => {
                         {row.wins}W · {row.places}P · {row.shows}S
                       </div>
                     </div>
+                    {!isMe && (
+                      <button
+                        onClick={() => !friendIds.has(row.userId) && handleAddFriend(row.userId, row.handle)}
+                        className="label-sm"
+                        style={{
+                          background: "transparent", border: 0,
+                          color: isMe ? "var(--ink)" : "var(--cream)",
+                          opacity: friendIds.has(row.userId) ? 0.35 : 0.6,
+                          cursor: friendIds.has(row.userId) ? "default" : "pointer",
+                          flexShrink: 0, padding: "4px 0 4px 8px",
+                        }}
+                      >
+                        {friendIds.has(row.userId) ? "✓" : "+ FRIEND"}
+                      </button>
+                    )}
                     <div className="display" style={{ fontSize: 32, lineHeight: 1 }}>
                       {row.points}<span style={{ fontSize: 12, marginLeft: 4, opacity: 0.6 }}>PTS</span>
                     </div>

@@ -98,6 +98,27 @@ const Gallop = () => {
       );
       const map: Record<string, string> = {};
       picksSnap.docs.forEach(p => { map[p.data().raceId] = p.data().horseId; });
+
+      // Auto-pick any locked races that have no pick yet
+      const nowTs2 = Date.now();
+      const missedRaces = loadedRaces.filter(
+        r => new Date(r.offTime).getTime() <= nowTs2 && !map[r.id] && r.horses.length > 0
+      );
+      if (missedRaces.length > 0) {
+        const autoBatch = writeBatch(db);
+        missedRaces.forEach(r => {
+          const horse = r.horses[Math.floor(Math.random() * r.horses.length)];
+          map[r.id] = horse.id;
+          autoBatch.set(doc(db, "picks", `${id}_${userId}_${r.id}`), {
+            scrumId: id, raceId: r.id, horseId: horse.id, userId,
+            points: null, horseName: horse.name, raceNumber: r.raceNumber,
+            autoPicked: true,
+          });
+        });
+        await autoBatch.commit();
+        toast(`${missedRaces.length} race${missedRaces.length > 1 ? "s" : ""} auto-picked for you`, { icon: "🎲" });
+      }
+
       setPicks(map);
     })();
   }, [id]);

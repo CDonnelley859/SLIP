@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { getCrewsForUser, deleteCrew, type Crew } from "@/lib/crews";
+import { getFriends, removeFriend, type Friend } from "@/lib/friends";
 
 const Settings = () => {
   const { handle, setHandle, userId } = useAuth();
@@ -17,13 +18,33 @@ const Settings = () => {
   const [confirmDeleteCrewId, setConfirmDeleteCrewId] = useState<string | null>(null);
   const [deletingCrew, setDeletingCrew] = useState(false);
 
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+  const [confirmRemoveFriendId, setConfirmRemoveFriendId] = useState<string | null>(null);
+  const [removingFriend, setRemovingFriend] = useState(false);
+
   useEffect(() => {
-    if (!userId) { setLoadingCrews(false); return; }
+    if (!userId) { setLoadingCrews(false); setLoadingFriends(false); return; }
     getCrewsForUser(userId)
-      .then(setCrews)
-      .catch(() => {})
-      .finally(() => setLoadingCrews(false));
+      .then(setCrews).catch(() => {}).finally(() => setLoadingCrews(false));
+    getFriends(userId)
+      .then(setFriends).catch(() => {}).finally(() => setLoadingFriends(false));
   }, [userId]);
+
+  async function handleRemoveFriend(friendUserId: string) {
+    if (!userId) return;
+    setRemovingFriend(true);
+    try {
+      await removeFriend(userId, friendUserId);
+      setFriends(prev => prev.filter(f => f.friendUserId !== friendUserId));
+      setConfirmRemoveFriendId(null);
+      toast.success("Friend removed");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setRemovingFriend(false);
+    }
+  }
 
   async function handleDeleteCrew(crewId: string) {
     setDeletingCrew(true);
@@ -255,24 +276,105 @@ const Settings = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                      <button
+                        onClick={() => navigate(`/crew/${crew.id}`)}
+                        style={{
+                          flex: 1, minWidth: 0, textAlign: "left", background: "transparent",
+                          border: 0, cursor: "pointer", padding: "12px 14px",
+                        }}
+                      >
                         <div className="display" style={{ fontSize: 16, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
-                          {crew.name}
+                          {crew.name} →
                         </div>
                         <div className="mono" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {crew.members.map(m => m.handle).join(", ")}
                         </div>
-                      </div>
+                      </button>
                       <button
                         onClick={() => setConfirmDeleteCrewId(crew.id)}
                         className="label-sm"
                         style={{
                           background: "transparent", border: 0, color: "var(--cream)",
                           opacity: 0.4, cursor: "pointer", textDecoration: "underline", flexShrink: 0,
+                          padding: "12px 14px 12px 0",
                         }}
                       >
                         DELETE
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── FRIENDS ── */}
+        <section style={{ marginTop: 8 }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+            FRIENDS
+          </div>
+          {loadingFriends ? (
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: 16, opacity: 0.4 }}>
+              <div style={{ height: 8, width: 100, background: "rgba(245,232,223,0.2)" }} />
+            </div>
+          ) : friends.length === 0 ? (
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO FRIENDS SAVED</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+                TAP + FRIEND ON A PLAYER IN THE PEN STANDINGS
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {friends.map((friend, i) => (
+                <div
+                  key={friend.friendUserId}
+                  style={{
+                    border: "3px solid rgba(245,232,223,0.35)",
+                    borderBottom: i < friends.length - 1 ? "1.5px solid rgba(245,232,223,0.2)" : "3px solid rgba(245,232,223,0.35)",
+                  }}
+                >
+                  {confirmRemoveFriendId === friend.friendUserId ? (
+                    <div style={{ padding: "12px 14px" }}>
+                      <p className="label-sm" style={{ color: "var(--cream)", marginBottom: 10 }}>
+                        REMOVE {friend.friendHandle}?
+                      </p>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => setConfirmRemoveFriendId(null)}
+                          className="label-sm"
+                          style={{ flex: 1, background: "transparent", border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)", padding: "8px", cursor: "pointer" }}
+                        >
+                          CANCEL
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFriend(friend.friendUserId)}
+                          disabled={removingFriend}
+                          className="label-sm"
+                          style={{ flex: 1, background: "var(--pink)", border: "1.5px solid var(--ink)", color: "var(--ink)", padding: "8px", cursor: "pointer", opacity: removingFriend ? 0.4 : 1 }}
+                        >
+                          {removingFriend ? "REMOVING…" : "YES, REMOVE"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <button
+                        onClick={() => navigate(`/profile/${friend.friendUserId}`)}
+                        style={{ flex: 1, textAlign: "left", background: "transparent", border: 0, cursor: "pointer", padding: "14px" }}
+                      >
+                        <div className="display" style={{ fontSize: 18, color: "var(--cream)", lineHeight: 1 }}>
+                          {friend.friendHandle} →
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemoveFriendId(friend.friendUserId)}
+                        className="label-sm"
+                        style={{ background: "transparent", border: 0, color: "var(--cream)", opacity: 0.4, cursor: "pointer", textDecoration: "underline", padding: "14px 14px 14px 0", flexShrink: 0 }}
+                      >
+                        REMOVE
                       </button>
                     </div>
                   )}
