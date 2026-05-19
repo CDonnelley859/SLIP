@@ -440,13 +440,18 @@ const Slip = () => {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Print slide-in wrapper */}
+        {/* Print slide-in wrapper — delays 1s then feeds down in three bursts */}
         <motion.div
-          initial={slideKey === 0 ? { y: -480, opacity: 0 } : false}
-          animate={slideKey === 0 ? { y: 0, opacity: 1 } : false}
+          initial={slideKey === 0 ? { y: -520, opacity: 0 } : false}
+          animate={slideKey === 0 ? {
+            y:       [-520, -340, -340, -160, -160,  0],
+            opacity: [   0,    1,    1,    1,    1,  1],
+          } : false}
           transition={slideKey === 0 ? {
-            type: "spring", stiffness: 72, damping: 18, mass: 1.1,
-            opacity: { duration: 0.18, ease: "easeOut" },
+            delay:    1.0,
+            duration: 2.4,
+            times:    [0, 0.22, 0.40, 0.64, 0.80, 1],
+            ease:     "linear",
           } : undefined}
         >
 
