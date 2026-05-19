@@ -6,6 +6,7 @@ import {
   doc, getDoc, getDocs, collection, query, where, deleteDoc, onSnapshot, updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
+import { saveCrew } from "@/lib/crews";
 
 type LeaderRow = { userId: string; handle: string; points: number; wins: number; places: number; shows: number };
 
@@ -23,6 +24,10 @@ const Lobby = () => {
   const [togglingDetails, setTogglingDetails] = useState(false);
   const [showHostSettings, setShowHostSettings] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [showSaveCrew, setShowSaveCrew] = useState(false);
+  const [crewName, setCrewName] = useState("");
+  const [savingCrew, setSavingCrew] = useState(false);
+  const [crewSaved, setCrewSaved] = useState(false);
 
   // Countdown timer
   useEffect(() => {
@@ -138,6 +143,26 @@ const Lobby = () => {
   function handleCopyCode() {
     if (!scrum?.joinCode) return;
     navigator.clipboard.writeText(scrum.joinCode).then(() => toast.success("Code copied!"));
+  }
+
+  async function handleSaveCrew() {
+    if (!crewName.trim() || !userId) return;
+    setSavingCrew(true);
+    try {
+      await saveCrew(
+        crewName.trim(),
+        members.map(m => ({ userId: m.userId, handle: m.handle })),
+        userId,
+      );
+      setCrewSaved(true);
+      setShowSaveCrew(false);
+      setCrewName("");
+      toast.success("Crew saved!");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSavingCrew(false);
+    }
   }
 
   function handleShare() {
@@ -370,6 +395,73 @@ const Lobby = () => {
               {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
             </span>
           </div>
+        )}
+
+        {/* ── SAVE AS CREW ── */}
+        {crewSaved ? (
+          <p className="label-sm" style={{ textAlign: "center", color: "var(--cream)", opacity: 0.45, padding: "12px 0" }}>
+            ✓ CREW SAVED
+          </p>
+        ) : showSaveCrew ? (
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px" }}>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 10 }}>
+              SAVE {members.length} PLAYERS AS A CREW
+            </p>
+            <input
+              autoFocus
+              value={crewName}
+              onChange={e => setCrewName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSaveCrew()}
+              placeholder="CREW NAME"
+              maxLength={30}
+              className="mono"
+              style={{
+                width: "100%", background: "transparent",
+                border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.4)",
+                color: "var(--cream)", fontSize: 15, padding: "6px 0",
+                outline: "none", letterSpacing: "0.08em", textTransform: "uppercase",
+                marginBottom: 14, boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { setShowSaveCrew(false); setCrewName(""); }}
+                className="label-sm"
+                style={{
+                  flex: 1, background: "transparent",
+                  border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)",
+                  padding: "8px", cursor: "pointer",
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleSaveCrew}
+                disabled={savingCrew || !crewName.trim()}
+                className="label-sm"
+                style={{
+                  flex: 1, background: "var(--cream)",
+                  border: "1.5px solid var(--ink)", color: "var(--ink)",
+                  padding: "8px", cursor: "pointer", fontWeight: 700,
+                  opacity: (savingCrew || !crewName.trim()) ? 0.4 : 1,
+                }}
+              >
+                {savingCrew ? "SAVING…" : "SAVE CREW"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowSaveCrew(true)}
+            className="label"
+            style={{
+              border: "2px dashed rgba(245,232,223,0.35)", background: "transparent",
+              color: "var(--cream)", padding: "12px", width: "100%",
+              cursor: "pointer", opacity: 0.5,
+            }}
+          >
+            SAVE AS CREW
+          </button>
         )}
 
         {/* ── LEAVE ── */}

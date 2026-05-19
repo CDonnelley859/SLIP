@@ -5,8 +5,9 @@ import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
 import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds, expectedVenueName } from "@/lib/virtualTrack";
 import { createMegaSlip, joinMegaSlip, getMegaSlipsForUser, type MegaSlip } from "@/lib/megaSlip";
+import { getCrewsForUser, type Crew } from "@/lib/crews";
 import {
-  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc,
+  collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc, writeBatch,
 } from "firebase/firestore";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +84,8 @@ const Index = () => {
   const [activeMegas, setActiveMegas] = useState<MegaSlip[]>([]);
   const [confirmLeaveScrumId, setConfirmLeaveScrumId] = useState<string | null>(null);
   const [confirmLeaveMegaId, setConfirmLeaveMegaId] = useState<string | null>(null);
+  const [crews, setCrews] = useState<Crew[]>([]);
+  const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
 
   const isMegaMode = selectedCards.length > 1;
 
@@ -181,6 +184,8 @@ const Index = () => {
     }
 
     if (!userId) return;
+    // Load saved crews so the create form can offer auto-enrol
+    getCrewsForUser(userId).then(setCrews).catch(() => {});
     // Await members — likely already resolved since it started in parallel
     const membersSnap = await membersPromise;
     if (!membersSnap) return;
@@ -295,6 +300,7 @@ const Index = () => {
       // Reset form when selection changes
       setGroupName("");
       setCreateName(handle);
+      setSelectedCrewId(null);
       return next;
     });
   }
@@ -315,6 +321,27 @@ const Index = () => {
           userId,
           displayName,
         );
+        // Auto-enrol crew members if one is selected
+        if (selectedCrewId) {
+          const crew = crews.find(c => c.id === selectedCrewId);
+          if (crew) {
+            const megaDocSnap = await getDoc(doc(db, "megaSlips", megaSlipId));
+            const scrumIds = (megaDocSnap.data()?.scrumIds ?? []) as string[];
+            const batch = writeBatch(db);
+            crew.members.forEach(m => {
+              if (m.userId === userId) return; // host already enrolled
+              batch.set(doc(db, "megaSlipMembers", `${megaSlipId}_${m.userId}`), {
+                megaSlipId, userId: m.userId, handle: m.handle,
+              });
+              scrumIds.forEach(scrumId => {
+                batch.set(doc(db, "scrumMembers", `${scrumId}_${m.userId}`), {
+                  scrumId, userId: m.userId, handle: m.handle,
+                });
+              });
+            });
+            await batch.commit();
+          }
+        }
         navigate(`/mega/${megaSlipId}/hub`);
       } else {
         // Single track — existing scrum flow
@@ -327,6 +354,20 @@ const Index = () => {
         await setDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`), {
           scrumId, userId, handle: displayName,
         });
+        // Auto-enrol crew members if one is selected
+        if (selectedCrewId) {
+          const crew = crews.find(c => c.id === selectedCrewId);
+          if (crew) {
+            const batch = writeBatch(db);
+            crew.members.forEach(m => {
+              if (m.userId === userId) return; // host already enrolled
+              batch.set(doc(db, "scrumMembers", `${scrumId}_${m.userId}`), {
+                scrumId, userId: m.userId, handle: m.handle,
+              });
+            });
+            await batch.commit();
+          }
+        }
         navigate(`/scrum/${scrumId}/lobby`);
       }
     } catch (err: any) {
@@ -611,6 +652,35 @@ const Index = () => {
                     color: "var(--cream)", outline: "none", width: "100%",
                   }}
                 />
+                {/* Crew selector — only shown when user has saved crews */}
+                {crews.length > 0 && (
+                  <div style={{ borderBottom: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 14px" }}>
+                    <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8 }}>
+                      AUTO-ENROL A CREW
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {crews.map(crew => (
+                        <button
+                          key={crew.id}
+                          type="button"
+                          onClick={() => setSelectedCrewId(id => id === crew.id ? null : crew.id)}
+                          className="label-sm"
+                          style={{
+                            background: selectedCrewId === crew.id ? "var(--pink)" : "transparent",
+                            border: `1.5px solid ${selectedCrewId === crew.id ? "var(--ink)" : "rgba(245,232,223,0.3)"}`,
+                            color: selectedCrewId === crew.id ? "var(--ink)" : "var(--cream)",
+                            padding: "8px 10px", cursor: "pointer", textAlign: "left",
+                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                            width: "100%",
+                          }}
+                        >
+                          <span>{crew.name}</span>
+                          <span style={{ opacity: 0.6 }}>{crew.members.length} PLAYERS</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div style={{ position: "relative" }}>
                   <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)", opacity: 0.7 }}>YOUR NAME</div>
                   <input

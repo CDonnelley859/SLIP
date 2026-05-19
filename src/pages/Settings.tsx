@@ -1,15 +1,43 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { getCrewsForUser, deleteCrew, type Crew } from "@/lib/crews";
 
 const Settings = () => {
-  const { handle, setHandle } = useAuth();
+  const { handle, setHandle, userId } = useAuth();
   const navigate = useNavigate();
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(handle);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [crews, setCrews] = useState<Crew[]>([]);
+  const [loadingCrews, setLoadingCrews] = useState(true);
+  const [confirmDeleteCrewId, setConfirmDeleteCrewId] = useState<string | null>(null);
+  const [deletingCrew, setDeletingCrew] = useState(false);
+
+  useEffect(() => {
+    if (!userId) { setLoadingCrews(false); return; }
+    getCrewsForUser(userId)
+      .then(setCrews)
+      .catch(() => {})
+      .finally(() => setLoadingCrews(false));
+  }, [userId]);
+
+  async function handleDeleteCrew(crewId: string) {
+    setDeletingCrew(true);
+    try {
+      await deleteCrew(crewId);
+      setCrews(prev => prev.filter(c => c.id !== crewId));
+      setConfirmDeleteCrewId(null);
+      toast.success("Crew deleted");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setDeletingCrew(false);
+    }
+  }
 
   function startEdit() {
     setNameInput(handle);
@@ -144,7 +172,7 @@ const Settings = () => {
         </section>
 
         {/* ── HOW TO PLAY ── */}
-        <section>
+        <section style={{ marginBottom: 8 }}>
           <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
             HELP
           </div>
@@ -166,6 +194,92 @@ const Settings = () => {
             </div>
             <span className="display" style={{ fontSize: 20, color: "var(--cream)", opacity: 0.5 }}>→</span>
           </button>
+        </section>
+
+        {/* ── SAVED CREWS ── */}
+        <section>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+            SAVED CREWS
+          </div>
+          {loadingCrews ? (
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: 16, opacity: 0.4 }}>
+              <div style={{ height: 8, width: 100, background: "rgba(245,232,223,0.2)" }} />
+            </div>
+          ) : crews.length === 0 ? (
+            <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO SAVED CREWS</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+                SAVE A CREW FROM THE PEN WHILE IN AN ACTIVE GROUP
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {crews.map((crew, i) => (
+                <div
+                  key={crew.id}
+                  style={{
+                    border: "3px solid rgba(245,232,223,0.35)",
+                    borderBottom: i < crews.length - 1 ? "1.5px solid rgba(245,232,223,0.2)" : "3px solid rgba(245,232,223,0.35)",
+                  }}
+                >
+                  {confirmDeleteCrewId === crew.id ? (
+                    <div style={{ padding: "12px 14px" }}>
+                      <p className="label-sm" style={{ color: "var(--cream)", marginBottom: 10 }}>
+                        DELETE "{crew.name}"?
+                      </p>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => setConfirmDeleteCrewId(null)}
+                          className="label-sm"
+                          style={{
+                            flex: 1, background: "transparent",
+                            border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)",
+                            padding: "8px", cursor: "pointer",
+                          }}
+                        >
+                          CANCEL
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCrew(crew.id)}
+                          disabled={deletingCrew}
+                          className="label-sm"
+                          style={{
+                            flex: 1, background: "var(--pink)",
+                            border: "1.5px solid var(--ink)", color: "var(--ink)",
+                            padding: "8px", cursor: "pointer",
+                            opacity: deletingCrew ? 0.4 : 1,
+                          }}
+                        >
+                          {deletingCrew ? "DELETING…" : "YES, DELETE"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="display" style={{ fontSize: 16, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
+                          {crew.name}
+                        </div>
+                        <div className="mono" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {crew.members.map(m => m.handle).join(", ")}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDeleteCrewId(crew.id)}
+                        className="label-sm"
+                        style={{
+                          background: "transparent", border: 0, color: "var(--cream)",
+                          opacity: 0.4, cursor: "pointer", textDecoration: "underline", flexShrink: 0,
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
       </main>

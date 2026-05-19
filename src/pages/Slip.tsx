@@ -315,6 +315,40 @@ const Slip = () => {
     }
   }
 
+  function handleShareSlip() {
+    const playerLabel = isOwnSlip ? "MY SLIP" : `${currentPlayer?.handle ?? "—"}'S SLIP`;
+    const venue = card?.trackName ?? "—";
+    const group = scrum?.name ? ` · ${scrum.name}` : "";
+    const dateStr = card?.raceDate
+      ? new Date(card.raceDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()
+      : "";
+
+    const resultIcon = (s: LineStatus) => {
+      if (s === "WIN") return "🥇";
+      if (s === "PLACE") return "🥈";
+      if (s === "SHOW") return "🥉";
+      if (s === "RUNNING") return "▶";
+      if (s === "PENDING") return "⏳";
+      return "❌";
+    };
+
+    const pickLines = lines.map(l =>
+      `R${String(l.raceNumber).padStart(2, "0")} ${l.horseName} ${resultIcon(l.status)} ${l.status}`
+    ).join("\n");
+
+    const totalLine = isFullyPending ? "" : `\nTOTAL: ${myTotal} PTS${myRank ? `  |  RANK: #${myRank} OF ${playerCount}` : ""}`;
+
+    const url = `https://slip-racing.vercel.app/scrum/${id}/slip`;
+
+    const text = `${playerLabel} — ${venue}${group}${dateStr ? "\n" + dateStr : ""}\n\n${pickLines}${totalLine}`;
+
+    if (navigator.share) {
+      navigator.share({ title: "SLIP", text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text}\n\n${url}`).then(() => toast.success("Slip copied!"));
+    }
+  }
+
   async function handleRefresh() {
     if (!scrum?.cardId) return;
     setRefreshing(true);
@@ -521,6 +555,16 @@ const Slip = () => {
             style={{ opacity: refreshing ? 0.4 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
           >
             {refreshing ? "REFRESHING…" : "↻ REFRESH RESULTS"}
+          </button>
+        )}
+
+        {lines.length > 0 && (
+          <button
+            onClick={handleShareSlip}
+            className="btn-retro"
+            style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
+          >
+            ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
           </button>
         )}
 
