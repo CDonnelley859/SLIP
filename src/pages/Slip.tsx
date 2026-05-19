@@ -135,14 +135,36 @@ const Slip = () => {
     });
 
     const built: Line[] = pickData.map((pick, i) => {
+      const raceExists = raceDocs[i].exists();
+      const horseExists = horseDocs[i].exists();
       const race = raceDocs[i].data();
       const horse = horseDocs[i].data();
       const winners = race?.winners;
-      const status = getStatus(race?.status ?? "upcoming", pick.horseId, winners);
+
+      let status: LineStatus;
+      if (!raceExists) {
+        // Race doc deleted (yesterday's virtual race wiped by daily reset).
+        // Reconstruct status from the points written to the pick at settle time.
+        if (pick.settled) {
+          const pts = pick.points ?? 0;
+          if (pts === 5) status = "WIN";
+          else if (pts === 3) status = "PLACE";
+          else if (pts === 1) status = "SHOW";
+          else status = "OUT";
+        } else {
+          status = "PENDING";
+        }
+      } else {
+        status = getStatus(race?.status ?? "upcoming", pick.horseId, winners);
+      }
+
+      // Extract race number from the raceId when the race doc is gone
+      const raceNumFallback = parseInt(pick.raceId?.match(/-r(\d+)$/)?.[1] ?? "0", 10);
+
       return {
-        raceNumber: race?.raceNumber ?? 0,
+        raceNumber: race?.raceNumber ?? raceNumFallback,
         horseName: horse?.name ?? "—",
-        horseNumber: horse?.number ?? 0,
+        horseNumber: horseExists ? (horse?.number ?? 0) : 0,
         offTime: race?.offTime ?? null,
         status,
         points: pointsFor(status),

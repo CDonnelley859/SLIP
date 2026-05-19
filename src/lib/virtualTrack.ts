@@ -218,7 +218,9 @@ async function settleCardRaces(cardId: string): Promise<void> {
         if (horseId === winners.first) points = 5;
         else if (horseId === winners.second) points = 3;
         else if (horseId === winners.third) points = 1;
-        batch.update(p.ref, { points });
+        // settled:true lets the Slip page infer WIN/PLACE/SHOW/OUT
+        // from pick.points even if the race doc has since been deleted
+        batch.update(p.ref, { points, settled: true });
       });
       await batch.commit();
     }
@@ -329,6 +331,10 @@ export async function seedVirtualTrack(): Promise<void> {
     const dailyMarker = await getDoc(doc(db, "_meta", dailyResetKey));
     if (!dailyMarker.exists()) {
       await setDoc(doc(db, "_meta", dailyResetKey), { done: true });
+      // Settle ALL finished races from yesterday before wiping anything.
+      // This guarantees pick.points and pick.settled are written even if
+      // nobody opened the app after the races ran.
+      try { await settleVirtualRaces(); } catch { }
       const allVirtual = await getDocs(
         query(collection(db, "cards"), where("isVirtual", "==", true))
       );
