@@ -124,6 +124,31 @@ const STEPS: Step[] = [
   },
   {
     number: 6,
+    title: "SAVED CREWS",
+    body: (
+      <>
+        <p>Play with the same group often? Save them as a Crew so you don't have to wait for everyone to join each time.</p>
+        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            { step: "01", text: "While you're in an active group, tap SAVE AS CREW at the bottom of The Pen." },
+            { step: "02", text: "Give the crew a name. All current members are saved." },
+            { step: "03", text: "Next time you create a group, tap + USE A CREW in the form to auto-enrol them all." },
+          ].map(s => (
+            <div key={s.step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <span className="mono" style={{ fontSize: 11, color: "var(--pink)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
+              <p>{s.text}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, border: "1.5px solid rgba(245,232,223,0.25)", padding: "12px 14px" }}>
+          <p style={{ opacity: 0.65 }}>Crew members don't need to enter a join code — the group appears in their Active Groups automatically when they next open the app.</p>
+        </div>
+        <p style={{ marginTop: 12, opacity: 0.5 }}>Manage your saved crews any time from Settings.</p>
+      </>
+    ),
+  },
+  {
+    number: 7,
     title: "THE DAILY GALLOP",
     body: (
       <>
@@ -147,7 +172,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    number: 7,
+    number: 8,
     title: "YOUR SLIP",
     body: (
       <>
@@ -174,7 +199,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    number: 8,
+    number: 9,
     title: "THE SPINDLE",
     body: (
       <>
