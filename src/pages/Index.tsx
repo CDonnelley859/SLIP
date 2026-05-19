@@ -29,6 +29,8 @@ const Index = () => {
   const [now, setNow] = useState(Date.now());
   const carouselRef = useRef<HTMLDivElement>(null);
   const hasAutoScrolled = useRef(false);
+  // Always-current ref so the virtual slot check interval doesn't capture stale cards
+  const cardsForInterval = useRef<Card[]>([]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -53,15 +55,19 @@ const Index = () => {
     });
   }, [cards]);
 
-  // Auto-reload when the active virtual card slots change (check every 30s)
+  // Keep ref in sync so the interval always sees latest cards without resetting
+  useEffect(() => { cardsForInterval.current = cards; }, [cards]);
+
+  // Auto-reload when the active virtual card slots change (check every 30s).
+  // Empty deps — interval is created once and reads cards via the ref above.
   useEffect(() => {
     const check = setInterval(() => {
       const currentIds = activeVirtualCardIds();
-      const existingIds = new Set(cards.filter(c => c.isVirtual).map(c => c.id));
+      const existingIds = new Set(cardsForInterval.current.filter(c => c.isVirtual).map(c => c.id));
       if (currentIds.some(id => !existingIds.has(id))) loadData();
     }, 30_000);
     return () => clearInterval(check);
-  }, [cards]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [groupName, setGroupName] = useState("");

@@ -93,12 +93,22 @@ const Slip = () => {
   const [ready, setReady] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
+  // Always-current ref so onSnapshot/interval don't capture a stale viewUserId
+  const viewUserIdRef = useRef<string>("");
+  // Generation counter — incremented before each buildLines call so out-of-order
+  // responses from rapid player swipes are silently discarded
+  const buildGenRef = useRef(0);
+
   const currentPlayer = players[playerIdx];
   const viewUserId = currentPlayer?.userId ?? userId;
   const isOwnSlip = viewUserId === userId;
 
+  // Keep the ref in sync with the derived value
+  useEffect(() => { viewUserIdRef.current = viewUserId ?? ""; }, [viewUserId]);
+
   async function buildLines(forUserId: string) {
     if (!id) return;
+    const gen = ++buildGenRef.current;
     const [picksSnap, allPicksSnap] = await Promise.all([
       getDocs(query(collection(db, "picks"), where("scrumId", "==", id), where("userId", "==", forUserId))),
       getDocs(query(collection(db, "picks"), where("scrumId", "==", id))),
@@ -145,6 +155,8 @@ const Slip = () => {
     });
 
     const sorted = built.sort((a, b) => a.raceNumber - b.raceNumber);
+    // Discard if a newer call completed first (rapid player swipes)
+    if (gen !== buildGenRef.current) return;
     setLines(sorted);
     setReady(true);
 
@@ -214,10 +226,10 @@ const Slip = () => {
 
     const unsub = onSnapshot(
       query(collection(db, "picks"), where("scrumId", "==", id)),
-      () => { if (viewUserId) buildLines(viewUserId); }
+      () => { const uid = viewUserIdRef.current; if (uid) buildLines(uid); }
     );
     const interval = setInterval(() => {
-      if (viewUserId) buildLines(viewUserId);
+      const uid = viewUserIdRef.current; if (uid) buildLines(uid);
     }, 30000);
     return () => { unsub(); clearInterval(interval); };
   }, [id]);
