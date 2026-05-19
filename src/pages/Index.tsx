@@ -86,6 +86,7 @@ const Index = () => {
   const [confirmLeaveMegaId, setConfirmLeaveMegaId] = useState<string | null>(null);
   const [crews, setCrews] = useState<Crew[]>([]);
   const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
+  const [showCrewPicker, setShowCrewPicker] = useState(false);
 
   const isMegaMode = selectedCards.length > 1;
 
@@ -301,6 +302,7 @@ const Index = () => {
       setGroupName("");
       setCreateName(handle);
       setSelectedCrewId(null);
+      setShowCrewPicker(false);
       return next;
     });
   }
@@ -652,33 +654,58 @@ const Index = () => {
                     color: "var(--cream)", outline: "none", width: "100%",
                   }}
                 />
-                {/* Crew selector — only shown when user has saved crews */}
+                {/* Crew selector — compact toggle, only shown when user has saved crews */}
                 {crews.length > 0 && (
-                  <div style={{ borderBottom: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 14px" }}>
-                    <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8 }}>
-                      AUTO-ENROL A CREW
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {crews.map(crew => (
-                        <button
-                          key={crew.id}
-                          type="button"
-                          onClick={() => setSelectedCrewId(id => id === crew.id ? null : crew.id)}
+                  <div style={{ borderBottom: "1.5px solid rgba(245,232,223,0.3)" }}>
+                    {/* Toggle row */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCrewPicker(s => !s)}
+                      style={{
+                        width: "100%", background: "transparent", border: 0,
+                        padding: "10px 14px", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                      }}
+                    >
+                      <span className="label-sm" style={{ color: "var(--cream)", opacity: selectedCrewId ? 1 : 0.45 }}>
+                        {selectedCrewId
+                          ? `CREW: ${crews.find(c => c.id === selectedCrewId)?.name ?? "—"}`
+                          : "+ USE A CREW"}
+                      </span>
+                      {selectedCrewId && (
+                        <span
                           className="label-sm"
-                          style={{
-                            background: selectedCrewId === crew.id ? "var(--pink)" : "transparent",
-                            border: `1.5px solid ${selectedCrewId === crew.id ? "var(--ink)" : "rgba(245,232,223,0.3)"}`,
-                            color: selectedCrewId === crew.id ? "var(--ink)" : "var(--cream)",
-                            padding: "8px 10px", cursor: "pointer", textAlign: "left",
-                            display: "flex", justifyContent: "space-between", alignItems: "center",
-                            width: "100%",
-                          }}
+                          style={{ color: "var(--cream)", opacity: 0.4 }}
+                          onClick={e => { e.stopPropagation(); setSelectedCrewId(null); setShowCrewPicker(false); }}
                         >
-                          <span>{crew.name}</span>
-                          <span style={{ opacity: 0.6 }}>{crew.members.length} PLAYERS</span>
-                        </button>
-                      ))}
-                    </div>
+                          ✕
+                        </span>
+                      )}
+                    </button>
+                    {/* Expandable crew list */}
+                    {showCrewPicker && (
+                      <div style={{ padding: "0 14px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                        {crews.map(crew => (
+                          <button
+                            key={crew.id}
+                            type="button"
+                            onClick={() => { setSelectedCrewId(id => id === crew.id ? null : crew.id); setShowCrewPicker(false); }}
+                            className="label-sm"
+                            style={{
+                              background: selectedCrewId === crew.id ? "var(--pink)" : "transparent",
+                              border: `1.5px solid ${selectedCrewId === crew.id ? "var(--ink)" : "rgba(245,232,223,0.3)"}`,
+                              color: selectedCrewId === crew.id ? "var(--ink)" : "var(--cream)",
+                              padding: "8px 10px", cursor: "pointer", textAlign: "left",
+                              display: "flex", justifyContent: "space-between", alignItems: "center",
+                              width: "100%",
+                            }}
+                          >
+                            <span>{crew.name}</span>
+                            <span style={{ opacity: 0.6 }}>{crew.members.length} PLAYERS</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ position: "relative" }}>
