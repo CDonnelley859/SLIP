@@ -335,7 +335,7 @@ const Slip = () => {
 
       {/* ── PLAYER DOTS ── */}
       {players.length > 1 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", marginBottom: 4 }}>
           {players.map((p, i) => (
             <button
               key={p.userId}
@@ -344,13 +344,21 @@ const Slip = () => {
                 setSlideKey(k => k + 1);
                 setPlayerIdx(i);
               }}
+              aria-label={p.handle}
               style={{
-                width: 10, height: 10, borderRadius: "50%",
-                border: "2px solid var(--cream)",
-                background: i === playerIdx ? "var(--cream)" : "transparent",
-                cursor: "pointer",
+                /* 40×40 tap area with a small visual dot centred inside */
+                width: 40, height: 40, borderRadius: "50%",
+                background: "transparent", border: 0,
+                cursor: "pointer", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}
-            />
+            >
+              <span style={{
+                display: "block", width: 10, height: 10, borderRadius: "50%",
+                border: `2px solid ${i === playerIdx ? "var(--cream)" : "rgba(245,232,223,0.4)"}`,
+                background: i === playerIdx ? "var(--cream)" : "transparent",
+              }} />
+            </button>
           ))}
         </div>
       )}

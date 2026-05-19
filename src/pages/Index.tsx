@@ -81,6 +81,8 @@ const Index = () => {
   const [joinError, setJoinError] = useState("");
 
   const [activeMegas, setActiveMegas] = useState<MegaSlip[]>([]);
+  const [confirmLeaveScrumId, setConfirmLeaveScrumId] = useState<string | null>(null);
+  const [confirmLeaveMegaId, setConfirmLeaveMegaId] = useState<string | null>(null);
 
   const isMegaMode = selectedCards.length > 1;
 
@@ -371,20 +373,20 @@ const Index = () => {
   }
 
   async function handleLeave(scrumId: string) {
-    if (!window.confirm("Are you sure you want to leave this group?")) return;
     try {
       await deleteDoc(doc(db, "scrumMembers", `${scrumId}_${userId}`));
       setActiveSlips(prev => prev.filter(s => s.scrumId !== scrumId));
+      setConfirmLeaveScrumId(null);
     } catch (err: any) {
       toast.error(err.message);
     }
   }
 
-  async function handleLeaveMega(mega: MegaSlip) {
-    if (!window.confirm("Are you sure you want to leave this Mega Group?")) return;
+  async function handleLeaveMega(megaId: string) {
     try {
-      await deleteDoc(doc(db, "megaSlipMembers", `${mega.id}_${userId}`));
-      setActiveMegas(prev => prev.filter(m => m.id !== mega.id));
+      await deleteDoc(doc(db, "megaSlipMembers", `${megaId}_${userId}`));
+      setActiveMegas(prev => prev.filter(m => m.id !== megaId));
+      setConfirmLeaveMegaId(null);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -454,11 +456,14 @@ const Index = () => {
               <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
-            <div ref={carouselRef} style={{
-              display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory",
-              WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
-              paddingBottom: 4,
-            }}>
+            <>
+            {/* Fade overlay signals that the carousel scrolls */}
+            <div style={{ position: "relative" }}>
+              <div ref={carouselRef} style={{
+                display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory",
+                WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
+                paddingBottom: 4,
+              }}>
               {(syncing && cards.length === 0 ? [0, 1, 2] : filteredCards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
@@ -504,6 +509,20 @@ const Index = () => {
                 );
               })}
             </div>
+            {/* Right-edge fade — signals that more cards scroll into view */}
+            <div style={{
+              position: "absolute", right: 0, top: 0, bottom: 4,
+              width: 48, pointerEvents: "none",
+              background: "linear-gradient(to right, transparent, var(--green))",
+            }} />
+            </div>
+            {/* Swipe hint — only shown when there are multiple cards to scroll through */}
+            {filteredCards.length > 1 && (
+              <p className="label-sm" style={{ textAlign: "right", marginTop: 6, opacity: 0.4, color: "var(--cream)" }}>
+                SWIPE FOR MORE →
+              </p>
+            )}
+            </>
           )}
         </section>
 
@@ -708,21 +727,45 @@ const Index = () => {
                     <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 4 }}>{mega.name}</div>
                     <div className="label-sm" style={{ opacity: 0.5 }}>{mega.scrumIds.length} TRACKS</div>
                   </div>
-                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "space-between" }}>
-                    <button
-                      onClick={() => handleLeaveMega(mega)}
-                      className="label"
-                      style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-                    >
-                      LEAVE
-                    </button>
-                    <button
-                      onClick={() => navigate(`/mega/${mega.id}/hub`)}
-                      className="label"
-                      style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-                    >
-                      VIEW HUB →
-                    </button>
+                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
+                    {confirmLeaveMegaId === mega.id ? (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>LEAVE THIS GROUP?</span>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            onClick={() => setConfirmLeaveMegaId(null)}
+                            className="label-sm"
+                            style={{ background: "transparent", border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)", padding: "4px 10px", cursor: "pointer" }}
+                          >
+                            CANCEL
+                          </button>
+                          <button
+                            onClick={() => handleLeaveMega(mega.id)}
+                            className="label-sm"
+                            style={{ background: "var(--pink)", border: "1.5px solid var(--ink)", color: "var(--ink)", padding: "4px 10px", cursor: "pointer" }}
+                          >
+                            YES, LEAVE
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <button
+                          onClick={() => setConfirmLeaveMegaId(mega.id)}
+                          className="label"
+                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                        >
+                          LEAVE
+                        </button>
+                        <button
+                          onClick={() => navigate(`/mega/${mega.id}/hub`)}
+                          className="label"
+                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                        >
+                          VIEW HUB →
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -787,21 +830,45 @@ const Index = () => {
                     </div>
 
                     {/* Bottom row */}
-                    <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px", display: "flex", justifyContent: "space-between" }}>
-                      <button
-                        onClick={() => handleLeave(s.scrumId)}
-                        className="label"
-                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-                      >
-                        LEAVE
-                      </button>
-                      <button
-                        onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
-                        className="label"
-                        style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
-                      >
-                        SHOW SLIPS
-                      </button>
+                    <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
+                      {confirmLeaveScrumId === s.scrumId ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                          <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>LEAVE THIS GROUP?</span>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => setConfirmLeaveScrumId(null)}
+                              className="label-sm"
+                              style={{ background: "transparent", border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)", padding: "4px 10px", cursor: "pointer" }}
+                            >
+                              CANCEL
+                            </button>
+                            <button
+                              onClick={() => handleLeave(s.scrumId)}
+                              className="label-sm"
+                              style={{ background: "var(--pink)", border: "1.5px solid var(--ink)", color: "var(--ink)", padding: "4px 10px", cursor: "pointer" }}
+                            >
+                              YES, LEAVE
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <button
+                            onClick={() => setConfirmLeaveScrumId(s.scrumId)}
+                            className="label"
+                            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                          >
+                            LEAVE
+                          </button>
+                          <button
+                            onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                            className="label"
+                            style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--cream)", textDecoration: "underline" }}
+                          >
+                            SHOW SLIPS
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

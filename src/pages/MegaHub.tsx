@@ -69,6 +69,8 @@ const MegaHub = () => {
   // Leave
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // Remove track confirmation
+  const [confirmRemoveTrack, setConfirmRemoveTrack] = useState<string | null>(null);
 
   const isHost = mega?.hostId === userId;
 
@@ -234,10 +236,10 @@ const MegaHub = () => {
 
   async function handleRemoveTrack(scrumId: string, trackName: string) {
     if (!megaSlipId) return;
-    if (!window.confirm(`Remove ${trackName} from this Mega Slip?`)) return;
     try {
       await removeTrackFromMega(megaSlipId, scrumId);
       await loadMega();
+      setConfirmRemoveTrack(null);
       toast.success(`${trackName} removed`);
     } catch {
       toast.error("Failed to remove track");
@@ -596,19 +598,41 @@ const MegaHub = () => {
 
                 {/* Remove tracks */}
                 {tracks.map(t => (
-                  <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "4px 14px" }}>
-                    <button
-                      onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
-                      className="label"
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        width: "100%", background: "transparent", border: 0, cursor: "pointer",
-                        color: "var(--cream)", padding: "10px 0", textAlign: "left", opacity: 0.7,
-                      }}
-                    >
-                      <span>Remove — {t.trackName}</span>
-                      <span style={{ opacity: 0.5 }}>✕</span>
-                    </button>
+                  <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "6px 14px" }}>
+                    {confirmRemoveTrack === t.scrumId ? (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "4px 0" }}>
+                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>REMOVE {t.trackName}?</span>
+                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                          <button
+                            onClick={() => setConfirmRemoveTrack(null)}
+                            className="label-sm"
+                            style={{ background: "transparent", border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)", padding: "4px 10px", cursor: "pointer" }}
+                          >
+                            CANCEL
+                          </button>
+                          <button
+                            onClick={() => handleRemoveTrack(t.scrumId, t.trackName)}
+                            className="label-sm"
+                            style={{ background: "var(--pink)", border: "1.5px solid var(--ink)", color: "var(--ink)", padding: "4px 10px", cursor: "pointer" }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmRemoveTrack(t.scrumId)}
+                        className="label"
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          width: "100%", background: "transparent", border: 0, cursor: "pointer",
+                          color: "var(--cream)", padding: "4px 0", textAlign: "left", opacity: 0.7,
+                        }}
+                      >
+                        <span>Remove — {t.trackName}</span>
+                        <span style={{ opacity: 0.5 }}>✕</span>
+                      </button>
+                    )}
                   </div>
                 ))}
 

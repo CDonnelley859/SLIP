@@ -130,6 +130,9 @@
     width: 100%;
   }
   .btn-retro:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+  /* Disabled state — consistent across all buttons */
+  button:disabled { cursor: not-allowed; }
   .btn-retro-green { background: var(--retro-green); color: var(--cream); }
   .btn-retro-pink  { background: var(--retro-pink);  color: var(--cream); }
   .btn-primary     { background: var(--green);       color: var(--cream); }
