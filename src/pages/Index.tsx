@@ -422,11 +422,11 @@ const Index = () => {
             SLIP
           </h1>
           <Link
-            to="/stats"
+            to="/settings"
             className="label"
             style={{ color: "var(--cream)", textDecoration: "underline" }}
           >
-            THE FORM
+            SETTINGS
           </Link>
         </div>
       </header>

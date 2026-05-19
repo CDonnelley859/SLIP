@@ -17,6 +17,8 @@ import JoinViaLink from "./pages/JoinViaLink";
 import HostResults from "./pages/HostResults";
 import MegaHub from "./pages/MegaHub";
 import JoinMegaViaLink from "./pages/JoinMegaViaLink";
+import Settings from "./pages/Settings";
+import HowToPlay from "./pages/HowToPlay";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +80,8 @@ const AppRoutes = () => {
       <Route path="/join/:code" element={<JoinViaLink />} />
       <Route path="/mega/:id/hub" element={<MegaHub />} />
       <Route path="/join-mega/:code" element={<JoinMegaViaLink />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/how-to-play" element={<HowToPlay />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

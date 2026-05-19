@@ -89,7 +89,7 @@ const Stats = () => {
           height: 64, padding: "0 18px", position: "sticky", top: 0, zIndex: 50,
         }}
       >
-        <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← PADDOCK</Link>
+        <Link to="/settings" className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← SETTINGS</Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>THE FORM</span>
         <div style={{ width: 80 }} />
       </header>
