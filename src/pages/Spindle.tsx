@@ -809,24 +809,7 @@ const Spindle = () => {
       </header>
 
       <main style={{ paddingTop: 24, paddingBottom: 40 }}>
-        {loading ? (
-          // When arriving from a send, skip the skeleton so the slide-in plays
-          // cleanly. Otherwise show the normal pulsing skeleton.
-          newScrumId ? (
-            <div style={{ minHeight: 200 }} />
-          ) : (
-            <div style={{ padding: "0 18px" }}>
-              <div className="retro-ticket animate-pulse" style={{ maxWidth: 420, margin: "0 auto", padding: "24px 20px" }}>
-                <div style={{ height: 24, width: 160, background: "var(--cream-2)", margin: "0 auto 10px" }} />
-                <div style={{ height: 14, width: 120, background: "var(--cream-2)", margin: "0 auto 20px" }} />
-                <div style={{ height: 40, width: 80, background: "var(--cream-2)", marginBottom: 16 }} />
-                {[1,2,3,4].map(i => (
-                  <div key={i} style={{ height: 60, background: "var(--cream-2)", marginBottom: 8 }} />
-                ))}
-              </div>
-            </div>
-          )
-        ) : visibleItems.length === 0 ? (
+        {loading ? null : visibleItems.length === 0 ? (
           <div
             style={{
               margin: "0 18px", border: "3px solid rgba(245,232,223,0.25)",
@@ -842,6 +825,23 @@ const Spindle = () => {
           </div>
         ) : (
           <>
+            {/* dot indicators */}
+            {visibleItems.length > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12 }}>
+                {visibleItems.map((item, i) => (
+                  <div
+                    key={itemKey(item)}
+                    style={{
+                      width: item.kind === "mega-summary" ? 12 : 8,
+                      height: 8, borderRadius: item.kind === "mega-summary" ? 4 : "50%",
+                      border: "2px solid var(--cream)",
+                      background: i === visibleIdx ? "var(--cream)" : "transparent",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
             <div
               ref={carouselRef}
               className="flex overflow-x-auto snap-x snap-mandatory"
@@ -880,22 +880,6 @@ const Spindle = () => {
               })}
             </div>
 
-            {/* dot indicators */}
-            {visibleItems.length > 1 && (
-              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 8 }}>
-                {visibleItems.map((item, i) => (
-                  <div
-                    key={itemKey(item)}
-                    style={{
-                      width: item.kind === "mega-summary" ? 12 : 8,
-                      height: 8, borderRadius: item.kind === "mega-summary" ? 4 : "50%",
-                      border: "2px solid var(--cream)",
-                      background: i === visibleIdx ? "var(--cream)" : "transparent",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
           </>
         )}
       </main>

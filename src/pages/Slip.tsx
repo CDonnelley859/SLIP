@@ -662,41 +662,56 @@ const Slip = () => {
         </motion.p>
       )}
 
+      {/* ── STICKY SEND FOOTER — visible without scrolling when ready to send ── */}
+      {readyToSend && (
+        <motion.div
+          initial={slideKey === 0 ? { opacity: 0 } : false}
+          animate={slideKey === 0 ? { opacity: 1 } : false}
+          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
+          style={{
+            position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+            background: "var(--green)", borderTop: "3px solid var(--pink)",
+            padding: "14px 18px 20px",
+            display: "flex", flexDirection: "column", gap: 8,
+          }}
+        >
+          <button
+            onClick={handleSendToSpindle}
+            disabled={sending}
+            className="btn-retro"
+            style={{
+              background: "var(--pink)", color: "var(--ink)",
+              border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
+              fontSize: 20, letterSpacing: "0.06em",
+              opacity: sending ? 0.5 : 1,
+            }}
+          >
+            {sending ? "SENDING…" : "SEND TO SPINDLE →"}
+          </button>
+          <Link
+            to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
+            className="label"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "var(--cream)", textDecoration: "underline", padding: "4px",
+            }}
+          >
+            {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
+          </Link>
+        </motion.div>
+      )}
+
       {/* action buttons — hidden until print animation completes on first load */}
       <motion.div
         initial={slideKey === 0 ? { opacity: 0 } : false}
         animate={slideKey === 0 ? { opacity: 1 } : false}
         transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
-        style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}
+        style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10,
+          // Extra bottom padding so the sticky footer doesn't overlap the ticket
+          paddingBottom: readyToSend ? 120 : 0,
+        }}
       >
-        {readyToSend ? (
-          /* ── SEND TO SPINDLE ── */
-          <>
-            <button
-              onClick={handleSendToSpindle}
-              disabled={sending}
-              className="btn-retro"
-              style={{
-                background: "var(--pink)", color: "var(--ink)",
-                border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
-                fontSize: 20, letterSpacing: "0.06em",
-                opacity: sending ? 0.5 : 1,
-              }}
-            >
-              {sending ? "SENDING…" : "SEND TO SPINDLE →"}
-            </button>
-            <Link
-              to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
-              className="label"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "var(--cream)", textDecoration: "underline", padding: "12px",
-              }}
-            >
-              {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
-            </Link>
-          </>
-        ) : (
+        {readyToSend ? null : (
           /* ── NORMAL BUTTONS ── */
           <>
             {isOwnSlip && !allSettled && (
@@ -738,6 +753,20 @@ const Slip = () => {
               <div className="label-sm" style={{ textAlign: "center", opacity: 0.5, color: "var(--cream)" }}>
                 SLIP IS ON THE SPINDLE
               </div>
+            )}
+
+            {/* Change picks — only show when races are still open */}
+            {isOwnSlip && !allSettled && (
+              <Link
+                to={`/scrum/${id}/gallop`}
+                className="label"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "var(--cream)", textDecoration: "underline", padding: "8px",
+                }}
+              >
+                ✏ CHANGE PICKS
+              </Link>
             )}
 
             <Link

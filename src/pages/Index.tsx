@@ -231,7 +231,18 @@ const Index = () => {
 
         const total = racesSnap.size;
         const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        const allSettled = settled === total && total > 0;
+        let allSettled = settled === total && total > 0;
+
+        // Detect reseeded virtual cards: the card has been wiped and refilled for a new day,
+        // so all races show as "upcoming" again — but the user's picks already have scored
+        // points from yesterday. Picks with non-null points = those races already ran.
+        if (!allSettled && settled === 0 && total > 0) {
+          const hasSettledPicks = picksSnap.docs.some(p => {
+            const pts = p.data().points;
+            return pts !== null && pts !== undefined;
+          });
+          if (hasSettledPicks) allSettled = true; // treat as done
+        }
 
         if (allSettled) {
           // All races done — only hide if this user has already sent to the spindle
@@ -927,9 +938,9 @@ const Index = () => {
                       background: s.allSettled ? "rgba(255,180,180,0.06)" : "transparent",
                     }}
                   >
-                    {/* Main content */}
+                    {/* Main content — go to lobby while racing, slip when finished */}
                     <div
-                      onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                      onClick={() => navigate(s.allSettled ? `/scrum/${s.scrumId}/slip` : `/scrum/${s.scrumId}/lobby`)}
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
                       {s.allSettled && (
