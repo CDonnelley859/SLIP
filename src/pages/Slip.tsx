@@ -583,8 +583,13 @@ const Slip = () => {
         </p>
       )}
 
-      {/* action buttons */}
-      <div style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* action buttons — hidden until print animation completes on first load */}
+      <motion.div
+        initial={slideKey === 0 ? { opacity: 0 } : false}
+        animate={slideKey === 0 ? { opacity: 1 } : false}
+        transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+        style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}
+      >
         {isOwnSlip && (
           <button
             onClick={handleRefresh}
@@ -630,7 +635,7 @@ const Slip = () => {
         >
           {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
         </Link>
-      </div>
+      </motion.div>
     </div>
   );
 };
