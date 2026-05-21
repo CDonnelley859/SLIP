@@ -384,10 +384,13 @@ const Slip = () => {
       style={{ background: "var(--green)", padding: "0 0 80px", touchAction: "pan-y" }}
     >
       {/* ── PAGE HEADER ── */}
-      <div
+      <motion.div
+        initial={slideKey === 0 ? { opacity: 0 } : false}
+        animate={slideKey === 0 ? { opacity: 1 } : false}
+        transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 18px",
+          padding: "14px 18px", opacity: slideKey === 0 ? 0 : 1,
         }}
       >
         <Link
@@ -399,11 +402,16 @@ const Slip = () => {
         </Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
-      </div>
+      </motion.div>
 
       {/* ── PLAYER DOTS ── */}
       {players.length > 1 && (
-        <div style={{ display: "flex", marginBottom: 4 }}>
+        <motion.div
+          initial={slideKey === 0 ? { opacity: 0 } : false}
+          animate={slideKey === 0 ? { opacity: 1 } : false}
+          transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+          style={{ display: "flex", marginBottom: 4, opacity: slideKey === 0 ? 0 : 1 }}
+        >
           {players.map((p, i) => (
             <button
               key={p.userId}
@@ -428,7 +436,7 @@ const Slip = () => {
               }} />
             </button>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* ── TICKET ── */}
