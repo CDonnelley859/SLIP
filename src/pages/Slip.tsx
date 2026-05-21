@@ -452,8 +452,11 @@ const Slip = () => {
       >
         {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
         <motion.div
-          initial={slideKey === 0 ? { y: printY[0] } : false}
-          animate={slideKey === 0 ? { y: printY } : false}
+          initial={slideKey === 0 ? { y: printY[0], opacity: 0 } : false}
+          animate={slideKey === 0 ? {
+            y:       printY,
+            opacity: [0, 1, 1, 1, 1, 1],
+          } : false}
           transition={slideKey === 0 ? {
             delay:    1.0,
             duration: 2.4,
