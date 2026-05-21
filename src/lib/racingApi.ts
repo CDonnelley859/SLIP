@@ -4,9 +4,15 @@ import {
 } from "firebase/firestore";
 
 async function apiFetch(path: string) {
-  const res = await fetch(`/api${path}`);
-  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`/api${path}`, { signal: controller.signal });
+    if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Strip any country/surface suffix: "Wolverhampton (AW)" → "wolverhampton"
