@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncRunners } from "@/lib/racingApi";
+import { seedVirtualTrack } from "@/lib/virtualTrack";
 import {
   doc, getDoc, getDocs, collection, query, where, setDoc, writeBatch,
 } from "firebase/firestore";
@@ -29,6 +30,7 @@ const Gallop = () => {
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [currentIdx, setCurrentIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   // Live clock so isLocked updates in real time as races start
@@ -40,17 +42,24 @@ const Gallop = () => {
   useEffect(() => {
     if (!id) return;
     (async () => {
+      try {
       const scrumDoc = await getDoc(doc(db, "scrums", id));
-      if (!scrumDoc.exists()) return;
+      if (!scrumDoc.exists()) { setLoadError("Group not found."); return; }
       const scrum = scrumDoc.data();
       setMegaSlipId(scrum.megaSlipId ?? null);
 
-      const [cardDoc, racesSnap] = await Promise.all([
+      let [cardDoc, racesSnap] = await Promise.all([
         getDoc(doc(db, "cards", scrum.cardId)),
         getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
       ]);
       setCard(cardDoc.data());
       setShowDetails(scrum.showDetails ?? false);
+
+      // If this is a virtual card and races are missing, seed now then re-fetch
+      if (cardDoc.data()?.isVirtual && racesSnap.empty) {
+        try { await seedVirtualTrack(); } catch { }
+        racesSnap = await getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId)));
+      }
 
       async function loadRaces(): Promise<Race[]> {
         const horseSnaps = await Promise.all(
@@ -121,6 +130,9 @@ const Gallop = () => {
       }
 
       setPicks(map);
+      } catch (err: any) {
+        setLoadError(err?.message ?? "Something went wrong loading the card.");
+      }
     })();
   }, [id]);
 
@@ -219,8 +231,21 @@ const Gallop = () => {
 
   if (!currentRace) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
-        <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading card…</p>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "var(--green)" }}>
+        {loadError ? (
+          <>
+            <p className="label" style={{ color: "var(--cream)", opacity: 0.8 }}>{loadError}</p>
+            <button
+              className="label"
+              onClick={() => navigate(-1)}
+              style={{ color: "var(--cream)", opacity: 0.5, background: "transparent", border: 0, cursor: "pointer" }}
+            >
+              ← Go back
+            </button>
+          </>
+        ) : (
+          <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading card…</p>
+        )}
       </div>
     );
   }
