@@ -55,10 +55,17 @@ const Gallop = () => {
       setCard(cardDoc.data());
       setShowDetails(scrum.showDetails ?? false);
 
-      // If this is a virtual card and races are missing, seed now then re-fetch
-      if (cardDoc.data()?.isVirtual && racesSnap.empty) {
+      // Detect virtual cards by ID prefix — don't rely on the card doc existing yet
+      const isVirtual = scrum.cardId?.startsWith("blotto-park-") || cardDoc.data()?.isVirtual;
+      if (isVirtual && (!cardDoc.exists() || racesSnap.empty)) {
         try { await seedVirtualTrack(); } catch { }
-        racesSnap = await getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId)));
+        let [freshCard, freshRaces] = await Promise.all([
+          getDoc(doc(db, "cards", scrum.cardId)),
+          getDocs(query(collection(db, "races"), where("cardId", "==", scrum.cardId))),
+        ]);
+        cardDoc = freshCard;
+        racesSnap = freshRaces;
+        setCard(cardDoc.data());
       }
 
       async function loadRaces(): Promise<Race[]> {
