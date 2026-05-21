@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
@@ -133,6 +134,9 @@ const TicketNotches = () => (
 
 const Spindle = () => {
   const { userId } = useAuth();
+  const location = useLocation();
+  // scrumId of the slip just sent — used to animate it in on arrival
+  const newScrumId: string | undefined = (location.state as any)?.newScrumId;
   const [items, setItems] = useState<CarouselItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [flipped, setFlipped] = useState<Set<string>>(new Set());
@@ -239,6 +243,9 @@ const Spindle = () => {
         const cardExists = cardDocReal?.exists() === true;
         const isPreviousDay = cardData?.raceDate && cardData.raceDate < today;
 
+        // Has this user explicitly sent this slip to the spindle?
+        const spindleSent = scrum.spindleSent?.[userId ?? ""] === true;
+
         if (!cardExists) {
           // Card was deleted (e.g. virtual track wiped by a migration reset).
           // Treat as complete only if all of the user's picks have settled points stored.
@@ -256,6 +263,9 @@ const Spindle = () => {
           const total = racesSnap.size;
           const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
           if (total === 0 || settled < total) return null;
+          // Today's slip: only show if the user has sent it to the spindle
+          // (previous-day slips are grandfathered — always shown)
+          if (!spindleSent) return null;
         }
 
         const pickData = myPicksSnap.docs.map(p => p.data());
@@ -438,6 +448,21 @@ const Spindle = () => {
       setLoading(false);
     })();
   }, [userId]);
+
+  // After items load, scroll to the newly-sent slip (if we arrived from a send action)
+  useEffect(() => {
+    if (!newScrumId || !carouselRef.current || items.length === 0) return;
+    const idx = visibleItems.findIndex(item =>
+      (item.kind === "single" || item.kind === "mega-track") && item.data.scrumId === newScrumId
+    );
+    if (idx === -1) return;
+    requestAnimationFrame(() => {
+      const el = carouselRef.current;
+      if (!el) return;
+      el.scrollTo({ left: idx * el.clientWidth, behavior: "instant" as ScrollBehavior });
+      setVisibleIdx(idx);
+    });
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const labelStyle: React.CSSProperties = {
     fontSize: 9, letterSpacing: "0.18em",
@@ -785,16 +810,22 @@ const Spindle = () => {
 
       <main style={{ paddingTop: 24, paddingBottom: 40 }}>
         {loading ? (
-          <div style={{ padding: "0 18px" }}>
-            <div className="retro-ticket animate-pulse" style={{ maxWidth: 420, margin: "0 auto", padding: "24px 20px" }}>
-              <div style={{ height: 24, width: 160, background: "var(--cream-2)", margin: "0 auto 10px" }} />
-              <div style={{ height: 14, width: 120, background: "var(--cream-2)", margin: "0 auto 20px" }} />
-              <div style={{ height: 40, width: 80, background: "var(--cream-2)", marginBottom: 16 }} />
-              {[1,2,3,4].map(i => (
-                <div key={i} style={{ height: 60, background: "var(--cream-2)", marginBottom: 8 }} />
-              ))}
+          // When arriving from a send, skip the skeleton so the slide-in plays
+          // cleanly. Otherwise show the normal pulsing skeleton.
+          newScrumId ? (
+            <div style={{ minHeight: 200 }} />
+          ) : (
+            <div style={{ padding: "0 18px" }}>
+              <div className="retro-ticket animate-pulse" style={{ maxWidth: 420, margin: "0 auto", padding: "24px 20px" }}>
+                <div style={{ height: 24, width: 160, background: "var(--cream-2)", margin: "0 auto 10px" }} />
+                <div style={{ height: 14, width: 120, background: "var(--cream-2)", margin: "0 auto 20px" }} />
+                <div style={{ height: 40, width: 80, background: "var(--cream-2)", marginBottom: 16 }} />
+                {[1,2,3,4].map(i => (
+                  <div key={i} style={{ height: 60, background: "var(--cream-2)", marginBottom: 8 }} />
+                ))}
+              </div>
             </div>
-          </div>
+          )
         ) : visibleItems.length === 0 ? (
           <div
             style={{
@@ -827,14 +858,23 @@ const Spindle = () => {
                     className="flex-shrink-0 snap-center"
                     style={{ width: "100vw", display: "flex", justifyContent: "center", padding: "0 18px" }}
                   >
-                    <div style={{ position: "relative", width: "100%", maxWidth: 420 }}>
+                    <motion.div
+                      style={{ position: "relative", width: "100%", maxWidth: 420 }}
+                      initial={
+                        newScrumId && (item.kind === "single" || item.kind === "mega-track") && item.data.scrumId === newScrumId
+                          ? { x: -(window.innerWidth + 100), opacity: 0 }
+                          : false
+                      }
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 28, delay: 0.05 }}
+                    >
                       {item.kind === "mega-summary"
                         ? renderMegaSummaryCard(item.data, isFlipped, expandedMegas.has(item.data.megaSlipId))
                         : item.kind === "mega-track"
                           ? renderSlipCard(item.data, isFlipped, `PART OF ${item.groupName}`)
                           : renderSlipCard(item.data, isFlipped)
                       }
-                    </div>
+                    </motion.div>
                   </div>
                 );
               })}

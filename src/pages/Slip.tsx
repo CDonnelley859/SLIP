@@ -7,7 +7,7 @@ import { syncResults } from "@/lib/racingApi";
 import { settleVirtualRaces } from "@/lib/virtualTrack";
 import { registerPush, unregisterPush, isPushRegistered } from "@/lib/notifications";
 import {
-  doc, getDoc, getDocs, collection, query, where, onSnapshot,
+  doc, getDoc, getDocs, collection, query, where, onSnapshot, updateDoc,
 } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -92,6 +92,7 @@ const Slip = () => {
   const [slideDir, setSlideDir] = useState<"forward" | "back">("forward");
   const [slideKey, setSlideKey] = useState(0);
   const [ready, setReady] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   // Always-current ref so onSnapshot/interval don't capture a stale viewUserId
@@ -149,6 +150,7 @@ const Slip = () => {
       };
     }
   }, []);
+
 
   async function buildLines(forUserId: string) {
     if (!id) return;
@@ -393,6 +395,27 @@ const Slip = () => {
     }
   }
 
+  // Spindle send — computed from lines and scrum state
+  const allSettled = lines.length > 0 && lines.every(l => l.status !== "PENDING" && l.status !== "RUNNING");
+  const alreadySent = scrum?.spindleSent?.[userId ?? ""] === true;
+  const readyToSend = isOwnSlip && allSettled && !alreadySent;
+
+  async function handleSendToSpindle() {
+    if (!id || !userId || sending) return;
+    setSending(true);
+    // Animation plays — Firestore write + navigate happens in onSendAnimComplete
+  }
+
+  async function onSendAnimComplete() {
+    if (!sending) return;
+    try {
+      await updateDoc(doc(db, "scrums", id!), {
+        [`spindleSent.${userId}`]: true,
+      });
+    } catch { }
+    navigate("/spindle", { state: { newScrumId: id } });
+  }
+
   async function handleRefresh() {
     if (!scrum?.cardId) return;
     setRefreshing(true);
@@ -491,6 +514,14 @@ const Slip = () => {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
+        {/* Send-to-spindle animation — slides the whole ticket off to the right */}
+        <motion.div
+          initial={{ x: 0, opacity: 1 }}
+          animate={sending ? { x: window.innerWidth + 120, opacity: 0 } : { x: 0, opacity: 1 }}
+          transition={sending ? { duration: 0.42, ease: [0.4, 0, 1, 1] } : { duration: 0 }}
+          onAnimationComplete={() => { if (sending) onSendAnimComplete(); }}
+        >
+
         {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
         <motion.div
           initial={slideKey === 0 ? { y: printAnim.yKeys[0], opacity: 0 } : false}
@@ -613,6 +644,7 @@ const Slip = () => {
           </div>
         </div>
         </motion.div>{/* /print slide-in */}
+        </motion.div>{/* /send animation wrapper */}
       </motion.div>
       )}
       </AnimatePresence>
@@ -637,51 +669,89 @@ const Slip = () => {
         transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}
       >
-        {isOwnSlip && (
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="btn-retro"
-            style={{ opacity: refreshing ? 0.4 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
-          >
-            {refreshing ? "REFRESHING…" : "↻ REFRESH RESULTS"}
-          </button>
-        )}
+        {readyToSend ? (
+          /* ── SEND TO SPINDLE ── */
+          <>
+            <button
+              onClick={handleSendToSpindle}
+              disabled={sending}
+              className="btn-retro"
+              style={{
+                background: "var(--pink)", color: "var(--ink)",
+                border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
+                fontSize: 20, letterSpacing: "0.06em",
+                opacity: sending ? 0.5 : 1,
+              }}
+            >
+              {sending ? "SENDING…" : "SEND TO SPINDLE →"}
+            </button>
+            <Link
+              to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
+              className="label"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--cream)", textDecoration: "underline", padding: "12px",
+              }}
+            >
+              {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
+            </Link>
+          </>
+        ) : (
+          /* ── NORMAL BUTTONS ── */
+          <>
+            {isOwnSlip && !allSettled && (
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="btn-retro"
+                style={{ opacity: refreshing ? 0.4 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
+              >
+                {refreshing ? "REFRESHING…" : "↻ REFRESH RESULTS"}
+              </button>
+            )}
 
-        {lines.length > 0 && (
-          <button
-            onClick={handleShareSlip}
-            className="btn-retro"
-            style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
-          >
-            ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
-          </button>
-        )}
+            {lines.length > 0 && (
+              <button
+                onClick={handleShareSlip}
+                className="btn-retro"
+                style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
+              >
+                ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
+              </button>
+            )}
 
-        {isOwnSlip && "Notification" in window && (
-          <button
-            onClick={handleNotifToggle}
-            disabled={notifLoading}
-            className="btn-retro"
-            style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink)" : "var(--green)", color: notifEnabled ? "var(--ink)" : "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
-          >
-            <span>{notifEnabled ? "🔔" : "🔕"}</span>
-            <span>
-              {notifLoading ? "UPDATING…" : notifEnabled ? "NOTIFICATIONS ON — MUTE" : "GET RACE NOTIFICATIONS"}
-            </span>
-          </button>
-        )}
+            {isOwnSlip && !allSettled && "Notification" in window && (
+              <button
+                onClick={handleNotifToggle}
+                disabled={notifLoading}
+                className="btn-retro"
+                style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink)" : "var(--green)", color: notifEnabled ? "var(--ink)" : "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
+              >
+                <span>{notifEnabled ? "🔔" : "🔕"}</span>
+                <span>
+                  {notifLoading ? "UPDATING…" : notifEnabled ? "NOTIFICATIONS ON — MUTE" : "GET RACE NOTIFICATIONS"}
+                </span>
+              </button>
+            )}
 
-        <Link
-          to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
-          className="label"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--cream)", textDecoration: "underline", padding: "12px",
-          }}
-        >
-          {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
-        </Link>
+            {alreadySent && (
+              <div className="label-sm" style={{ textAlign: "center", opacity: 0.5, color: "var(--cream)" }}>
+                SLIP IS ON THE SPINDLE
+              </div>
+            )}
+
+            <Link
+              to={scrum?.megaSlipId ? `/mega/${scrum.megaSlipId}/hub` : `/scrum/${id}/lobby`}
+              className="label"
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--cream)", textDecoration: "underline", padding: "12px",
+              }}
+            >
+              {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
+            </Link>
+          </>
+        )}
       </motion.div>
     </div>
   );

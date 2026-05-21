@@ -17,7 +17,7 @@ function formatWeight(lbs: number): string {
   const lb = lbs % 14;
   return `${st}-${lb}`;
 }
-type Race = { id: string; raceNumber: number; name: string | null; offTime: string; horses: Horse[] };
+type Race = { id: string; raceNumber: number; name: string | null; offTime: string; status: string; horses: Horse[] };
 
 const Gallop = () => {
   const { id } = useParams();
@@ -92,6 +92,7 @@ const Gallop = () => {
             raceNumber: r.raceNumber,
             name: r.name ?? null,
             offTime: r.offTime,
+            status: r.status ?? "upcoming",
             horses,
           };
         });
@@ -116,10 +117,14 @@ const Gallop = () => {
       const map: Record<string, string> = {};
       picksSnap.docs.forEach(p => { map[p.data().raceId] = p.data().horseId; });
 
-      // Auto-pick any locked races that have no pick yet
+      // Auto-pick races that have started but not yet finished (status !== "settled").
+      // A settled race is already done — assigning a random pick after the fact isn't fair.
       const nowTs2 = Date.now();
       const missedRaces = loadedRaces.filter(
-        r => new Date(r.offTime).getTime() <= nowTs2 && !map[r.id] && r.horses.length > 0
+        r => new Date(r.offTime).getTime() <= nowTs2
+          && r.status !== "settled"
+          && !map[r.id]
+          && r.horses.length > 0
       );
       if (missedRaces.length > 0) {
         const autoBatch = writeBatch(db);

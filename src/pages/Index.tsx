@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 type Card = { id: string; trackName: string; tagline?: string; raceDate: string; postTime: string; raceCount: number; isVirtual?: boolean };
-type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null };
+type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null; allSettled: boolean };
 
 const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
@@ -231,7 +231,14 @@ const Index = () => {
 
         const total = racesSnap.size;
         const settled = racesSnap.docs.filter(r => r.data().status === "settled").length;
-        if (settled === total && total > 0) return null;
+        const allSettled = settled === total && total > 0;
+
+        if (allSettled) {
+          // All races done — only hide if this user has already sent to the spindle
+          const spindleSent = scrum.spindleSent?.[userId ?? ""] === true;
+          if (spindleSent) return null;
+          // Not yet sent — keep in active groups as "ready to send"
+        }
 
         const nowTs = Date.now();
         const nextRace = racesSnap.docs
@@ -248,6 +255,7 @@ const Index = () => {
           total,
           settled,
           nextRaceTime: nextRace,
+          allSettled,
         };
       })
     );
@@ -911,28 +919,38 @@ const Index = () => {
                     key={s.scrumId}
                     className="animate-fade-in"
                     style={{
-                      border: "3px solid var(--cream)",
-                      borderBottom: i < activeSlips.length - 1 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
+                      border: s.allSettled ? "3px solid var(--pink)" : "3px solid var(--cream)",
+                      borderBottom: i < activeSlips.length - 1
+                        ? s.allSettled ? "1.5px solid var(--pink)" : "1.5px solid rgba(245,232,223,0.4)"
+                        : s.allSettled ? "3px solid var(--pink)" : "3px solid var(--cream)",
                       color: "var(--cream)",
+                      background: s.allSettled ? "rgba(255,180,180,0.06)" : "transparent",
                     }}
                   >
                     {/* Main content */}
                     <div
-                      onClick={() => navigate(`/scrum/${s.scrumId}/lobby`)}
+                      onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
+                      {s.allSettled && (
+                        <div className="label-sm" style={{ color: "var(--pink)", marginBottom: 6, letterSpacing: "0.16em" }}>
+                          RACE FINISHED · READY TO SEND
+                        </div>
+                      )}
                       <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>VENUE</div>
                       <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 10 }}>{s.trackName}</div>
                       <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>GROUP</div>
-                      <div className="display" style={{ fontSize: 18, lineHeight: 1, marginBottom: 10 }}>{s.scrumName}</div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                        <span className="label-sm" style={{ opacity: 0.6 }}>NEXT RACE</span>
-                        <span className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{nextRaceDisplay}</span>
-                      </div>
+                      <div className="display" style={{ fontSize: 18, lineHeight: 1, marginBottom: s.allSettled ? 0 : 10 }}>{s.scrumName}</div>
+                      {!s.allSettled && (
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span className="label-sm" style={{ opacity: 0.6 }}>NEXT RACE</span>
+                          <span className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{nextRaceDisplay}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Bottom row */}
-                    <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
+                    <div style={{ borderTop: s.allSettled ? "1.5px solid rgba(255,180,180,0.3)" : "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
                       {confirmLeaveScrumId === s.scrumId ? (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                           <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>LEAVE THIS GROUP?</span>
@@ -953,6 +971,14 @@ const Index = () => {
                             </button>
                           </div>
                         </div>
+                      ) : s.allSettled ? (
+                        <button
+                          onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
+                          className="label"
+                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--pink)", textDecoration: "underline", width: "100%", textAlign: "center" }}
+                        >
+                          SEND TO SPINDLE →
+                        </button>
                       ) : (
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <button
