@@ -387,7 +387,7 @@ const Slip = () => {
       <motion.div
         initial={slideKey === 0 ? { opacity: 0 } : false}
         animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+        transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "14px 18px", opacity: slideKey === 0 ? 0 : 1,
@@ -409,7 +409,7 @@ const Slip = () => {
         <motion.div
           initial={slideKey === 0 ? { opacity: 0 } : false}
           animate={slideKey === 0 ? { opacity: 1 } : false}
-          transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+          transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
           style={{ display: "flex", marginBottom: 4, opacity: slideKey === 0 ? 0 : 1 }}
         >
           {players.map((p, i) => (
@@ -466,7 +466,7 @@ const Slip = () => {
             opacity: [0, 1, 1, 1, 1, 1],
           } : false}
           transition={slideKey === 0 ? {
-            delay:    1.0,
+            delay:    0.4,
             duration: 2.4,
             times:    [0, 0.22, 0.40, 0.64, 0.80, 1],
             ease:     "linear",
@@ -590,7 +590,7 @@ const Slip = () => {
           className="label-sm"
           initial={slideKey === 0 ? { opacity: 0 } : false}
           animate={slideKey === 0 ? { opacity: 0.4 } : false}
-          transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+          transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
           style={{ marginTop: 12, opacity: slideKey === 0 ? 0 : 0.4, color: "var(--cream)" }}
         >
           ← SWIPE TO SEE OTHER SLIPS →
@@ -601,7 +601,7 @@ const Slip = () => {
       <motion.div
         initial={slideKey === 0 ? { opacity: 0 } : false}
         animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+        transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}
       >
         {isOwnSlip && (
