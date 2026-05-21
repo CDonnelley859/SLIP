@@ -578,9 +578,15 @@ const Slip = () => {
 
       {/* swipe hint */}
       {players.length > 1 && (
-        <p className="label-sm" style={{ marginTop: 12, opacity: 0.4, color: "var(--cream)" }}>
+        <motion.p
+          className="label-sm"
+          initial={slideKey === 0 ? { opacity: 0 } : false}
+          animate={slideKey === 0 ? { opacity: 0.4 } : false}
+          transition={slideKey === 0 ? { delay: 3.4, duration: 0.3 } : undefined}
+          style={{ marginTop: 12, opacity: slideKey === 0 ? 0 : 0.4, color: "var(--cream)" }}
+        >
           ← SWIPE TO SEE OTHER SLIPS →
-        </p>
+        </motion.p>
       )}
 
       {/* action buttons — hidden until print animation completes on first load */}
