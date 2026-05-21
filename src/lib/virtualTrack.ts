@@ -251,8 +251,12 @@ async function seedSlot(slotNum: number): Promise<void> {
   const cardDoc = await getDoc(cardRef);
 
   if (cardDoc.exists()) {
-    // Already seeded for today — nothing to do
-    if (cardDoc.data().raceDate === today) return;
+    if (cardDoc.data().raceDate === today) {
+      // Card exists for today — only skip if race docs also exist
+      const race1 = await getDoc(doc(db, "races", `${cardId}-r1`));
+      if (race1.exists()) return;
+      // Card exists but races are missing — fall through and write them
+    }
     // Stale card from a previous day — wipe it and reseed fresh
     const staleBatch = writeBatch(db);
     staleBatch.delete(cardRef);
