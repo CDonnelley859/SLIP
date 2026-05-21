@@ -107,14 +107,47 @@ const Slip = () => {
   // Keep the ref in sync with the derived value
   useEffect(() => { viewUserIdRef.current = viewUserId ?? ""; }, [viewUserId]);
 
-  // Print animation y-keyframes — computed from screen height so the ticket
-  // always starts fully off the top of the screen regardless of device size.
-  const printY = useMemo(() => {
-    const vh = window.innerHeight;
-    const start = -(vh + 200);               // 200px above top of screen
-    const mid1  = -Math.round(vh * 0.72);    // bottom ~28% of ticket visible
-    const mid2  = -Math.round(vh * 0.30);    // most of ticket visible
-    return [start, mid1, mid1, mid2, mid2, 0];
+  // Print animation — randomly picks one of three styles each load.
+  const printAnim = useMemo(() => {
+    const vh    = window.innerHeight;
+    const start = -(vh + 200);
+    const m1    = -Math.round(vh * 0.72);
+    const m2    = -Math.round(vh * 0.30);
+    const m15   = -Math.round(vh * 0.51); // midpoint, used by 3-stop style
+    const DELAY = 0.4;
+    const style = Math.floor(Math.random() * 3);
+
+    if (style === 0) {
+      // ── Smooth: prints all in one go ──────────────────────────────
+      return {
+        yKeys:    [start, 0]                        as number[],
+        opKeys:   [0, 1]                            as number[],
+        times:    [0, 1]                            as number[],
+        duration: 1.8,
+        ease:     "easeOut"                         as const,
+        revealAt: DELAY + 1.8,
+      };
+    } else if (style === 1) {
+      // ── Two stops ─────────────────────────────────────────────────
+      return {
+        yKeys:    [start, m1, m1, m2, m2, 0]       as number[],
+        opKeys:   [0, 1, 1, 1, 1, 1]               as number[],
+        times:    [0, 0.22, 0.40, 0.64, 0.80, 1]   as number[],
+        duration: 2.4,
+        ease:     "linear"                          as const,
+        revealAt: DELAY + 2.4,
+      };
+    } else {
+      // ── Three stops ───────────────────────────────────────────────
+      return {
+        yKeys:    [start, m1, m1, m15, m15, m2, m2, 0]           as number[],
+        opKeys:   [0, 1, 1, 1, 1, 1, 1, 1]                       as number[],
+        times:    [0, 0.14, 0.27, 0.41, 0.54, 0.68, 0.81, 1]     as number[],
+        duration: 3.0,
+        ease:     "linear"                                        as const,
+        revealAt: DELAY + 3.0,
+      };
+    }
   }, []);
 
   async function buildLines(forUserId: string) {
@@ -387,7 +420,7 @@ const Slip = () => {
       <motion.div
         initial={slideKey === 0 ? { opacity: 0 } : false}
         animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
+        transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "14px 18px", opacity: slideKey === 0 ? 0 : 1,
@@ -409,7 +442,7 @@ const Slip = () => {
         <motion.div
           initial={slideKey === 0 ? { opacity: 0 } : false}
           animate={slideKey === 0 ? { opacity: 1 } : false}
-          transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
+          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
           style={{ display: "flex", marginBottom: 4, opacity: slideKey === 0 ? 0 : 1 }}
         >
           {players.map((p, i) => (
@@ -460,16 +493,16 @@ const Slip = () => {
       >
         {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
         <motion.div
-          initial={slideKey === 0 ? { y: printY[0], opacity: 0 } : false}
+          initial={slideKey === 0 ? { y: printAnim.yKeys[0], opacity: 0 } : false}
           animate={slideKey === 0 ? {
-            y:       printY,
-            opacity: [0, 1, 1, 1, 1, 1],
+            y:       printAnim.yKeys,
+            opacity: printAnim.opKeys,
           } : false}
           transition={slideKey === 0 ? {
             delay:    0.4,
-            duration: 2.4,
-            times:    [0, 0.22, 0.40, 0.64, 0.80, 1],
-            ease:     "linear",
+            duration: printAnim.duration,
+            times:    printAnim.times,
+            ease:     printAnim.ease,
           } : undefined}
         >
 
@@ -590,7 +623,7 @@ const Slip = () => {
           className="label-sm"
           initial={slideKey === 0 ? { opacity: 0 } : false}
           animate={slideKey === 0 ? { opacity: 0.4 } : false}
-          transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
+          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
           style={{ marginTop: 12, opacity: slideKey === 0 ? 0 : 0.4, color: "var(--cream)" }}
         >
           ← SWIPE TO SEE OTHER SLIPS →
@@ -601,7 +634,7 @@ const Slip = () => {
       <motion.div
         initial={slideKey === 0 ? { opacity: 0 } : false}
         animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: 2.8, duration: 0.3 } : undefined}
+        transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}
       >
         {isOwnSlip && (
