@@ -56,12 +56,12 @@ const ScalloppedEdge = ({ side, bg, stroke }: { side: "top" | "bottom"; bg: stri
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN",     color: "var(--pink)",              rot: -8 },
-    PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
-    SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
-    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.5)",    rot: 4, dashed: true, dim: true },
-    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.4)",    rot: 0, dim: true },
-    RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
+    WIN:     { label: "WIN",     color: "var(--pink)",  rot: -8 },
+    PLACE:   { label: "PLACE",   color: "var(--cream)", rot: -5 },
+    SHOW:    { label: "SHOW",    color: "var(--cream)", rot: -3 },
+    OUT:     { label: "OUT",     color: "var(--cream)", rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "var(--cream)", rot: 0, dim: true },
+    RUNNING: { label: "NOW",     color: "var(--cream)", rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
   return (
