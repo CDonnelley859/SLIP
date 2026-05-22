@@ -245,72 +245,59 @@ const Lobby = () => {
           </button>
         )}
 
-        {/* ── JOIN CODE ── */}
-        <div
-          className="halftone-bg halftone-loose"
-          style={{
-            border: "3px solid var(--ink)",
-            background: "var(--pink)", color: "var(--ink)",
-            padding: "16px", textAlign: "center",
-            boxShadow: "5px 5px 0 var(--ink)",
-          }}
-        >
-          <div className="label-sm" style={{ opacity: 0.85, color: "var(--ink)" }}>JOIN CODE</div>
-          <div className="display" style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--ink)" }}>
-            {scrum.joinCode}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 6 }}>
-            <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
-              COPY
-            </button>
-            <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.5 }}>·</span>
-            <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
-              SHARE
-            </button>
-          </div>
-        </div>
-
-        {/* ── VENUE CARD ── */}
+        {/* ── VENUE + ACTIONS ── */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", background: "var(--green)", color: "var(--cream)" }}>
-          {/* Venue info — matches Hub track card style */}
-          <div style={{ padding: "14px 16px 12px" }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-              <div className="display" style={{ fontSize: 30, lineHeight: 1 }}>{card?.trackName ?? "—"}</div>
-              {card?.isVirtual && (
-                <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
-              )}
+          {/* Venue info row */}
+          <div style={{ padding: "14px 16px 12px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                <div className="display" style={{ fontSize: 30, lineHeight: 1 }}>{card?.trackName ?? "—"}</div>
+                {card?.isVirtual && (
+                  <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
+                )}
+              </div>
+              <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                {[
+                  card?.raceCount ? `${card.raceCount} RACES` : null,
+                  card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
+                ].filter(Boolean).join(" · ")}
+              </div>
             </div>
-            <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
-              {[
-                card?.raceCount ? `${card.raceCount} RACES` : null,
-                card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
-                countdown && countdown !== "PICKS LOCKED" ? countdown : countdown === "PICKS LOCKED" ? "UNDERWAY" : null,
-              ].filter(Boolean).join(" · ")}
-            </div>
+            {/* Countdown — prominent if picks are still open */}
+            {countdown && (
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div className="mono" style={{ fontSize: 9, opacity: 0.55, marginBottom: 2 }}>
+                  {picksLocked ? "UNDERWAY" : "PICKS LOCK IN"}
+                </div>
+                {!picksLocked && (
+                  <div className="display" style={{ fontSize: 28, lineHeight: 1, color: "var(--pink)" }}>
+                    {countdown}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {/* Action buttons */}
-          <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
+
+          {/* START PICKING — full-width pink CTA */}
+          <div style={{ padding: "0 16px 16px" }}>
             <button
               onClick={() => navigate(`/scrum/${id}/gallop`)}
-              className="display"
+              className="btn-retro"
               style={{
-                flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                background: "var(--green)",
-                color: "var(--cream)",
-                padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em",
-                textTransform: "uppercase", cursor: "pointer",
+                width: "100%", background: "var(--pink)", color: "var(--ink)",
+                border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
+                fontSize: 18, letterSpacing: "0.06em",
               }}
             >
               {picksLocked ? "PICK OPEN RACES →" : "START PICKING →"}
             </button>
             <button
               onClick={() => navigate(`/scrum/${id}/slip`)}
-              className="display"
+              className="label"
               style={{
-                flex: 1, border: 0, background: "transparent",
-                color: "var(--cream)", padding: "14px 10px",
-                fontSize: 14, letterSpacing: "0.06em",
-                textTransform: "uppercase", cursor: "pointer",
+                width: "100%", background: "transparent", border: 0,
+                color: "var(--cream)", padding: "10px 0 0",
+                cursor: "pointer", textDecoration: "underline", textAlign: "center",
               }}
             >
               SHOW SLIPS
@@ -318,60 +305,84 @@ const Lobby = () => {
           </div>
         </div>
 
+        {/* ── JOIN CODE — compact ── */}
+        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+            <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)" }}>{scrum.joinCode}</span>
+          </div>
+          <div style={{ display: "flex", gap: 14 }}>
+            <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
+              COPY
+            </button>
+            <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
+              SHARE
+            </button>
+          </div>
+        </div>
+
         {/* ── STANDINGS ── */}
-        <div>
-          <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>STANDINGS</span>
-          {leaderboard.length === 0 ? (
-            <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: 24, textAlign: "center" }}>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No players yet.</p>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {leaderboard.map((row, i) => {
-                const isMe = row.userId === userId;
-                return (
-                  <div
-                    key={row.userId}
-                    style={{
-                      border: "3px solid rgba(245,232,223,0.3)",
-                      borderBottom: i < leaderboard.length - 1 ? "1.5px solid rgba(245,232,223,0.2)" : "3px solid rgba(245,232,223,0.3)",
-                      padding: "12px 16px",
-                      background: isMe ? "var(--pink)" : "transparent",
-                      color: isMe ? "var(--ink)" : "var(--cream)",
-                      display: "flex", alignItems: "center", gap: 12,
-                    }}
-                  >
-                    <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.5 }}>{i + 1}</span>
-                    <div style={{ flex: 1 }}>
-                      <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
-                      <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
-                        {row.wins}W · {row.places}P · {row.shows}S
-                      </div>
-                    </div>
-                    {!isMe && (
-                      <button
-                        onClick={() => !friendIds.has(row.userId) && handleAddFriend(row.userId, row.handle)}
-                        className="label-sm"
+        {(() => {
+          const submittedSet = new Set(members.filter(m => m.submitted).map(m => m.userId));
+          return (
+            <div>
+              <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>STANDINGS</span>
+              {leaderboard.length === 0 ? (
+                <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: 24, textAlign: "center" }}>
+                  <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No players yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {leaderboard.map((row, i) => {
+                    const isMe = row.userId === userId;
+                    const hasPicked = submittedSet.has(row.userId);
+                    return (
+                      <div
+                        key={row.userId}
                         style={{
-                          background: "transparent", border: 0,
+                          border: "3px solid rgba(245,232,223,0.3)",
+                          borderBottom: i < leaderboard.length - 1 ? "1.5px solid rgba(245,232,223,0.2)" : "3px solid rgba(245,232,223,0.3)",
+                          padding: "12px 16px",
+                          background: isMe ? "var(--pink)" : "transparent",
                           color: isMe ? "var(--ink)" : "var(--cream)",
-                          opacity: friendIds.has(row.userId) ? 0.35 : 0.6,
-                          cursor: friendIds.has(row.userId) ? "default" : "pointer",
-                          flexShrink: 0, padding: "4px 0 4px 8px",
+                          display: "flex", alignItems: "center", gap: 12,
                         }}
                       >
-                        {friendIds.has(row.userId) ? "✓" : "+ FRIEND"}
-                      </button>
-                    )}
-                    <div className="display" style={{ fontSize: 32, lineHeight: 1 }}>
-                      {row.points}<span style={{ fontSize: 12, marginLeft: 4, opacity: 0.6 }}>PTS</span>
-                    </div>
-                  </div>
-                );
-              })}
+                        <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.5 }}>{i + 1}</span>
+                        <div style={{ flex: 1 }}>
+                          <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
+                          <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
+                            {hasPicked
+                              ? `${row.wins}W · ${row.places}P · ${row.shows}S`
+                              : "NOT PICKED YET"}
+                          </div>
+                        </div>
+                        {!isMe && (
+                          <button
+                            onClick={() => !friendIds.has(row.userId) && handleAddFriend(row.userId, row.handle)}
+                            className="label-sm"
+                            style={{
+                              background: "transparent", border: 0,
+                              color: "var(--cream)",
+                              opacity: friendIds.has(row.userId) ? 0.35 : 0.6,
+                              cursor: friendIds.has(row.userId) ? "default" : "pointer",
+                              flexShrink: 0, padding: "4px 0 4px 8px",
+                            }}
+                          >
+                            {friendIds.has(row.userId) ? "✓" : "+ FRIEND"}
+                          </button>
+                        )}
+                        <div className="display" style={{ fontSize: 32, lineHeight: 1 }}>
+                          {row.points}<span style={{ fontSize: 12, marginLeft: 4, opacity: 0.6 }}>PTS</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* ── HOST SETTINGS ── */}
         {userId === scrum.hostId ? (
