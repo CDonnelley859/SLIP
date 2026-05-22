@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -80,6 +80,8 @@ const Slip = () => {
   const { id } = useParams();
   const { userId } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const printOnLoad = !!(location.state as any)?.printOnLoad;
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [players, setPlayers] = useState<{ userId: string; handle: string }[]>([]);
@@ -284,6 +286,11 @@ const Slip = () => {
   useEffect(() => {
     if (viewUserId) buildLines(viewUserId);
   }, [playerIdx]);
+
+  // Auto-trigger print animation when arriving from the Gallop PRINT SLIP button
+  useEffect(() => {
+    if (ready && printOnLoad) handlePrint();
+  }, [ready]);
 
   function goToPlayer(dir: "forward" | "back") {
     setSlideDir(dir);
@@ -693,17 +700,6 @@ const Slip = () => {
                 style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
               >
                 ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
-              </button>
-            )}
-
-            {isOwnSlip && lines.length > 0 && (
-              <button
-                onClick={handlePrint}
-                disabled={printing}
-                className="btn-retro"
-                style={{ opacity: printing ? 0.5 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
-              >
-                {printing ? "PRINTING…" : "🖨 PRINT SLIP"}
               </button>
             )}
 

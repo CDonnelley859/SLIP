@@ -232,7 +232,7 @@ const Gallop = () => {
       if (megaSlipId) {
         navigate(`/mega/${megaSlipId}/hub`);
       } else {
-        navigate(`/scrum/${id}/slip`);
+        navigate(`/scrum/${id}/slip`, { state: { printOnLoad: true } });
       }
     } catch (err: any) {
       toast.error(err.message);
