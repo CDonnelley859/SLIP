@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { SlipIllustration } from "@/components/SlipIllustration";
 import { syncResults } from "@/lib/racingApi";
 import { settleVirtualRaces } from "@/lib/virtualTrack";
 import { registerPush, unregisterPush, isPushRegistered } from "@/lib/notifications";
@@ -538,13 +537,6 @@ const Slip = () => {
               {scrum?.name && (
                 <div style={{ textAlign: "center", marginTop: 4 }}>
                   <span className="label-sm" style={{ opacity: 0.5 }}>{scrum.name}</span>
-                </div>
-              )}
-
-              {/* track illustration */}
-              {card?.trackName && (
-                <div style={{ margin: "16px -18px 0", borderTop: "1.5px solid rgba(245,232,223,0.18)", borderBottom: "1.5px solid rgba(245,232,223,0.18)", overflow: "hidden" }}>
-                  <SlipIllustration trackName={card.trackName} isVirtual={!!card.isVirtual} />
                 </div>
               )}
 
