@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { getSlipPalette, DEFAULT_PALETTE, type SlipPalette } from "@/lib/slipPalette";
 import { syncResults } from "@/lib/racingApi";
 import { settleVirtualRaces } from "@/lib/virtualTrack";
 import { registerPush, unregisterPush, isPushRegistered } from "@/lib/notifications";
@@ -43,25 +42,25 @@ function pointsFor(status: LineStatus): number {
 
 // ── File-local components ──
 
-const ScalloppedEdge = ({ side, bg, stroke }: { side: "top" | "bottom"; bg: string; stroke: string }) => (
+const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
   <svg viewBox="0 0 400 8" preserveAspectRatio="none" style={{
     position: "absolute" as const, left: 0, right: 0, width: "100%", height: 8, display: "block", zIndex: 4,
     ...(side === "top" ? { top: 0, transform: "translateY(-1px)" } : { bottom: 0, transform: "translateY(1px) scaleY(-1)" }),
   }}>
     {Array.from({ length: 25 }).map((_, i) => (
-      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill={bg} stroke={stroke} strokeWidth={1.5} />
+      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--green)" stroke="rgba(245,232,223,0.4)" strokeWidth={1.5} />
     ))}
   </svg>
 );
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN",     color: "var(--pink)",  rot: -8 },
-    PLACE:   { label: "PLACE",   color: "var(--cream)", rot: -5 },
-    SHOW:    { label: "SHOW",    color: "var(--cream)", rot: -3 },
-    OUT:     { label: "OUT",     color: "var(--cream)", rot: 4, dashed: true, dim: true },
-    PENDING: { label: "PENDING", color: "var(--cream)", rot: 0, dim: true },
-    RUNNING: { label: "NOW",     color: "var(--cream)", rot: -4 },
+    WIN:     { label: "WIN",     color: "var(--pink)",              rot: -8 },
+    PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
+    SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
+    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.5)",    rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.4)",    rot: 0, dim: true },
+    RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
   return (
@@ -97,7 +96,6 @@ const Slip = () => {
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
   const [printing, setPrinting] = useState(printOnLoad); // blank until animation if coming from Gallop
-  const [palette, setPalette] = useState<SlipPalette>(DEFAULT_PALETTE);
 
   // Print animation — randomly picks one of three receipt-feed styles.
   const printAnim = useMemo(() => {
@@ -252,9 +250,7 @@ const Slip = () => {
       const scrumData = scrumDoc.data();
       setScrum(scrumData);
       const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
-      const cardData = cardDoc.data();
-      setCard(cardData);
-      setPalette(getSlipPalette(cardData?.trackName, cardData?.isVirtual));
+      setCard(cardDoc.data());
 
       const membersSnap = await getDocs(
         query(collection(db, "scrumMembers"), where("scrumId", "==", id))
@@ -510,28 +506,17 @@ const Slip = () => {
 
         {/* Ticket */}
         <div style={{ position: "relative" }}>
-          {/* ticket — CSS variables overridden per palette so all var(--green/cream/pink) children update automatically */}
-          <div style={{
-            position: "relative", zIndex: 1,
-            background: palette.bg,
-            border: `3px solid ${palette.border}`,
-            color: palette.text,
-            boxShadow: `6px 6px 0 ${palette.shadow}`,
-            // Override CSS vars so Stamp + className-based styles pick up palette colours
-            "--green": palette.bg,
-            "--cream": palette.text,
-            "--pink":  palette.accent,
-          } as React.CSSProperties}>
-            <ScalloppedEdge side="top"    bg={palette.bg} stroke={palette.border} />
-            <ScalloppedEdge side="bottom" bg={palette.bg} stroke={palette.border} />
+          <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", color: "var(--cream)", boxShadow: "6px 6px 0 var(--cream)" }}>
+            <ScalloppedEdge side="top" />
+            <ScalloppedEdge side="bottom" />
             <div style={{ padding: "20px 18px 22px" }}>
 
               {/* player badge */}
               {currentPlayer && (
                 <div style={{ textAlign: "center", marginBottom: 8 }}>
                   <span className="mono" style={{
-                    border: `2px solid ${palette.border}`, padding: "3px 10px",
-                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: palette.text,
+                    border: "2px solid rgba(245,232,223,0.4)", padding: "3px 10px",
+                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)",
                   }}>
                     {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
                   </span>
@@ -539,33 +524,33 @@ const Slip = () => {
               )}
 
               {/* venue */}
-              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center", color: palette.text }}>{card?.trackName ?? "—"}</div>
+              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center" }}>{card?.trackName ?? "—"}</div>
 
               {/* date + post time */}
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }}>
                 <div className="perf" style={{ width: 30 }} />
-                <span className="label-sm" style={{ color: palette.text }}>{dateLabel} · POST {postTimeLabel}</span>
+                <span className="label-sm">{dateLabel} · POST {postTimeLabel}</span>
                 <div className="perf" style={{ width: 30 }} />
               </div>
 
               {scrum?.name && (
                 <div style={{ textAlign: "center", marginTop: 4 }}>
-                  <span className="label-sm" style={{ opacity: 0.5, color: palette.text }}>{scrum.name}</span>
+                  <span className="label-sm" style={{ opacity: 0.5 }}>{scrum.name}</span>
                 </div>
               )}
 
               {/* TOTAL / RANK */}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, padding: "0 6px" }}>
                 <div>
-                  <div className="label-sm" style={{ opacity: 0.65, color: palette.text }}>TOTAL</div>
-                  <div className="display" style={{ fontSize: 44, lineHeight: 0.9, color: palette.text }}>
+                  <div className="label-sm" style={{ opacity: 0.65 }}>TOTAL</div>
+                  <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
                     {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>PTS</span>
                   </div>
                 </div>
                 {myRank && (
                   <div style={{ textAlign: "right" }}>
-                    <div className="label-sm" style={{ opacity: 0.65, color: palette.text }}>RANK</div>
-                    <div className="display" style={{ fontSize: 44, lineHeight: 0.9, color: palette.text }}>
+                    <div className="label-sm" style={{ opacity: 0.65 }}>RANK</div>
+                    <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
                       #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>OF {playerCount}</span>
                     </div>
                   </div>
@@ -574,31 +559,31 @@ const Slip = () => {
 
               {/* perforated tear */}
               <div style={{ display: "flex", alignItems: "center", margin: "18px -22px 14px" }}>
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: palette.bg, border: `3px solid ${palette.border}`, marginLeft: -10 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginLeft: -10 }} />
                 <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: palette.bg, border: `3px solid ${palette.border}`, marginRight: -10 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginRight: -10 }} />
               </div>
 
               {/* pick cards */}
               {lines.length === 0 && (
-                <p className="label-sm" style={{ textAlign: "center", paddingBlock: 16, opacity: 0.5, color: palette.text }}>
+                <p className="label-sm" style={{ textAlign: "center", paddingBlock: 16, opacity: 0.5 }}>
                   No picks yet — head to the Daily Gallop
                 </p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lines.map(line => (
-                  <div key={line.raceNumber} style={{ border: `1.5px solid ${palette.subtle}`, background: palette.bg, padding: "10px 12px" }}>
+                  <div key={line.raceNumber} style={{ border: "1.5px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "10px 12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
-                          <span className="mono" style={{ background: palette.faint, color: palette.text, padding: "2px 6px", fontSize: 9, letterSpacing: ".18em", border: `1px solid ${palette.subtle}` }}>
+                          <span className="mono" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "2px 6px", fontSize: 9, letterSpacing: ".18em", border: "1px solid rgba(245,232,223,0.3)" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
-                          <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: palette.text }}>
+                          <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
                             {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </span>
                         </div>
-                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4, color: palette.text,
+                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4, color: "var(--cream)",
                           textDecoration: line.status === "OUT" ? "line-through" : "none",
                           opacity: line.status === "OUT" ? 0.45 : 1 }}>
                           {line.horseNumber}. {line.horseName}
@@ -610,9 +595,9 @@ const Slip = () => {
                       {(["1ST", "2ND", "3RD"] as const).map((pos, idx) => {
                         const w = idx === 0 ? line.podium?.first : idx === 1 ? line.podium?.second : line.podium?.third;
                         return (
-                          <div key={pos} style={{ flex: 1, border: `1.5px solid ${palette.subtle}`, padding: "5px 6px", textAlign: "center", background: palette.faint, opacity: w ? 1 : 0.55 }}>
-                            <div className="label-sm" style={{ color: palette.text }}>{pos}</div>
-                            <div className="display" style={{ fontSize: 12, marginTop: 1, color: palette.text }}>{w ? w.name : "—"}</div>
+                          <div key={pos} style={{ flex: 1, border: "1.5px solid rgba(245,232,223,0.25)", padding: "5px 6px", textAlign: "center", background: "rgba(245,232,223,0.08)", opacity: w ? 1 : 0.55 }}>
+                            <div className="label-sm" style={{ color: "var(--cream)" }}>{pos}</div>
+                            <div className="display" style={{ fontSize: 12, marginTop: 1, color: "var(--cream)" }}>{w ? w.name : "—"}</div>
                           </div>
                         );
                       })}
