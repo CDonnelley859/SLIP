@@ -438,6 +438,7 @@ const Slip = () => {
       style={{ background: "var(--green)", padding: "0 0 80px", touchAction: "pan-y" }}
     >
       {/* ── PAGE HEADER ── */}
+      {!printing && (
       <div
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -454,9 +455,10 @@ const Slip = () => {
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
       </div>
+      )}
 
       {/* ── PLAYER DOTS ── */}
-      {players.length > 1 && (
+      {!printing && players.length > 1 && (
         <div style={{ display: "flex", marginBottom: 4 }}>
           {players.map((p, i) => (
             <button
@@ -628,7 +630,7 @@ const Slip = () => {
       </AnimatePresence>
 
       {/* swipe hint */}
-      {players.length > 1 && (
+      {!printing && players.length > 1 && (
         <p
           className="label-sm"
           style={{ marginTop: 12, opacity: 0.4, color: "var(--cream)" }}
@@ -638,7 +640,7 @@ const Slip = () => {
       )}
 
       {/* ── STICKY SEND FOOTER — visible without scrolling when ready to send ── */}
-      {readyToSend && (
+      {!printing && readyToSend && (
         <div
           style={{
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
@@ -674,7 +676,7 @@ const Slip = () => {
       )}
 
       {/* action buttons */}
-      <div
+      {!printing && <div
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10,
           paddingBottom: readyToSend ? 120 : 0,
         }}
@@ -749,7 +751,7 @@ const Slip = () => {
             </Link>
           </>
         )}
-      </div>
+      </div>}
     </div>
   );
 };
