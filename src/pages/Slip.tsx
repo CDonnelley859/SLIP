@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -93,6 +93,26 @@ const Slip = () => {
   const [slideKey, setSlideKey] = useState(0);
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const printControls = useAnimation();
+
+  // Print animation — randomly picks one of three receipt-feed styles.
+  const printAnim = useMemo(() => {
+    const vh    = window.innerHeight;
+    const start = -(vh + 200);
+    const m1    = -Math.round(vh * 0.72);
+    const m2    = -Math.round(vh * 0.30);
+    const m15   = -Math.round(vh * 0.51);
+    const style = Math.floor(Math.random() * 3);
+    if (style === 0) {
+      return { yKeys: [start, 0] as number[], opKeys: [0, 1] as number[], times: [0, 1] as number[], duration: 1.8, ease: "easeOut" as const };
+    } else if (style === 1) {
+      return { yKeys: [start, m1, m1, m2, m2, 0] as number[], opKeys: [0, 1, 1, 1, 1, 1] as number[], times: [0, 0.22, 0.40, 0.64, 0.80, 1] as number[], duration: 2.4, ease: "linear" as const };
+    } else {
+      return { yKeys: [start, m1, m1, m15, m15, m2, m2, 0] as number[], opKeys: [0, 1, 1, 1, 1, 1, 1, 1] as number[], times: [0, 0.14, 0.27, 0.41, 0.54, 0.68, 0.81, 1] as number[], duration: 3.0, ease: "linear" as const };
+    }
+  }, []);
 
   const touchStartX = useRef<number | null>(null);
   // Always-current ref so onSnapshot/interval don't capture a stale viewUserId
@@ -358,6 +378,19 @@ const Slip = () => {
   const alreadySent = scrum?.spindleSent?.[userId ?? ""] === true;
   const readyToSend = isOwnSlip && allSettled && !alreadySent;
 
+  async function handlePrint() {
+    if (printing) return;
+    setPrinting(true);
+    // Jump ticket above screen instantly, then feed it down
+    await printControls.set({ y: printAnim.yKeys[0], opacity: 0 });
+    await printControls.start({
+      y:       printAnim.yKeys,
+      opacity: printAnim.opKeys,
+      transition: { delay: 0.3, duration: printAnim.duration, times: printAnim.times, ease: printAnim.ease },
+    });
+    setPrinting(false);
+  }
+
   async function handleSendToSpindle() {
     if (!id || !userId || sending) return;
     setSending(true);
@@ -472,6 +505,9 @@ const Slip = () => {
           onAnimationComplete={() => { if (sending) onSendAnimComplete(); }}
         >
 
+        {/* Print animation wrapper — controlled imperatively via printControls */}
+        <motion.div animate={printControls}>
+
         {/* Ticket */}
         <div style={{ position: "relative" }}>
           {/* ticket */}
@@ -578,6 +614,7 @@ const Slip = () => {
             </div>
           </div>
         </div>
+        </motion.div>{/* /print animation wrapper */}
         </motion.div>{/* /send animation wrapper */}
       </motion.div>
       )}
@@ -656,6 +693,17 @@ const Slip = () => {
                 style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
               >
                 ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
+              </button>
+            )}
+
+            {isOwnSlip && lines.length > 0 && (
+              <button
+                onClick={handlePrint}
+                disabled={printing}
+                className="btn-retro"
+                style={{ opacity: printing ? 0.5 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
+              >
+                {printing ? "PRINTING…" : "🖨 PRINT SLIP"}
               </button>
             )}
 
