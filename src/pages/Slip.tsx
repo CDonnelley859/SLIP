@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -108,48 +108,6 @@ const Slip = () => {
   // Keep the ref in sync with the derived value
   useEffect(() => { viewUserIdRef.current = viewUserId ?? ""; }, [viewUserId]);
 
-  // Print animation — randomly picks one of three styles each load.
-  const printAnim = useMemo(() => {
-    const vh    = window.innerHeight;
-    const start = -(vh + 200);
-    const m1    = -Math.round(vh * 0.72);
-    const m2    = -Math.round(vh * 0.30);
-    const m15   = -Math.round(vh * 0.51); // midpoint, used by 3-stop style
-    const DELAY = 0.4;
-    const style = Math.floor(Math.random() * 3);
-
-    if (style === 0) {
-      // ── Smooth: prints all in one go ──────────────────────────────
-      return {
-        yKeys:    [start, 0]                        as number[],
-        opKeys:   [0, 1]                            as number[],
-        times:    [0, 1]                            as number[],
-        duration: 1.8,
-        ease:     "easeOut"                         as const,
-        revealAt: DELAY + 1.8,
-      };
-    } else if (style === 1) {
-      // ── Two stops ─────────────────────────────────────────────────
-      return {
-        yKeys:    [start, m1, m1, m2, m2, 0]       as number[],
-        opKeys:   [0, 1, 1, 1, 1, 1]               as number[],
-        times:    [0, 0.22, 0.40, 0.64, 0.80, 1]   as number[],
-        duration: 2.4,
-        ease:     "linear"                          as const,
-        revealAt: DELAY + 2.4,
-      };
-    } else {
-      // ── Three stops ───────────────────────────────────────────────
-      return {
-        yKeys:    [start, m1, m1, m15, m15, m2, m2, 0]           as number[],
-        opKeys:   [0, 1, 1, 1, 1, 1, 1, 1]                       as number[],
-        times:    [0, 0.14, 0.27, 0.41, 0.54, 0.68, 0.81, 1]     as number[],
-        duration: 3.0,
-        ease:     "linear"                                        as const,
-        revealAt: DELAY + 3.0,
-      };
-    }
-  }, []);
 
 
   async function buildLines(forUserId: string) {
@@ -440,13 +398,10 @@ const Slip = () => {
       style={{ background: "var(--green)", padding: "0 0 80px", touchAction: "pan-y" }}
     >
       {/* ── PAGE HEADER ── */}
-      <motion.div
-        initial={slideKey === 0 ? { opacity: 0 } : false}
-        animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
+      <div
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 18px", opacity: slideKey === 0 ? 0 : 1,
+          padding: "14px 18px",
         }}
       >
         <Link
@@ -458,16 +413,11 @@ const Slip = () => {
         </Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
-      </motion.div>
+      </div>
 
       {/* ── PLAYER DOTS ── */}
       {players.length > 1 && (
-        <motion.div
-          initial={slideKey === 0 ? { opacity: 0 } : false}
-          animate={slideKey === 0 ? { opacity: 1 } : false}
-          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
-          style={{ display: "flex", marginBottom: 4, opacity: slideKey === 0 ? 0 : 1 }}
-        >
+        <div style={{ display: "flex", marginBottom: 4 }}>
           {players.map((p, i) => (
             <button
               key={p.userId}
@@ -492,7 +442,7 @@ const Slip = () => {
               }} />
             </button>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* ── TICKET ── */}
@@ -520,21 +470,6 @@ const Slip = () => {
           animate={sending ? { x: window.innerWidth + 120, opacity: 0 } : { x: 0, opacity: 1 }}
           transition={sending ? { duration: 0.42, ease: [0.4, 0, 1, 1] } : { duration: 0 }}
           onAnimationComplete={() => { if (sending) onSendAnimComplete(); }}
-        >
-
-        {/* Print slot — ticket starts above the screen, feeds down so bottom appears first */}
-        <motion.div
-          initial={slideKey === 0 ? { y: printAnim.yKeys[0], opacity: 0 } : false}
-          animate={slideKey === 0 ? {
-            y:       printAnim.yKeys,
-            opacity: printAnim.opKeys,
-          } : false}
-          transition={slideKey === 0 ? {
-            delay:    0.4,
-            duration: printAnim.duration,
-            times:    printAnim.times,
-            ease:     printAnim.ease,
-          } : undefined}
         >
 
         {/* Ticket */}
@@ -643,7 +578,6 @@ const Slip = () => {
             </div>
           </div>
         </div>
-        </motion.div>{/* /print slide-in */}
         </motion.div>{/* /send animation wrapper */}
       </motion.div>
       )}
@@ -651,23 +585,17 @@ const Slip = () => {
 
       {/* swipe hint */}
       {players.length > 1 && (
-        <motion.p
+        <p
           className="label-sm"
-          initial={slideKey === 0 ? { opacity: 0 } : false}
-          animate={slideKey === 0 ? { opacity: 0.4 } : false}
-          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
-          style={{ marginTop: 12, opacity: slideKey === 0 ? 0 : 0.4, color: "var(--cream)" }}
+          style={{ marginTop: 12, opacity: 0.4, color: "var(--cream)" }}
         >
           ← SWIPE TO SEE OTHER SLIPS →
-        </motion.p>
+        </p>
       )}
 
       {/* ── STICKY SEND FOOTER — visible without scrolling when ready to send ── */}
       {readyToSend && (
-        <motion.div
-          initial={slideKey === 0 ? { opacity: 0 } : false}
-          animate={slideKey === 0 ? { opacity: 1 } : false}
-          transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
+        <div
           style={{
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
             background: "var(--green)", borderTop: "3px solid var(--pink)",
@@ -698,16 +626,12 @@ const Slip = () => {
           >
             {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
           </Link>
-        </motion.div>
+        </div>
       )}
 
-      {/* action buttons — hidden until print animation completes on first load */}
-      <motion.div
-        initial={slideKey === 0 ? { opacity: 0 } : false}
-        animate={slideKey === 0 ? { opacity: 1 } : false}
-        transition={slideKey === 0 ? { delay: printAnim.revealAt, duration: 0.3 } : undefined}
+      {/* action buttons */}
+      <div
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10,
-          // Extra bottom padding so the sticky footer doesn't overlap the ticket
           paddingBottom: readyToSend ? 120 : 0,
         }}
       >
@@ -781,7 +705,7 @@ const Slip = () => {
             </Link>
           </>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
