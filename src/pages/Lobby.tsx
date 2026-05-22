@@ -301,10 +301,10 @@ const Lobby = () => {
         </div>
 
         {/* ── JOIN CODE — compact ── */}
-        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em", flexShrink: 0 }}>JOIN CODE</span>
-          <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)" }}>{scrum.joinCode}</span>
-          <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
+        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
+          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{scrum.joinCode}</span>
+          <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
               COPY
             </button>
