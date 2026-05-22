@@ -247,39 +247,34 @@ const Lobby = () => {
 
         {/* ── VENUE + ACTIONS ── */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", background: "var(--green)", color: "var(--cream)" }}>
-          {/* Venue info row */}
-          <div style={{ padding: "14px 16px 12px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-            <div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                <div className="display" style={{ fontSize: 30, lineHeight: 1 }}>{card?.trackName ?? "—"}</div>
-                {card?.isVirtual && (
-                  <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
-                )}
-              </div>
+          {/* Venue info */}
+          <div style={{ padding: "14px 16px 12px" }}>
+            <div className="display" style={{ fontSize: 30, lineHeight: 1, marginBottom: 6 }}>{card?.trackName ?? "—"}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
                 {[
                   card?.raceCount ? `${card.raceCount} RACES` : null,
                   card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
+                  card?.isVirtual ? "VIRTUAL" : null,
                 ].filter(Boolean).join(" · ")}
               </div>
-            </div>
-            {/* Countdown — prominent if picks are still open */}
-            {countdown && (
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div className="mono" style={{ fontSize: 9, opacity: 0.55, marginBottom: 2 }}>
-                  {picksLocked ? "UNDERWAY" : "PICKS LOCK IN"}
+              {/* Countdown — prominent if picks are still open */}
+              {countdown && (
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  {picksLocked ? (
+                    <span className="mono" style={{ fontSize: 9, opacity: 0.55 }}>UNDERWAY</span>
+                  ) : (
+                    <div className="display" style={{ fontSize: 24, lineHeight: 1, color: "var(--pink)" }}>
+                      {countdown}
+                    </div>
+                  )}
                 </div>
-                {!picksLocked && (
-                  <div className="display" style={{ fontSize: 28, lineHeight: 1, color: "var(--pink)" }}>
-                    {countdown}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* START PICKING — full-width pink CTA */}
-          <div style={{ padding: "0 16px 16px" }}>
+          {/* Action buttons */}
+          <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
             <button
               onClick={() => navigate(`/scrum/${id}/gallop`)}
               className="btn-retro"
@@ -293,11 +288,11 @@ const Lobby = () => {
             </button>
             <button
               onClick={() => navigate(`/scrum/${id}/slip`)}
-              className="label"
+              className="btn-retro"
               style={{
-                width: "100%", background: "transparent", border: 0,
-                color: "var(--cream)", padding: "10px 0 0",
-                cursor: "pointer", textDecoration: "underline", textAlign: "center",
+                width: "100%", background: "transparent", color: "var(--cream)",
+                border: "3px solid rgba(245,232,223,0.4)", boxShadow: "none",
+                fontSize: 18, letterSpacing: "0.06em",
               }}
             >
               SHOW SLIPS
@@ -306,12 +301,10 @@ const Lobby = () => {
         </div>
 
         {/* ── JOIN CODE — compact ── */}
-        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
-            <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)" }}>{scrum.joinCode}</span>
-          </div>
-          <div style={{ display: "flex", gap: 14 }}>
+        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em", flexShrink: 0 }}>JOIN CODE</span>
+          <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)" }}>{scrum.joinCode}</span>
+          <div style={{ display: "flex", gap: 14, flexShrink: 0 }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
               COPY
             </button>
