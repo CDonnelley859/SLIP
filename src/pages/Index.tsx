@@ -24,7 +24,6 @@ const Index = () => {
 
   const [cards, setCards] = useState<Card[]>([]);
   const [activeSlips, setActiveSlips] = useState<ActiveSlip[]>([]);
-  const [trackSearch, setTrackSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [slipsLoading, setSlipsLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
@@ -459,10 +458,6 @@ const Index = () => {
     }
   }
 
-  const filteredCards = cards.filter(c =>
-    c.trackName.toLowerCase().includes(trackSearch.toLowerCase())
-  );
-
   return (
     <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--green)" }}>
 
@@ -531,7 +526,7 @@ const Index = () => {
                 WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
                 paddingBottom: 4,
               }}>
-              {(syncing && cards.length === 0 ? [0, 1, 2] : filteredCards).map((c, i) => {
+              {(syncing && cards.length === 0 ? [0, 1, 2] : cards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
                     <div key={i} style={{ flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start", border: "3px solid var(--cream)", padding: "18px 16px 16px" }}>
@@ -584,42 +579,13 @@ const Index = () => {
             }} />
             </div>
             {/* Swipe hint — only shown when there are multiple cards to scroll through */}
-            {filteredCards.length > 1 && (
+            {cards.length > 1 && (
               <p className="label-sm" style={{ textAlign: "right", marginTop: 6, opacity: 0.4, color: "var(--cream)" }}>
                 SWIPE FOR MORE →
               </p>
             )}
             </>
           )}
-        </section>
-
-        {/* ── SEARCH ── */}
-        <section style={{ padding: "14px 18px 0" }}>
-          <div style={{ border: "3px solid var(--cream)", position: "relative" }}>
-            <div
-              className="label-sm"
-              style={{
-                position: "absolute", top: -1, left: 12,
-                transform: "translateY(-50%)",
-                background: "var(--green)", padding: "0 4px",
-                color: "var(--cream)", letterSpacing: "0.18em",
-              }}
-            >
-              SEARCH TRACKS
-            </div>
-            <input
-              value={trackSearch}
-              onChange={e => setTrackSearch(e.target.value)}
-              placeholder="ENTER TRACK NAME"
-              className="mono"
-              style={{
-                width: "100%", border: 0,
-                background: "transparent", padding: "14px 14px",
-                fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase",
-                color: "var(--cream)", outline: "none",
-              }}
-            />
-          </div>
         </section>
 
         {/* ── JOIN / CREATE ── */}
