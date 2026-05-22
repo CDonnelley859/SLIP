@@ -50,6 +50,7 @@ const MegaHub = () => {
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [myPickCounts, setMyPickCounts] = useState<Record<string, number>>({});
+  const [pickedUserIds, setPickedUserIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -147,8 +148,10 @@ const MegaHub = () => {
           };
         });
         const myCounts: Record<string, number> = {};
+        const pickedSet = new Set<string>();
         snap.docs.forEach(p => {
           const { userId: uid, scrumId, points } = p.data();
+          pickedSet.add(uid);
           const pts = points ?? 0;
           if (uid === userId) {
             myCounts[scrumId] = (myCounts[scrumId] ?? 0) + 1;
@@ -168,6 +171,7 @@ const MegaHub = () => {
           else if (pts === 1) byUser[uid].shows++;
         });
         setMyPickCounts(myCounts);
+        setPickedUserIds(pickedSet);
         const sorted = Object.values(byUser).sort((a, b) => {
           if (b.total !== a.total) return b.total - a.total;
           if (b.wins !== a.wins) return b.wins - a.wins;
@@ -345,27 +349,15 @@ const MegaHub = () => {
 
       <main style={{ padding: "18px 18px 0" }}>
 
-        {/* JOIN CODE */}
-        <div
-          className="halftone-bg halftone-loose"
-          style={{
-            border: "3px solid var(--ink)",
-            background: "var(--pink)", color: "var(--ink)",
-            padding: "16px", textAlign: "center",
-            boxShadow: "5px 5px 0 var(--ink)",
-            marginBottom: 14,
-          }}
-        >
-          <div className="label-sm" style={{ opacity: 0.85, color: "var(--ink)" }}>JOIN CODE</div>
-          <div className="display" style={{ fontSize: 56, letterSpacing: "0.16em", marginTop: 4, color: "var(--ink)" }}>
-            {mega?.joinCode}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 6 }}>
-            <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+        {/* JOIN CODE — compact */}
+        <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 14 }}>
+          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{mega?.joinCode}</span>
+          <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
+            <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
               COPY
             </button>
-            <span className="label-sm" style={{ color: "var(--ink)", opacity: 0.5 }}>·</span>
-            <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--ink)", cursor: "pointer", textDecoration: "underline" }}>
+            <button onClick={handleShare} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
               SHARE
             </button>
           </div>
@@ -397,71 +389,47 @@ const MegaHub = () => {
                   }}
                 >
                   <div style={{ padding: "14px 16px 10px" }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                      <div className="display" style={{ fontSize: 20, lineHeight: 1 }}>{t.trackName}</div>
-                      {t.isVirtual && (
-                        <span style={{ background: "var(--pink)", color: "var(--cream)", padding: "1px 5px", fontSize: 9 }} className="mono">VIRTUAL</span>
-                      )}
-                      <div style={{ marginLeft: "auto", flexShrink: 0 }}>
+                    <div className="display" style={{ fontSize: 20, lineHeight: 1, marginBottom: 6 }}>{t.trackName}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                        {[
+                          `${t.raceCount} RACES`,
+                          formatTime(t.postTime),
+                          t.isVirtual ? "VIRTUAL" : null,
+                          countdown === "UNDERWAY" ? "UNDERWAY" : null,
+                        ].filter(Boolean).join(" · ")}
+                      </div>
+                      <div style={{ flexShrink: 0 }}>
                         {allPicked ? (
-                          <span
-                            className="mono"
-                            style={{
-                              fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
-                              background: "var(--cream)", color: "var(--ink)",
-                              padding: "2px 7px",
-                            }}
-                          >
+                          <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", background: "var(--cream)", color: "var(--ink)", padding: "2px 7px" }}>
                             {picked}/{total} ✓
                           </span>
                         ) : picked > 0 ? (
-                          <span
-                            className="mono"
-                            style={{
-                              fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
-                              background: "var(--pink)", color: "var(--cream)",
-                              padding: "2px 7px",
-                            }}
-                          >
+                          <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", background: "var(--pink)", color: "var(--cream)", padding: "2px 7px" }}>
                             {picked}/{total}
                           </span>
                         ) : (
-                          <span
-                            className="mono"
-                            style={{
-                              fontSize: 10, letterSpacing: "0.06em",
-                              color: "rgba(245,232,223,0.35)",
-                              padding: "2px 7px",
-                            }}
-                          >
+                          <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em", color: "rgba(245,232,223,0.35)", padding: "2px 7px" }}>
                             0/{total}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
-                      {t.raceCount} RACES · {formatTime(t.postTime)} · {countdown}
-                    </div>
                   </div>
-                  <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.2)", display: "flex" }}>
+                  <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
                     <button
                       onClick={() => navigate(`/scrum/${t.scrumId}/gallop`)}
-                      className="display"
-                      style={{
-                        flex: 1, border: 0, borderRight: "1.5px solid rgba(245,232,223,0.2)",
-                        background: "var(--green)", cursor: "pointer",
-                        color: "var(--cream)", padding: "14px 10px",
-                        fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase",
-                      }}
+                      className="btn-retro"
+                      style={{ width: "100%", background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)", fontSize: 16, letterSpacing: "0.06em" }}
                     >
                       PICK HORSES →
                     </button>
                     <button
                       onClick={() => navigate(`/scrum/${t.scrumId}/slip`)}
-                      className="display"
-                      style={{ flex: 1, border: 0, background: "transparent", cursor: "pointer", color: "var(--cream)", padding: "14px 10px", fontSize: 14, letterSpacing: "0.06em", textTransform: "uppercase" }}
+                      className="btn-retro"
+                      style={{ width: "100%", background: "transparent", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.4)", boxShadow: "none", fontSize: 16, letterSpacing: "0.06em" }}
                     >
-                      SLIPS
+                      SHOW SLIPS
                     </button>
                   </div>
                 </div>
@@ -500,7 +468,9 @@ const MegaHub = () => {
                     <div style={{ flex: 1 }}>
                       <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
                       <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
-                        {row.wins}W · {row.places}P · {row.shows}S
+                        {pickedUserIds.has(row.userId)
+                          ? `${row.wins}W · ${row.places}P · ${row.shows}S`
+                          : "NOT PICKED YET"}
                       </div>
                     </div>
                     <div className="display" style={{ fontSize: 32, lineHeight: 1 }}>
