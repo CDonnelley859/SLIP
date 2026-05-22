@@ -420,7 +420,8 @@ const Slip = () => {
     >
       {/* ── PAGE HEADER ── */}
       {!printing && (
-      <div
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "14px 18px",
@@ -435,12 +436,12 @@ const Slip = () => {
         </Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
-      </div>
+      </motion.div>
       )}
 
       {/* ── PLAYER DOTS ── */}
       {!printing && players.length > 1 && (
-        <div style={{ display: "flex", marginBottom: 4 }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} style={{ display: "flex", marginBottom: 4 }}>
           {players.map((p, i) => (
             <button
               key={p.userId}
@@ -465,7 +466,7 @@ const Slip = () => {
               }} />
             </button>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* ── TICKET ── */}
@@ -617,17 +618,19 @@ const Slip = () => {
 
       {/* swipe hint */}
       {!printing && players.length > 1 && (
-        <p
+        <motion.p
           className="label-sm"
-          style={{ marginTop: 12, opacity: 0.4, color: "var(--cream)" }}
+          initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} transition={{ duration: 0.4, ease: "easeOut" }}
+          style={{ marginTop: 12, color: "var(--cream)" }}
         >
           ← SWIPE TO SEE OTHER SLIPS →
-        </p>
+        </motion.p>
       )}
 
       {/* ── STICKY SEND FOOTER — visible without scrolling when ready to send ── */}
       {!printing && readyToSend && (
-        <div
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }}
           style={{
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
             background: "var(--green)", borderTop: "3px solid var(--pink)",
@@ -658,11 +661,12 @@ const Slip = () => {
           >
             {scrum?.megaSlipId ? "BACK TO HUB" : "BACK TO THE PEN"}
           </Link>
-        </div>
+        </motion.div>
       )}
 
       {/* action buttons */}
-      {!printing && <div
+      {!printing && <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }}
         style={{ width: "calc(100% - 36px)", maxWidth: 420, marginTop: 20, display: "flex", flexDirection: "column", gap: 10,
           paddingBottom: readyToSend ? 120 : 0,
         }}
@@ -737,7 +741,7 @@ const Slip = () => {
             </Link>
           </>
         )}
-      </div>}
+      </motion.div>}
     </div>
   );
 };
