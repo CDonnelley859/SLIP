@@ -95,7 +95,7 @@ const Slip = () => {
   const [slideKey, setSlideKey] = useState(0);
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
-  const [printing, setPrinting] = useState(false);
+  const [printing, setPrinting] = useState(printOnLoad); // blank until animation if coming from Gallop
 
   const printControls = useAnimation();
 
@@ -386,7 +386,6 @@ const Slip = () => {
   const readyToSend = isOwnSlip && allSettled && !alreadySent;
 
   async function handlePrint() {
-    if (printing) return;
     setPrinting(true);
     // Jump ticket above screen instantly, then feed it down
     await printControls.set({ y: printAnim.yKeys[0], opacity: 0 });
