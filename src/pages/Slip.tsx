@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { syncResults } from "@/lib/racingApi";
@@ -96,8 +96,6 @@ const Slip = () => {
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
   const [printing, setPrinting] = useState(printOnLoad); // blank until animation if coming from Gallop
-
-  const printControls = useAnimation();
 
   // Print animation — randomly picks one of three receipt-feed styles.
   const printAnim = useMemo(() => {
@@ -287,10 +285,6 @@ const Slip = () => {
     if (viewUserId) buildLines(viewUserId);
   }, [playerIdx]);
 
-  // Auto-trigger print animation when arriving from the Gallop PRINT SLIP button
-  useEffect(() => {
-    if (ready && printOnLoad) handlePrint();
-  }, [ready]);
 
   function goToPlayer(dir: "forward" | "back") {
     setSlideDir(dir);
@@ -384,18 +378,6 @@ const Slip = () => {
   const allSettled = lines.length > 0 && lines.every(l => l.status !== "PENDING" && l.status !== "RUNNING");
   const alreadySent = scrum?.spindleSent?.[userId ?? ""] === true;
   const readyToSend = isOwnSlip && allSettled && !alreadySent;
-
-  async function handlePrint() {
-    setPrinting(true);
-    // Jump ticket above screen instantly, then feed it down
-    await printControls.set({ y: printAnim.yKeys[0], opacity: 0 });
-    await printControls.start({
-      y:       printAnim.yKeys,
-      opacity: printAnim.opKeys,
-      transition: { delay: 0.3, duration: printAnim.duration, times: printAnim.times, ease: printAnim.ease },
-    });
-    setPrinting(false);
-  }
 
   async function handleSendToSpindle() {
     if (!id || !userId || sending) return;
@@ -513,8 +495,13 @@ const Slip = () => {
           onAnimationComplete={() => { if (sending) onSendAnimComplete(); }}
         >
 
-        {/* Print animation wrapper — controlled imperatively via printControls */}
-        <motion.div animate={printControls}>
+        {/* Print animation — feeds ticket down from above, only on PRINT SLIP from Gallop */}
+        <motion.div
+          initial={printOnLoad ? { y: printAnim.yKeys[0], opacity: 0 } : false}
+          animate={printOnLoad ? { y: printAnim.yKeys, opacity: printAnim.opKeys } : false}
+          transition={printOnLoad ? { delay: 0.3, duration: printAnim.duration, times: printAnim.times, ease: printAnim.ease } : undefined}
+          onAnimationComplete={() => { if (printing) setPrinting(false); }}
+        >
 
         {/* Ticket */}
         <div style={{ position: "relative" }}>
