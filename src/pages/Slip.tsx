@@ -55,7 +55,7 @@ const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN",     color: "var(--pink)",              rot: -8 },
+    WIN:     { label: "WIN",     color: "var(--pink-light)",        rot: -8 },
     PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
     SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
     OUT:     { label: "OUT",     color: "rgba(245,232,223,0.5)",    rot: 4, dashed: true, dim: true },
@@ -516,7 +516,7 @@ const Slip = () => {
                 <div style={{ textAlign: "center", marginBottom: 8 }}>
                   <span className="mono" style={{
                     border: "2px solid rgba(245,232,223,0.4)", padding: "3px 10px",
-                    fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)",
+                    fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cream)",
                   }}>
                     {isOwnSlip ? "YOUR SLIP" : `${currentPlayer.handle}'S SLIP`}
                   </span>
@@ -576,10 +576,10 @@ const Slip = () => {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
-                          <span className="mono" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "2px 6px", fontSize: 9, letterSpacing: ".18em", border: "1px solid rgba(245,232,223,0.3)" }}>
+                          <span className="mono" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "2px 6px", fontSize: 11, letterSpacing: ".18em", border: "1px solid rgba(245,232,223,0.3)" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
-                          <span className="mono" style={{ fontSize: 10, opacity: 0.6, color: "var(--cream)" }}>
+                          <span className="mono" style={{ fontSize: 11, opacity: 0.6, color: "var(--cream)" }}>
                             {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </span>
                         </div>

@@ -351,7 +351,7 @@ const MegaHub = () => {
 
         {/* JOIN CODE — compact */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 14 }}>
-          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="mono" style={{ fontSize: 11, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
           <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{mega?.joinCode}</span>
           <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
@@ -391,7 +391,7 @@ const MegaHub = () => {
                   <div style={{ padding: "14px 16px 10px" }}>
                     <div className="display" style={{ fontSize: 20, lineHeight: 1, marginBottom: 6 }}>{t.trackName}</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+                      <div className="mono" style={{ fontSize: 11, opacity: 0.6 }}>
                         {[
                           `${t.raceCount} RACES`,
                           formatTime(t.postTime),
@@ -401,15 +401,15 @@ const MegaHub = () => {
                       </div>
                       <div style={{ flexShrink: 0 }}>
                         {allPicked ? (
-                          <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", background: "var(--cream)", color: "var(--ink)", padding: "2px 7px" }}>
+                          <span className="mono" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", background: "var(--cream)", color: "var(--ink)", padding: "2px 7px" }}>
                             {picked}/{total} ✓
                           </span>
                         ) : picked > 0 ? (
-                          <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", background: "var(--pink)", color: "var(--cream)", padding: "2px 7px" }}>
+                          <span className="mono" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", background: "var(--pink-deep)", color: "var(--cream)", padding: "2px 7px" }}>
                             {picked}/{total}
                           </span>
                         ) : (
-                          <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em", color: "rgba(245,232,223,0.35)", padding: "2px 7px" }}>
+                          <span className="mono" style={{ fontSize: 11, letterSpacing: "0.06em", color: "rgba(245,232,223,0.35)", padding: "2px 7px" }}>
                             0/{total}
                           </span>
                         )}
@@ -467,7 +467,7 @@ const MegaHub = () => {
                     </span>
                     <div style={{ flex: 1 }}>
                       <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
-                      <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
+                      <div className="mono" style={{ fontSize: 11, marginTop: 4, opacity: 0.65 }}>
                         {pickedUserIds.has(row.userId)
                           ? `${row.wins}W · ${row.places}P · ${row.shows}S`
                           : "NOT PICKED YET"}
@@ -514,7 +514,7 @@ const MegaHub = () => {
                       border: "2px solid rgba(245,232,223,0.5)",
                       background: showDetails ? "var(--cream)" : "transparent",
                       color: showDetails ? "var(--ink)" : "var(--cream)",
-                      fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                      fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
                       textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
                       opacity: togglingDetails ? 0.4 : 1,
                     }}
@@ -555,7 +555,7 @@ const MegaHub = () => {
                         >
                           <div>
                             <div className="display" style={{ fontSize: 15 }}>{card.trackName}</div>
-                            <div className="mono" style={{ fontSize: 9, opacity: 0.6, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
+                            <div className="mono" style={{ fontSize: 11, opacity: 0.6, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
                           </div>
                           <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>
                             {addingCard === card.id ? "ADDING…" : "ADD →"}

@@ -229,7 +229,7 @@ const Settings = () => {
           ) : crews.length === 0 ? (
             <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
               <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO SAVED CREWS</p>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 11, lineHeight: 1.4 }}>
                 SAVE A CREW FROM THE PEN WHILE IN AN ACTIVE GROUP
               </p>
             </div>
@@ -287,7 +287,7 @@ const Settings = () => {
                         <div className="display" style={{ fontSize: 16, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
                           {crew.name} →
                         </div>
-                        <div className="mono" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {crew.members.map(m => m.handle).join(", ")}
                         </div>
                       </button>
@@ -322,7 +322,7 @@ const Settings = () => {
           ) : friends.length === 0 ? (
             <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
               <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO FRIENDS SAVED</p>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 11, lineHeight: 1.4 }}>
                 TAP + FRIEND ON A PLAYER IN THE PEN STANDINGS
               </p>
             </div>

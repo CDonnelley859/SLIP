@@ -197,7 +197,7 @@ const Lobby = () => {
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)", padding: "32px 24px" }}>
       {loadError ? (
         <div style={{ textAlign: "center", maxWidth: 320 }}>
-          <p className="label" style={{ color: "var(--pink)", marginBottom: 16 }}>⚠ {loadError}</p>
+          <p className="label" style={{ color: "var(--pink-light)", marginBottom: 16 }}>⚠ {loadError}</p>
           <button
             onClick={() => navigate("/")}
             className="label"
@@ -251,7 +251,7 @@ const Lobby = () => {
           <div style={{ padding: "14px 16px 12px" }}>
             <div className="display" style={{ fontSize: 30, lineHeight: 1, marginBottom: 6 }}>{card?.trackName ?? "—"}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+              <div className="mono" style={{ fontSize: 11, opacity: 0.6 }}>
                 {[
                   card?.raceCount ? `${card.raceCount} RACES` : null,
                   card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
@@ -262,9 +262,9 @@ const Lobby = () => {
               {countdown && (
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   {picksLocked ? (
-                    <span className="mono" style={{ fontSize: 9, opacity: 0.55 }}>UNDERWAY</span>
+                    <span className="mono" style={{ fontSize: 11, opacity: 0.55 }}>UNDERWAY</span>
                   ) : (
-                    <div className="display" style={{ fontSize: 24, lineHeight: 1, color: "var(--pink)" }}>
+                    <div className="display" style={{ fontSize: 24, lineHeight: 1, color: "var(--pink-light)" }}>
                       {countdown}
                     </div>
                   )}
@@ -302,7 +302,7 @@ const Lobby = () => {
 
         {/* ── JOIN CODE — compact ── */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="mono" style={{ fontSize: 11, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
           <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{scrum.joinCode}</span>
           <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
@@ -344,7 +344,7 @@ const Lobby = () => {
                         <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.5 }}>{i + 1}</span>
                         <div style={{ flex: 1 }}>
                           <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
-                          <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
+                          <div className="mono" style={{ fontSize: 11, marginTop: 4, opacity: 0.65 }}>
                             {hasPicked
                               ? `${row.wins}W · ${row.places}P · ${row.shows}S`
                               : "NOT PICKED YET"}
@@ -404,7 +404,7 @@ const Lobby = () => {
                       border: "2px solid rgba(245,232,223,0.5)",
                       background: (scrum.showDetails ?? false) ? "var(--cream)" : "transparent",
                       color: (scrum.showDetails ?? false) ? "var(--ink)" : "var(--cream)",
-                      fontWeight: 700, fontSize: 9, letterSpacing: "0.14em",
+                      fontWeight: 700, fontSize: 11, letterSpacing: "0.14em",
                       textTransform: "uppercase", padding: "6px 10px", cursor: "pointer",
                       opacity: togglingDetails ? 0.4 : 1,
                     }}

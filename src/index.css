@@ -23,6 +23,8 @@
     --pink: #ec5a8c;
     --pink-soft: #f48fb5;
     --pink-pale: #fbd5e2;
+    --pink-deep: #b3245a;   /* cream text on it: 5.3:1 */
+    --pink-light: #f7a1c1;  /* pink text on green: 5:1 */
     --halftone: 0.20;
 
     /* Tailwind HSL tokens — mapped to retro palette */
@@ -90,8 +92,8 @@
 
   /* ===== new typography helpers ===== */
   .display { font-family: 'Bowlby One SC', system-ui, sans-serif; font-weight: 400; letter-spacing: 0.005em; line-height: 0.92; }
-  .label   { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; }
-  .label-sm { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: 9px; }
+  .label   { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; }
+  .label-sm { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; }
   .mono    { font-family: 'JetBrains Mono', monospace; }
   .perf-v {
     background-image: linear-gradient(to bottom, rgba(245,232,223,0.4) 50%, transparent 50%);
@@ -134,9 +136,9 @@
   /* Disabled state — consistent across all buttons */
   button:disabled { cursor: not-allowed; }
   .btn-retro-green { background: var(--retro-green); color: var(--cream); }
-  .btn-retro-pink  { background: var(--retro-pink);  color: var(--cream); }
+  .btn-retro-pink  { background: var(--pink-deep);   color: var(--cream); }
   .btn-primary     { background: var(--green);       color: var(--cream); }
-  .btn-pink        { background: var(--pink);        color: var(--cream); }
+  .btn-pink        { background: var(--pink-deep);   color: var(--cream); }
 
   /* ===== ticket clip (legacy) ===== */
   .ticket-clip {
@@ -187,8 +189,8 @@
   /* ===== stamp ===== */
   .stamp-win {
     display: inline-block;
-    border: 2.5px solid var(--pink);
-    color: var(--pink);
+    border: 2.5px solid var(--pink-light);
+    color: var(--pink-light);
     padding: 3px 10px 2px;
     font-family: 'Bowlby One SC', system-ui, sans-serif;
     font-size: 15px;

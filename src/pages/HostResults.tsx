@@ -202,7 +202,7 @@ const HostResults = () => {
                   )}
                 </div>
                 {isSettled && (
-                  <span className="label-sm" style={{ color: "var(--pink)" }}>✓ SETTLED</span>
+                  <span className="label-sm" style={{ color: "var(--pink-light)" }}>✓ SETTLED</span>
                 )}
               </div>
 

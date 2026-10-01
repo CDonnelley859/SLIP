@@ -715,7 +715,7 @@ const Index = () => {
                   />
                 </div>
                 {createError && (
-                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
+                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink-light)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
                     ⚠ {createError}
                   </div>
                 )}
@@ -765,7 +765,7 @@ const Index = () => {
                   />
                 </div>
                 {joinError && (
-                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
+                  <div className="mono" style={{ padding: "10px 14px", color: "var(--pink-light)", fontSize: 11, background: "rgba(0,0,0,0.2)" }}>
                     ⚠ {joinError}
                   </div>
                 )}
@@ -910,7 +910,7 @@ const Index = () => {
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
                       {s.allSettled && (
-                        <div className="label-sm" style={{ color: "var(--pink)", marginBottom: 6, letterSpacing: "0.16em" }}>
+                        <div className="label-sm" style={{ color: "var(--pink-light)", marginBottom: 6, letterSpacing: "0.16em" }}>
                           RACE FINISHED · READY TO SEND
                         </div>
                       )}
@@ -952,7 +952,7 @@ const Index = () => {
                         <button
                           onClick={() => navigate(`/scrum/${s.scrumId}/slip`)}
                           className="label"
-                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--pink)", textDecoration: "underline", width: "100%", textAlign: "center" }}
+                          style={{ background: "transparent", border: 0, cursor: "pointer", color: "var(--pink-light)", textDecoration: "underline", width: "100%", textAlign: "center" }}
                         >
                           SEND TO SPINDLE →
                         </button>

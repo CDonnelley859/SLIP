@@ -18,7 +18,7 @@ const STEPS: Step[] = [
         <p>Pick one horse per race. Score points based on where your horse finishes. Most points at the end of the day wins.</p>
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            { pos: "1ST", pts: "5 PTS", color: "var(--pink)" },
+            { pos: "1ST", pts: "5 PTS", color: "var(--pink-light)" },
             { pos: "2ND", pts: "3 PTS", color: "var(--cream)" },
             { pos: "3RD", pts: "1 PT",  color: "var(--cream)" },
           ].map(r => (
@@ -45,7 +45,7 @@ const STEPS: Step[] = [
             <p>Pick a single racecourse. Six races across the day, one horse each. Share a 4-character code with your group. Best total score wins.</p>
           </div>
           <div style={{ border: "3px solid var(--pink)", padding: "16px" }}>
-            <div className="display" style={{ fontSize: 18, color: "var(--pink)", marginBottom: 6 }}>MEGA SLIP</div>
+            <div className="display" style={{ fontSize: 18, color: "var(--pink-light)", marginBottom: 6 }}>MEGA SLIP</div>
             <p>Pick two or more racecourses. Everyone in the group competes across every track at once — a combined leaderboard across all venues.</p>
             <p style={{ marginTop: 8, opacity: 0.6 }}>More tracks = more races = more chaos.</p>
           </div>
@@ -66,7 +66,7 @@ const STEPS: Step[] = [
             { step: "03", text: "You'll get a short join code — send it to whoever's playing." },
           ].map(s => (
             <div key={s.step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--pink)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--pink-light)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
               <p>{s.text}</p>
             </div>
           ))}
@@ -83,17 +83,17 @@ const STEPS: Step[] = [
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
+              <div className="mono" style={{ fontSize: 11, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
               <div className="display" style={{ fontSize: 18, color: "var(--cream)" }}>AB12</div>
             </div>
             <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>Single track</div>
           </div>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
-              <div className="display" style={{ fontSize: 18, color: "var(--pink)" }}>AB1234</div>
+              <div className="mono" style={{ fontSize: 11, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
+              <div className="display" style={{ fontSize: 18, color: "var(--pink-light)" }}>AB1234</div>
             </div>
-            <div className="label-sm" style={{ color: "var(--pink)", opacity: 0.7 }}>Mega Slip</div>
+            <div className="label-sm" style={{ color: "var(--pink-light)", opacity: 0.7 }}>Mega Slip</div>
           </div>
         </div>
         <p style={{ marginTop: 16, opacity: 0.6 }}>You can also join via a share link if someone sends you one directly.</p>
@@ -136,7 +136,7 @@ const STEPS: Step[] = [
             { step: "03", text: "Next time you create a group, tap + USE A CREW in the form to auto-enrol them all." },
           ].map(s => (
             <div key={s.step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--pink)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--pink-light)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
               <p>{s.text}</p>
             </div>
           ))}
@@ -161,7 +161,7 @@ const STEPS: Step[] = [
             { step: "03", text: "Once a race goes off, that pick is locked — but open races are still fair game." },
           ].map(s => (
             <div key={s.step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--pink)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--pink-light)", flexShrink: 0, paddingTop: 2, letterSpacing: "0.1em" }}>{s.step}</span>
               <p>{s.text}</p>
             </div>
           ))}
@@ -180,7 +180,7 @@ const STEPS: Step[] = [
         <p>Your Slip is your ticket — every pick you've made, with live results as races settle.</p>
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            { label: "WIN",     desc: "Your horse finished 1st", color: "var(--pink)" },
+            { label: "WIN",     desc: "Your horse finished 1st", color: "var(--pink-light)" },
             { label: "PLACE",   desc: "Your horse finished 2nd", color: "var(--cream)" },
             { label: "SHOW",    desc: "Your horse finished 3rd", color: "var(--cream)" },
             { label: "OUT",     desc: "Better luck next race",   color: "rgba(245,232,223,0.4)" },
@@ -218,7 +218,7 @@ const STEPS: Step[] = [
           ))}
         </div>
         <div style={{ marginTop: 24, border: "3px solid rgba(245,232,223,0.35)", padding: "18px", textAlign: "center" }}>
-          <div className="display" style={{ fontSize: 22, color: "var(--pink)", marginBottom: 6 }}>THAT'S IT.</div>
+          <div className="display" style={{ fontSize: 22, color: "var(--pink-light)", marginBottom: 6 }}>THAT'S IT.</div>
           <p style={{ opacity: 0.7 }}>Pick your horses. Beat your mates. Pour one out for the ones that didn't place.</p>
         </div>
       </>
@@ -295,7 +295,7 @@ const HowToPlay = () => {
         >
           {/* step number */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <span className="display" style={{ fontSize: 56, lineHeight: 1, color: "var(--pink)" }}>
+            <span className="display" style={{ fontSize: 56, lineHeight: 1, color: "var(--pink-light)" }}>
               {String(current.number).padStart(2, "0")}
             </span>
             <div style={{ height: 3, flex: 1, background: "rgba(245,232,223,0.2)" }}>

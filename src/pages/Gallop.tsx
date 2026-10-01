@@ -289,7 +289,7 @@ const Gallop = () => {
           <span className="display" style={{ fontSize: 36, lineHeight: 0.9, color: "var(--cream)" }}>
             {card?.trackName ?? "—"}
           </span>
-          <span className="label" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.7 }}>
+          <span className="label" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.7 }}>
             {offTime}
           </span>
         </div>
@@ -346,7 +346,7 @@ const Gallop = () => {
                 {card?.raceDate ?? ""}
               </span>
               {isLocked && (
-                <span className="label-sm" style={{ background: "var(--pink)", color: "var(--cream)", padding: "3px 6px" }}>
+                <span className="label-sm" style={{ background: "var(--pink-deep)", color: "var(--cream)", padding: "3px 6px" }}>
                   LOCKED
                 </span>
               )}
@@ -451,7 +451,7 @@ const Gallop = () => {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="display" style={{ fontSize: 18 }}>{h.name}</div>
                   {showDetails && (
-                    <div className="mono" style={{ fontSize: 10, marginTop: 5, lineHeight: 1.5, opacity: 0.75 }}>
+                    <div className="mono" style={{ fontSize: 11, marginTop: 5, lineHeight: 1.5, opacity: 0.75 }}>
                       {h.jockey && <div>J: {h.jockey}</div>}
                       {h.lbs && <div>WT: {formatWeight(h.lbs)}</div>}
                       {h.trainer && <div>T: {h.trainer}</div>}
@@ -469,8 +469,8 @@ const Gallop = () => {
                       style={{ flexShrink: 0, paddingTop: 2 }}
                     >
                       <span className="display" style={{
-                        display: "inline-block", border: "2px solid var(--pink)",
-                        color: "var(--pink)", padding: "2px 6px",
+                        display: "inline-block", border: "2px solid var(--pink-light)",
+                        color: "var(--pink-light)", padding: "2px 6px",
                         fontSize: 12, letterSpacing: "0.06em", background: "transparent",
                       }}>
                         INKED

@@ -161,7 +161,7 @@ const CrewPage = () => {
                   </div>
                   <div style={{ flex: 1, padding: "16px 18px 18px", textAlign: "right" }}>
                     <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST FINISH</div>
-                    <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--pink)" }}>
+                    <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--pink-light)" }}>
                       {stats.bestRank ? `#${stats.bestRank}` : "—"}
                     </div>
                   </div>
@@ -188,7 +188,7 @@ const CrewPage = () => {
                 {/* Win / place / show */}
                 <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
                   {[
-                    { label: "WINS",   value: stats.wins,   color: "var(--pink)" },
+                    { label: "WINS",   value: stats.wins,   color: "var(--pink-light)" },
                     { label: "PLACES", value: stats.places, color: "var(--cream)" },
                     { label: "SHOWS",  value: stats.shows,  color: "var(--cream)" },
                   ].map((s, i) => (

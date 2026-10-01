@@ -35,15 +35,18 @@ export default {
         },
       },
       borderRadius: {
-        DEFAULT: "0.25rem",
-        lg: "0.5rem",
-        xl: "0.75rem",
+        none: "0",
+        sm: "4px",
+        DEFAULT: "0",
+        md: "0",
+        lg: "0",
+        xl: "0",
         full: "9999px",
       },
       fontFamily: {
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-        display: ["Bagel Fat One", "system-ui", "sans-serif"],
+        display: ["Bowlby One SC", "system-ui", "sans-serif"],
       },
       fontSize: {
         "headline-xl": ["64px", { lineHeight: "1.0", letterSpacing: "-0.04em", fontWeight: "900" }],

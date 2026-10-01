@@ -20,7 +20,7 @@ export const NamePrompt = () => {
         </div>
         <form onSubmit={submit}>
           <div className="relative border-brutalist">
-            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[10px] uppercase z-10">
+            <label className="absolute top-[-9px] left-3 bg-background px-2 text-label-caps text-[11px] uppercase z-10">
               YOUR_HANDLE
             </label>
             <input
