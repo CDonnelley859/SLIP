@@ -87,7 +87,7 @@ const FriendProfile = () => {
   }, [friendUserId, userId]);
 
   return (
-    <div className="min-h-screen halftone-bg" style={{ background: "var(--green)" }}>
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
       <header style={{
         background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.3)",
         display: "flex", alignItems: "center", justifyContent: "space-between",

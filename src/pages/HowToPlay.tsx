@@ -256,7 +256,7 @@ const HowToPlay = () => {
 
   return (
     <div
-      className="min-h-screen halftone-bg"
+      className="min-h-screen"
       style={{ background: "var(--green)", display: "flex", flexDirection: "column" }}
     >
       {/* ── HEADER ── */}

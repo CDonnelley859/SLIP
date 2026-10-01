@@ -333,7 +333,7 @@ const MegaHub = () => {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--green)" }}>
+    <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
 
       {/* HEADER */}
       <header style={{ background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.3)", padding: "16px 18px 14px" }}>

@@ -459,7 +459,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen halftone-bg pb-20" style={{ background: "var(--green)" }}>
+    <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header

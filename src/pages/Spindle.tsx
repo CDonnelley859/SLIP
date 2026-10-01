@@ -103,10 +103,10 @@ function pointsFor(status: LineStatus): number {
 }
 
 const StampBadge = ({ status }: { status: LineStatus }) => {
-  if (status === "WIN") return <span className="stamp-win">WIN</span>;
-  if (status === "PLACE") return <span className="stamp-place">PLACE</span>;
-  if (status === "SHOW") return <span className="stamp-show">SHOW</span>;
-  return <span className="stamp-out">OUT</span>;
+  if (status === "WIN") return <span className="stamp stamp-win">WIN</span>;
+  if (status === "PLACE") return <span className="stamp stamp-place">PLACE</span>;
+  if (status === "SHOW") return <span className="stamp stamp-show">SHOW</span>;
+  return <span className="stamp stamp-out">OUT</span>;
 };
 
 const ScallopTop = () => (

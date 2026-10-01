@@ -80,7 +80,7 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen halftone-bg" style={{ background: "var(--green)" }}>
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header style={{

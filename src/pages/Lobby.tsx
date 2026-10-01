@@ -215,7 +215,7 @@ const Lobby = () => {
   const picksLocked = countdown === "PICKS LOCKED";
 
   return (
-    <div className="min-h-screen halftone-bg" style={{ background: "var(--green)" }}>
+    <div className="min-h-screen" style={{ background: "var(--green)" }}>
 
       {/* ── HEADER ── */}
       <header style={{ background: "var(--green)", borderBottom: "3px solid rgba(245,232,223,0.3)", padding: "16px 18px 14px" }}>

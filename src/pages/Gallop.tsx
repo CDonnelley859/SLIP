@@ -267,7 +267,7 @@ const Gallop = () => {
     : "—";
 
   return (
-    <div className="min-h-screen flex flex-col halftone-bg" style={{ background: "var(--green)", touchAction: "pan-y" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--green)", touchAction: "pan-y" }}>
 
       {/* ── HEADER ── */}
       <header
