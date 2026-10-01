@@ -219,30 +219,6 @@
     letter-spacing: 0.02em;
   }
 
-  /* ===== mascot (rubber-hose gallop, 0.44s beat) ===== */
-  .rh-bounce { animation: rhBounce 0.44s ease-in-out infinite; }
-  .rh-leg-a  { animation: rhLeg 0.44s ease-in-out infinite; }
-  .rh-leg-b  { animation: rhLeg 0.44s ease-in-out infinite reverse; }
-  .rh-tail   { animation: rhTail 0.44s ease-in-out infinite; }
-  .rh-head   { animation: rhHead 0.44s ease-in-out infinite; }
-  .rh-rider  { animation: rhRider 0.44s ease-in-out infinite; }
-  .rh-neck   { animation: rhNeck 0.44s ease-in-out infinite; }
-  .rh-wave   { animation: rhWave 0.44s ease-in-out infinite alternate; }
-  .rh-puff   { animation: rhPuff 0.66s ease-out infinite; }
-  .rh-speed  { animation: rhSpeed 0.44s linear infinite; }
-  @keyframes rhBounce { 0%,100% { transform: translateY(0) scale(1.05, 0.94); } 50% { transform: translateY(-16px) scale(0.96, 1.05); } }
-  @keyframes rhLeg    { 0%,100% { transform: rotate(-26deg); } 50% { transform: rotate(26deg); } }
-  @keyframes rhTail   { 0%,100% { transform: rotate(10deg); } 50% { transform: rotate(-16deg); } }
-  @keyframes rhHead   { 0%,100% { transform: rotate(4deg); } 50% { transform: rotate(-6deg); } }
-  @keyframes rhRider  { 0%,100% { transform: translateY(-6px) rotate(-3deg); } 50% { transform: translateY(6px) rotate(3deg); } }
-  @keyframes rhNeck   { 0%,100% { transform: scaleY(1.12); } 50% { transform: scaleY(0.9); } }
-  @keyframes rhWave   { from { transform: rotate(-22deg); } to { transform: rotate(18deg); } }
-  @keyframes rhPuff   { 0% { transform: translateX(0) scale(0.3); opacity: 1; } 100% { transform: translateX(-34px) scale(1.25); opacity: 0; } }
-  @keyframes rhSpeed  { 0% { transform: translateX(10px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-20px); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    .rh-bounce, .rh-leg-a, .rh-leg-b, .rh-tail, .rh-head, .rh-rider, .rh-neck, .rh-wave, .rh-puff, .rh-speed { animation: none; }
-  }
-
   /* ===== animations ===== */
   .animate-print {
     animation: ticketPrint 3.6s linear forwards;

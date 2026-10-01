@@ -1,4 +1,3 @@
-import { Mascot } from "@/components/Mascot";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -515,9 +514,8 @@ const Index = () => {
           </div>
 
           {cards.length === 0 && !syncing ? (
-            <div style={{ border: "3px solid var(--cream)", padding: "20px 24px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <Mascot size={180} />
-              <p className="label" style={{ color: "var(--cream)" }}>No races today. The horse is warming up.</p>
+            <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
+              <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
             <>
