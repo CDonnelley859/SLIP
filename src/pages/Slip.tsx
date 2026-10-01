@@ -1,3 +1,4 @@
+import { TicketStub } from "@/components/TicketStub";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -605,6 +606,8 @@ const Slip = () => {
                   </div>
                 ))}
               </div>
+
+              <TicketStub seed={`${id ?? ""}:${viewUserId ?? userId ?? ""}`} />
 
             </div>
           </div>

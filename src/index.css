@@ -183,6 +183,58 @@
       linear-gradient(-45deg, transparent 48%, currentColor 48%, currentColor 52%, transparent 52%);
   }
 
+  /* ===== harlequin (jockey silks) ===== */
+  .harlequin {
+    background-color: var(--green);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpolygon points='16,0 32,16 16,32 0,16' fill='%23ec5a8c'/%3E%3C/svg%3E");
+    background-size: 32px 32px;
+  }
+  .harlequin-sm { background-size: 20px 20px; }
+
+  /* ===== halftone shading ===== */
+  .halftone-dots {
+    background-image: radial-gradient(circle, var(--dot, var(--ink)) 1.1px, transparent 1.6px);
+    background-size: 6px 6px;
+  }
+  .halftone-diamond {
+    background-image: linear-gradient(45deg, var(--dot, var(--ink)) 25%, transparent 25%, transparent 75%, var(--dot, var(--ink)) 75%),
+                      linear-gradient(45deg, var(--dot, var(--ink)) 25%, transparent 25%, transparent 75%, var(--dot, var(--ink)) 75%);
+    background-size: 8px 8px; background-position: 0 0, 4px 4px;
+  }
+  /* overlay that fades from solid dots to nothing; add to any position:relative box */
+  .halftone-shade { position: relative; }
+  .halftone-shade::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, var(--dot, rgba(26,20,16,0.55)) 1.3px, transparent 1.8px);
+    background-size: 6px 6px;
+    -webkit-mask-image: linear-gradient(to var(--fade, bottom), #000, transparent 70%);
+            mask-image: linear-gradient(to var(--fade, bottom), #000, transparent 70%);
+  }
+
+  /* ===== extruded display type ===== */
+  .display-extruded {
+    font-family: 'Bowlby One SC', system-ui, sans-serif;
+    text-shadow: 1px 1px 0 var(--ext, var(--pink-deep)), 2px 2px 0 var(--ext, var(--pink-deep)),
+                 3px 3px 0 var(--ext, var(--pink-deep)), 4px 4px 0 var(--ext, var(--pink-deep));
+    letter-spacing: 0.02em;
+  }
+
+  /* ===== mascot gallop ===== */
+  .mascot-bob   { animation: mascotBob 0.5s ease-in-out infinite; transform-origin: 50% 100%; }
+  .mascot-legs-a { animation: legSwing 0.5s ease-in-out infinite; }
+  .mascot-legs-b { animation: legSwing 0.5s ease-in-out infinite reverse; }
+  .mascot-tail  { animation: tailWag 0.5s ease-in-out infinite; }
+  .mascot-rider { animation: riderLean 0.5s ease-in-out infinite; }
+  .mascot-arm   { animation: armWave 0.5s ease-in-out infinite; }
+  @keyframes mascotBob  { 0%,100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-9px) rotate(1.5deg); } }
+  @keyframes legSwing   { 0%,100% { transform: rotate(-22deg); } 50% { transform: rotate(24deg); } }
+  @keyframes tailWag    { 0%,100% { transform: rotate(6deg); } 50% { transform: rotate(-12deg); } }
+  @keyframes riderLean  { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-4deg) translateY(2px); } }
+  @keyframes armWave    { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .mascot-bob, .mascot-legs-a, .mascot-legs-b, .mascot-tail, .mascot-rider, .mascot-arm { animation: none; }
+  }
+
   /* ===== animations ===== */
   .animate-print {
     animation: ticketPrint 3.6s linear forwards;

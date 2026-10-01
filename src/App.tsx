@@ -1,3 +1,4 @@
+import { Splash } from "@/components/Splash";
 import { Component, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -117,6 +118,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <Splash />
       <BrowserRouter>
         <AuthProvider>
           <ErrorBoundary>
