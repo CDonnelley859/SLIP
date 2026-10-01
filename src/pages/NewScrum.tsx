@@ -104,7 +104,7 @@ const NewScrum = () => {
             {busy ? "CREATING…" : "CREATE GROUP"}
           </button>
         </form>
-        <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 16, textAlign: "center" }}>
+        <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 16, textAlign: "center" }}>
           A JOIN CODE WILL BE GENERATED FOR YOU TO SHARE
         </p>
       </main>

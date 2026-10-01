@@ -279,7 +279,7 @@ const SlipDesigns = () => (
         <div key={n}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
             <span className="display" style={{ fontSize: 32, color: "var(--cream)", lineHeight: 1 }}>{n}</span>
-            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>{label.toUpperCase()}</span>
+            <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{label.toUpperCase()}</span>
           </div>
           <div style={{ overflow: "visible", padding: "0 8px" }}>{el}</div>
         </div>

@@ -320,7 +320,7 @@ const MegaHub = () => {
   // ── Loading / error states ───────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
-      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>Loading…</p>
     </div>
   );
 
@@ -351,7 +351,7 @@ const MegaHub = () => {
 
         {/* JOIN CODE — compact */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", marginBottom: 14 }}>
-          <span className="mono" style={{ fontSize: 11, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="mono" style={{ fontSize: 11, opacity: 0.7, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
           <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{mega?.joinCode}</span>
           <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
@@ -369,7 +369,7 @@ const MegaHub = () => {
         {/* Track list */}
         {tracks.length === 0 ? (
           <div style={{ border: "3px solid var(--cream)", padding: 24, textAlign: "center" }}>
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No tracks yet.</p>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>No tracks yet.</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -391,7 +391,7 @@ const MegaHub = () => {
                   <div style={{ padding: "14px 16px 10px" }}>
                     <div className="display" style={{ fontSize: 20, lineHeight: 1, marginBottom: 6 }}>{t.trackName}</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div className="mono" style={{ fontSize: 11, opacity: 0.6 }}>
+                      <div className="mono" style={{ fontSize: 11, opacity: 0.7 }}>
                         {[
                           `${t.raceCount} RACES`,
                           formatTime(t.postTime),
@@ -409,7 +409,7 @@ const MegaHub = () => {
                             {picked}/{total}
                           </span>
                         ) : (
-                          <span className="mono" style={{ fontSize: 11, letterSpacing: "0.06em", color: "rgba(245,232,223,0.35)", padding: "2px 7px" }}>
+                          <span className="mono" style={{ fontSize: 11, letterSpacing: "0.06em", color: "rgba(245,232,223,0.7)", padding: "2px 7px" }}>
                             0/{total}
                           </span>
                         )}
@@ -444,7 +444,7 @@ const MegaHub = () => {
 
           {leaderboard.length === 0 ? (
             <div style={{ border: "3px solid var(--cream)", padding: 24, textAlign: "center" }}>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No players yet.</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>No players yet.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -462,19 +462,19 @@ const MegaHub = () => {
                       display: "flex", alignItems: "center", gap: 12,
                     }}
                   >
-                    <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.5 }}>
+                    <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.7 }}>
                       {i + 1}
                     </span>
                     <div style={{ flex: 1 }}>
                       <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
-                      <div className="mono" style={{ fontSize: 11, marginTop: 4, opacity: 0.65 }}>
+                      <div className="mono" style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>
                         {pickedUserIds.has(row.userId)
                           ? `${row.wins}W · ${row.places}P · ${row.shows}S`
                           : "NOT PICKED YET"}
                       </div>
                     </div>
                     <div className="display" style={{ fontSize: 32, lineHeight: 1 }}>
-                      {row.total}<span style={{ fontSize: 12, marginLeft: 4, opacity: 0.6 }}>PTS</span>
+                      {row.total}<span style={{ fontSize: 12, marginLeft: 4, opacity: 0.7 }}>PTS</span>
                     </div>
                   </div>
                 );
@@ -496,8 +496,8 @@ const MegaHub = () => {
                 padding: "12px 14px",
               }}
             >
-              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>HOST SETTINGS</span>
-              <span className="mono" style={{ color: "var(--cream)", opacity: 0.5, fontSize: 14 }}>
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>HOST SETTINGS</span>
+              <span className="mono" style={{ color: "var(--cream)", opacity: 0.7, fontSize: 14 }}>
                 {showHostSettings ? "▲" : "▼"}
               </span>
             </button>
@@ -535,12 +535,12 @@ const MegaHub = () => {
                     }}
                   >
                     <span>Add Track</span>
-                    <span style={{ opacity: 0.5 }}>{showAddTrack ? "CANCEL" : "+"}</span>
+                    <span style={{ opacity: 0.7 }}>{showAddTrack ? "CANCEL" : "+"}</span>
                   </button>
                   {showAddTrack && (
                     <div style={{ borderTop: "1px solid rgba(245,232,223,0.1)", paddingBottom: 8 }}>
                       {availableCards.length === 0 ? (
-                        <p className="label-sm" style={{ padding: "12px 0", color: "var(--cream)", opacity: 0.5 }}>No other tracks available today.</p>
+                        <p className="label-sm" style={{ padding: "12px 0", color: "var(--cream)", opacity: 0.7 }}>No other tracks available today.</p>
                       ) : availableCards.map(card => (
                         <button
                           key={card.id}
@@ -555,7 +555,7 @@ const MegaHub = () => {
                         >
                           <div>
                             <div className="display" style={{ fontSize: 15 }}>{card.trackName}</div>
-                            <div className="mono" style={{ fontSize: 11, opacity: 0.6, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
+                            <div className="mono" style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{formatTime(card.postTime)} · {card.raceCount} RACES</div>
                           </div>
                           <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>
                             {addingCard === card.id ? "ADDING…" : "ADD →"}
@@ -571,7 +571,7 @@ const MegaHub = () => {
                   <div key={t.scrumId} style={{ borderTop: "1px solid rgba(245,232,223,0.15)", padding: "6px 14px" }}>
                     {confirmRemoveTrack === t.scrumId ? (
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "4px 0" }}>
-                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>REMOVE {t.trackName}?</span>
+                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>REMOVE {t.trackName}?</span>
                         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                           <button
                             onClick={() => setConfirmRemoveTrack(null)}
@@ -600,7 +600,7 @@ const MegaHub = () => {
                         }}
                       >
                         <span>Remove — {t.trackName}</span>
-                        <span style={{ opacity: 0.5 }}>✕</span>
+                        <span style={{ opacity: 0.7 }}>✕</span>
                       </button>
                     )}
                   </div>
@@ -619,7 +619,7 @@ const MegaHub = () => {
                       }}
                     >
                       <span>Enter Results — {t.trackName}</span>
-                      <span style={{ opacity: 0.5 }}>→</span>
+                      <span style={{ opacity: 0.7 }}>→</span>
                     </button>
                   </div>
                 ))}
@@ -669,7 +669,7 @@ const MegaHub = () => {
               style={{
                 border: "2px dashed rgba(245,232,223,0.35)", background: "transparent",
                 color: "var(--cream)", padding: "12px", width: "100%",
-                cursor: "pointer", opacity: 0.55,
+                cursor: "pointer", opacity: 0.7,
               }}
             >
               LEAVE GROUP

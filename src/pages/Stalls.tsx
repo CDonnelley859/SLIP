@@ -88,7 +88,7 @@ const Stalls = () => {
               </div>
             </div>
 
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>{horseCount} HORSES ACROSS THE CARD</p>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{horseCount} HORSES ACROSS THE CARD</p>
 
             <Link
               to={`/scrum/${id}/gallop`}

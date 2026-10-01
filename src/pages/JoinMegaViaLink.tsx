@@ -27,7 +27,7 @@ const JoinMegaViaLink = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
-      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Joining…</p>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>Joining…</p>
     </div>
   );
 };

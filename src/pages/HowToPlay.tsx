@@ -47,7 +47,7 @@ const STEPS: Step[] = [
           <div style={{ border: "3px solid var(--pink)", padding: "16px" }}>
             <div className="display" style={{ fontSize: 18, color: "var(--pink-light)", marginBottom: 6 }}>MEGA SLIP</div>
             <p>Pick two or more racecourses. Everyone in the group competes across every track at once — a combined leaderboard across all venues.</p>
-            <p style={{ marginTop: 8, opacity: 0.6 }}>More tracks = more races = more chaos.</p>
+            <p style={{ marginTop: 8, opacity: 0.7 }}>More tracks = more races = more chaos.</p>
           </div>
         </div>
       </>
@@ -83,20 +83,20 @@ const STEPS: Step[] = [
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 11, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
+              <div className="mono" style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
               <div className="display" style={{ fontSize: 18, color: "var(--cream)" }}>AB12</div>
             </div>
-            <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>Single track</div>
+            <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>Single track</div>
           </div>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 11, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
+              <div className="mono" style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
               <div className="display" style={{ fontSize: 18, color: "var(--pink-light)" }}>AB1234</div>
             </div>
             <div className="label-sm" style={{ color: "var(--pink-light)", opacity: 0.7 }}>Mega Slip</div>
           </div>
         </div>
-        <p style={{ marginTop: 16, opacity: 0.6 }}>You can also join via a share link if someone sends you one directly.</p>
+        <p style={{ marginTop: 16, opacity: 0.7 }}>You can also join via a share link if someone sends you one directly.</p>
       </>
     ),
   },
@@ -114,12 +114,12 @@ const STEPS: Step[] = [
             "The leaderboard starts filling in as picks come in.",
           ].map((t, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.4, flexShrink: 0, paddingTop: 2 }}>—</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.7, flexShrink: 0, paddingTop: 2 }}>—</span>
               <p>{t}</p>
             </div>
           ))}
         </div>
-        <p style={{ marginTop: 16, opacity: 0.6 }}>You can enter and exit The Pen freely — your picks are saved as you go.</p>
+        <p style={{ marginTop: 16, opacity: 0.7 }}>You can enter and exit The Pen freely — your picks are saved as you go.</p>
       </>
     ),
   },
@@ -142,9 +142,9 @@ const STEPS: Step[] = [
           ))}
         </div>
         <div style={{ marginTop: 16, border: "1.5px solid rgba(245,232,223,0.25)", padding: "12px 14px" }}>
-          <p style={{ opacity: 0.65 }}>Crew members don't need to enter a join code — the group appears in their Active Groups automatically when they next open the app.</p>
+          <p style={{ opacity: 0.7 }}>Crew members don't need to enter a join code — the group appears in their Active Groups automatically when they next open the app.</p>
         </div>
-        <p style={{ marginTop: 12, opacity: 0.5 }}>Manage your saved crews any time from Settings.</p>
+        <p style={{ marginTop: 12, opacity: 0.7 }}>Manage your saved crews any time from Settings.</p>
       </>
     ),
   },
@@ -167,7 +167,7 @@ const STEPS: Step[] = [
           ))}
         </div>
         <div style={{ marginTop: 16, border: "1.5px solid rgba(245,232,223,0.25)", padding: "12px 14px" }}>
-          <p style={{ opacity: 0.65 }}>You don't have to pick all six races at once. Come back as each race approaches.</p>
+          <p style={{ opacity: 0.7 }}>You don't have to pick all six races at once. Come back as each race approaches.</p>
         </div>
       </>
     ),
@@ -183,19 +183,19 @@ const STEPS: Step[] = [
             { label: "WIN",     desc: "Your horse finished 1st", color: "var(--pink-light)" },
             { label: "PLACE",   desc: "Your horse finished 2nd", color: "var(--cream)" },
             { label: "SHOW",    desc: "Your horse finished 3rd", color: "var(--cream)" },
-            { label: "OUT",     desc: "Better luck next race",   color: "rgba(245,232,223,0.4)" },
-            { label: "PENDING", desc: "Race hasn't happened yet",color: "rgba(245,232,223,0.35)" },
+            { label: "OUT",     desc: "Better luck next race",   color: "rgba(245,232,223,0.7)" },
+            { label: "PENDING", desc: "Race hasn't happened yet",color: "rgba(245,232,223,0.7)" },
           ].map(r => (
             <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span className="display" style={{
                 fontSize: 12, border: `2px solid ${r.color}`, color: r.color,
                 padding: "3px 8px", flexShrink: 0, minWidth: 64, textAlign: "center",
               }}>{r.label}</span>
-              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>{r.desc}</span>
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{r.desc}</span>
             </div>
           ))}
         </div>
-        <p style={{ marginTop: 16, opacity: 0.6 }}>Swipe left and right to see your group's other slips too.</p>
+        <p style={{ marginTop: 16, opacity: 0.7 }}>Swipe left and right to see your group's other slips too.</p>
       </>
     ),
   },
@@ -212,7 +212,7 @@ const STEPS: Step[] = [
             "Your final rank and score are saved to your Form.",
           ].map((t, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.4, flexShrink: 0, paddingTop: 2 }}>—</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.7, flexShrink: 0, paddingTop: 2 }}>—</span>
               <p>{t}</p>
             </div>
           ))}

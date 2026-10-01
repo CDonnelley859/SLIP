@@ -256,7 +256,7 @@ const Gallop = () => {
             </button>
           </>
         ) : (
-          <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading card…</p>
+          <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>Loading card…</p>
         )}
       </div>
     );
@@ -321,7 +321,7 @@ const Gallop = () => {
             })}
             <span
               className="label-sm"
-              style={{ marginLeft: "auto", opacity: 0.6, color: "var(--cream)" }}
+              style={{ marginLeft: "auto", opacity: 0.7, color: "var(--cream)" }}
             >
               ENTRY {String(currentIdx + 1).padStart(2, "0")}/{String(races.length).padStart(2, "0")}
             </span>
@@ -385,7 +385,7 @@ const Gallop = () => {
             }}>
               <div>
                 <div className="display" style={{ fontSize: 16, color: "var(--cream)" }}>RACE STARTED</div>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 2 }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 2 }}>
                   Picking is closed.
                 </div>
               </div>

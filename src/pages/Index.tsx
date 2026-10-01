@@ -580,7 +580,7 @@ const Index = () => {
             </div>
             {/* Swipe hint — only shown when there are multiple cards to scroll through */}
             {cards.length > 1 && (
-              <p className="label-sm" style={{ textAlign: "right", marginTop: 6, opacity: 0.4, color: "var(--cream)" }}>
+              <p className="label-sm" style={{ textAlign: "right", marginTop: 6, opacity: 0.7, color: "var(--cream)" }}>
                 SWIPE FOR MORE →
               </p>
             )}
@@ -665,7 +665,7 @@ const Index = () => {
                       {selectedCrewId && (
                         <span
                           className="label-sm"
-                          style={{ color: "var(--cream)", opacity: 0.4 }}
+                          style={{ color: "var(--cream)", opacity: 0.7 }}
                           onClick={e => { e.stopPropagation(); setSelectedCrewId(null); setShowCrewPicker(false); }}
                         >
                           ✕
@@ -691,7 +691,7 @@ const Index = () => {
                             }}
                           >
                             <span>{crew.name}</span>
-                            <span style={{ opacity: 0.6 }}>{crew.members.length} PLAYERS</span>
+                            <span style={{ opacity: 0.7 }}>{crew.members.length} PLAYERS</span>
                           </button>
                         ))}
                       </div>
@@ -810,14 +810,14 @@ const Index = () => {
                     onClick={() => navigate(`/mega/${mega.id}/hub`)}
                     style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                   >
-                    <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>MEGA GROUP</div>
+                    <div className="label-sm" style={{ opacity: 0.7, marginBottom: 2 }}>MEGA GROUP</div>
                     <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 4 }}>{mega.name}</div>
-                    <div className="label-sm" style={{ opacity: 0.5 }}>{mega.scrumIds.length} TRACKS</div>
+                    <div className="label-sm" style={{ opacity: 0.7 }}>{mega.scrumIds.length} TRACKS</div>
                   </div>
                   <div style={{ borderTop: "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
                     {confirmLeaveMegaId === mega.id ? (
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>LEAVE THIS GROUP?</span>
+                        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>LEAVE THIS GROUP?</span>
                         <div style={{ display: "flex", gap: 8 }}>
                           <button
                             onClick={() => setConfirmLeaveMegaId(null)}
@@ -871,7 +871,7 @@ const Index = () => {
             </div>
           ) : activeSlips.length === 0 && activeMegas.length === 0 ? (
             <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
-              <p className="label" style={{ color: "var(--cream)", opacity: 0.5 }}>
+              <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
@@ -914,13 +914,13 @@ const Index = () => {
                           RACE FINISHED · READY TO SEND
                         </div>
                       )}
-                      <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>VENUE</div>
+                      <div className="label-sm" style={{ opacity: 0.7, marginBottom: 2 }}>VENUE</div>
                       <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 10 }}>{s.trackName}</div>
-                      <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>GROUP</div>
+                      <div className="label-sm" style={{ opacity: 0.7, marginBottom: 2 }}>GROUP</div>
                       <div className="display" style={{ fontSize: 18, lineHeight: 1, marginBottom: s.allSettled ? 0 : 10 }}>{s.scrumName}</div>
                       {!s.allSettled && (
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                          <span className="label-sm" style={{ opacity: 0.6 }}>NEXT RACE</span>
+                          <span className="label-sm" style={{ opacity: 0.7 }}>NEXT RACE</span>
                           <span className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{nextRaceDisplay}</span>
                         </div>
                       )}
@@ -930,7 +930,7 @@ const Index = () => {
                     <div style={{ borderTop: s.allSettled ? "1.5px solid rgba(255,180,180,0.3)" : "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
                       {confirmLeaveScrumId === s.scrumId ? (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                          <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>LEAVE THIS GROUP?</span>
+                          <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>LEAVE THIS GROUP?</span>
                           <div style={{ display: "flex", gap: 8 }}>
                             <button
                               onClick={() => setConfirmLeaveScrumId(null)}

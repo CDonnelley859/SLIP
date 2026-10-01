@@ -133,7 +133,7 @@ const HostResults = () => {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--green)" }}>
-      <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>Loading…</p>
     </div>
   );
 
@@ -162,7 +162,7 @@ const HostResults = () => {
       >
         <Link to={`/scrum/${id}/lobby`} className="label" style={{ color: "var(--cream)", textDecoration: "none" }}>← LOBBY</Link>
         <span className="display" style={{ fontSize: 22, color: "var(--cream)" }}>RESULTS</span>
-        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>{settledCount}/{races.length}</span>
+        <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>{settledCount}/{races.length}</span>
       </header>
 
       <main style={{ padding: "16px 18px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -170,7 +170,7 @@ const HostResults = () => {
           <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>
             {card?.trackName ?? "—"} · HOST ONLY
           </p>
-          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 4 }}>
+          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 4 }}>
             Pick 1st, 2nd &amp; 3rd for each race, then tap SETTLE
           </p>
         </div>
@@ -196,7 +196,7 @@ const HostResults = () => {
                     {offTime ? ` · ${offTime}` : ""}
                   </span>
                   {race.name && (
-                    <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 2 }}>
+                    <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 2 }}>
                       {race.name}
                     </p>
                   )}
@@ -255,7 +255,7 @@ const HostResults = () => {
         {settledCount === races.length && races.length > 0 && (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 16, textAlign: "center" }}>
             <p className="display" style={{ fontSize: 24, color: "var(--cream)" }}>ALL DONE</p>
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 4 }}>ALL RACES SETTLED</p>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 4 }}>ALL RACES SETTLED</p>
           </div>
         )}
       </main>

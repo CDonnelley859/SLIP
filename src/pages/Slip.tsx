@@ -58,8 +58,8 @@ const Stamp = ({ kind }: { kind: string }) => {
     WIN:     { label: "WIN",     color: "var(--pink-light)",        rot: -8 },
     PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
     SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
-    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.5)",    rot: 4, dashed: true, dim: true },
-    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.4)",    rot: 0, dim: true },
+    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.7)",    rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.7)",    rot: 0, dim: true },
     RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
@@ -535,23 +535,23 @@ const Slip = () => {
 
               {scrum?.name && (
                 <div style={{ textAlign: "center", marginTop: 4 }}>
-                  <span className="label-sm" style={{ opacity: 0.5 }}>{scrum.name}</span>
+                  <span className="label-sm" style={{ opacity: 0.7 }}>{scrum.name}</span>
                 </div>
               )}
 
               {/* TOTAL / RANK */}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, padding: "0 6px" }}>
                 <div>
-                  <div className="label-sm" style={{ opacity: 0.65 }}>TOTAL</div>
+                  <div className="label-sm" style={{ opacity: 0.7 }}>TOTAL</div>
                   <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
-                    {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>PTS</span>
+                    {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>PTS</span>
                   </div>
                 </div>
                 {myRank && (
                   <div style={{ textAlign: "right" }}>
-                    <div className="label-sm" style={{ opacity: 0.65 }}>RANK</div>
+                    <div className="label-sm" style={{ opacity: 0.7 }}>RANK</div>
                     <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
-                      #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.6 }}>OF {playerCount}</span>
+                      #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>OF {playerCount}</span>
                     </div>
                   </div>
                 )}
@@ -560,13 +560,13 @@ const Slip = () => {
               {/* perforated tear */}
               <div style={{ display: "flex", alignItems: "center", margin: "18px -22px 14px" }}>
                 <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginLeft: -10 }} />
-                <div className="perf" style={{ flex: 1, opacity: 0.4 }} />
+                <div className="perf" style={{ flex: 1, opacity: 0.7 }} />
                 <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginRight: -10 }} />
               </div>
 
               {/* pick cards */}
               {lines.length === 0 && (
-                <p className="label-sm" style={{ textAlign: "center", paddingBlock: 16, opacity: 0.5 }}>
+                <p className="label-sm" style={{ textAlign: "center", paddingBlock: 16, opacity: 0.7 }}>
                   No picks yet — head to the Daily Gallop
                 </p>
               )}
@@ -579,7 +579,7 @@ const Slip = () => {
                           <span className="mono" style={{ background: "rgba(245,232,223,0.2)", color: "var(--cream)", padding: "2px 6px", fontSize: 11, letterSpacing: ".18em", border: "1px solid rgba(245,232,223,0.3)" }}>
                             RACE {String(line.raceNumber).padStart(2, "0")}
                           </span>
-                          <span className="mono" style={{ fontSize: 11, opacity: 0.6, color: "var(--cream)" }}>
+                          <span className="mono" style={{ fontSize: 11, opacity: 0.7, color: "var(--cream)" }}>
                             {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </span>
                         </div>
@@ -619,7 +619,7 @@ const Slip = () => {
       {!printing && players.length > 1 && (
         <motion.p
           className="label-sm"
-          initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} transition={{ duration: 0.4, ease: "easeOut" }}
+          initial={{ opacity: 0 }} animate={{ opacity: 0.7 }} transition={{ duration: 0.4, ease: "easeOut" }}
           style={{ marginTop: 12, color: "var(--cream)" }}
         >
           ← SWIPE TO SEE OTHER SLIPS →
@@ -709,7 +709,7 @@ const Slip = () => {
             )}
 
             {alreadySent && (
-              <div className="label-sm" style={{ textAlign: "center", opacity: 0.5, color: "var(--cream)" }}>
+              <div className="label-sm" style={{ textAlign: "center", opacity: 0.7, color: "var(--cream)" }}>
                 SLIP IS ON THE SPINDLE
               </div>
             )}

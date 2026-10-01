@@ -43,7 +43,7 @@ const Auth = () => {
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="display" style={{ fontSize: 64, color: "var(--cream)" }}>SLIP</h1>
-          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginTop: 8 }}>Race-Day Companion</p>
+          <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.7, marginTop: 8 }}>Race-Day Companion</p>
         </div>
 
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
