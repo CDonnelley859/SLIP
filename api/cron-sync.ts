@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { TRA_BASE, traAuth } from "./_tra";
 
 // Initialise Firebase Admin (server-side, for cron)
 if (!getApps().length) {
@@ -13,10 +14,6 @@ if (!getApps().length) {
   });
 }
 
-const TRA_USER = "08xHXpaIUHJ1IXZq1A4ds8A3";
-const TRA_PASS = "a2oT5R6AHlzP10XAhhEDAQhw";
-const TRA_BASE = "https://api.theracingapi.com/v1";
-const TRA_AUTH = "Basic " + Buffer.from(`${TRA_USER}:${TRA_PASS}`).toString("base64");
 
 function normaliseCourse(course: string): string {
   return course.replace(/\s*\([^)]+\)\s*$/, "").trim().toLowerCase();
@@ -42,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Fetch TRA racecards
   const upstream = await fetch(`${TRA_BASE}/racecards/free?limit=100`, {
-    headers: { Authorization: TRA_AUTH },
+    headers: { Authorization: traAuth() },
   });
   if (!upstream.ok) {
     return res.status(502).json({ error: `TRA error ${upstream.status}` });

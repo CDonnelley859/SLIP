@@ -7,9 +7,16 @@
     {
       "path": "/api/cron-virtual-track",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron-results",
+      "schedule": "30 21 * * *"
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }
