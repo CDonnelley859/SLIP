@@ -39,7 +39,7 @@ export const Splash = () => {
           <div className="harlequin harlequin-sm" style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, borderTop: "3px solid var(--ink)" }} />
 
           <motion.div
-            initial={{ x: "-110vw" }}
+            initial={{ x: "110vw" }}
             animate={{ x: 0 }}
             transition={{ type: "spring", stiffness: 70, damping: 14, mass: 1.1 }}
           >

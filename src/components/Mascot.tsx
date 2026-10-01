@@ -9,10 +9,14 @@ import { useId, type ReactNode, type SVGProps } from "react";
 
 const INK = "var(--ink)";
 const CREAM = "var(--cream)";
-const CREAM2 = "var(--cream-2)";
 const PINK = "var(--pink)";
 const PINK_DEEP = "var(--pink-deep)";
 const WHITE = "#fffaf4";
+const GREY = "#8c7f8d";
+const GREY_DK = "#6e6270";
+const GREY_LT = "#a99dab";
+const GOLD = "#e8c84a";
+const GOLD_DK = "#c49a3c";
 
 type Shapes = (p: SVGProps<SVGElement>) => ReactNode;
 
@@ -63,20 +67,30 @@ const Glove = ({ x, y, rot = 0, scale = 1 }: { x: number; y: number; rot?: numbe
   </g>
 );
 
-/** Big bulbous boot hoof with a pink cuff and a shine. */
-const Boot = ({ x, y, rot = 0, far = false }: { x: number; y: number; rot?: number; far?: boolean }) => (
-  <g transform={`translate(${x} ${y}) rotate(${rot})`}>
+/** Thin rubbery grey leg with an ink outline. */
+const Leg = ({ d, far = false }: { d: string; far?: boolean }) => (
+  <g fill="none" strokeLinecap="round">
+    <path d={d} stroke={INK} strokeWidth={17} />
+    <path d={d} stroke={far ? GREY_DK : GREY} strokeWidth={10} />
+  </g>
+);
+
+/** Big puffy gold boot hoof with a cuff, shading and a shine. */
+const Hoof = ({ x, y, rot = 0, far = false }: { x: number; y: number; rot?: number; far?: boolean }) => (
+  <g transform={`translate(${x} ${y}) rotate(${rot})`} opacity={far ? 0.92 : 1}>
     <Solid
-      fill={far ? CREAM2 : CREAM}
+      fill={GOLD}
+      line={3}
       shapes={() => (
         <>
-          <ellipse cx="6" cy="4" rx="19" ry="11.5" />
-          <rect x="-8" y="-9" width="16" height="10" rx="4" />
+          <ellipse cx="8" cy="5" rx="21" ry="13" />
+          <ellipse cx="-2" cy="-6" rx="11" ry="8" />
         </>
       )}
     />
-    <rect x="-8" y="-9" width="16" height="7" rx="3.5" fill={PINK} />
-    <path d="M10 -1 Q17 -1 19 4" stroke={WHITE} strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M-12 10 C0 18 20 18 28 8 C26 16 14 20 4 19 C-4 18 -10 15 -12 10 Z" fill={GOLD_DK} />
+    <path d="M-11 -4 C-6 0 4 0 9 -4" stroke={INK} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <path d="M14 -2 Q22 -1 24 5" stroke={WHITE} strokeWidth="3" fill="none" strokeLinecap="round" />
   </g>
 );
 
@@ -93,8 +107,9 @@ export const Mascot = ({
   const harl = `harl${uid}`;
   const dots = `dots${uid}`;
   const dotsInk = `dotsk${uid}`;
-  const snoutClip = `snout${uid}`;
   const faceClip = `face${uid}`;
+  const bodyClip = `body${uid}`;
+  const headClip = `head${uid}`;
   const a = (c: string) => (animate ? c : "");
   const at = (x: number, y: number) => ({ transformOrigin: `${x}px ${y}px` });
 
@@ -105,8 +120,8 @@ export const Mascot = ({
       height={(size * 330) / 400}
       className={className}
       role="img"
-      aria-label="SLIP mascot: a grinning rubber-hose horse galloping with a waving jockey"
-      style={{ overflow: "visible" }}
+      aria-label="SLIP mascot: a grinning rubber-hose horse with gold hooves galloping, a jockey waving on its back"
+      style={{ overflow: "visible", transform: "scaleX(-1)" }}
     >
       <defs>
         <pattern id={harl} width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
@@ -119,8 +134,11 @@ export const Mascot = ({
         <pattern id={dotsInk} width="6" height="6" patternUnits="userSpaceOnUse">
           <circle cx="3" cy="3" r="1.6" fill={INK} />
         </pattern>
-        <clipPath id={snoutClip}>
-          <ellipse cx="350" cy="110" rx="44" ry="30" transform="rotate(18 350 110)" />
+        <clipPath id={bodyClip}>
+          <path d="M140 178 C138 150 170 138 205 142 C240 146 266 158 264 186 C262 212 232 220 200 218 C168 216 142 206 140 178 Z" />
+        </clipPath>
+        <clipPath id={headClip}>
+          <path d="M280 76 C298 60 330 68 348 90 C368 98 382 110 378 128 C374 144 350 148 332 142 C310 136 290 120 282 104 C276 94 274 84 280 76 Z" />
         </clipPath>
         <clipPath id={faceClip}>
           <circle cx="212" cy="44" r="24" />
@@ -142,97 +160,112 @@ export const Mascot = ({
         <path d="M18 196 H48" /><path d="M6 222 H40" /><path d="M24 248 H52" />
       </g>
 
-      <g className={a("rh-bounce")} style={at(190, 300)}>
-        {/* tail: hose with a tuft */}
-        <g className={a("rh-tail")} style={at(114, 176)}>
-          <Hose d="M116 178 C92 168 90 136 72 120" w={13} />
+      <g className={a("rh-bounce")} style={at(200, 300)}>
+        {/* tail: black swept-up flame */}
+        <g className={a("rh-tail")} style={at(146, 168)}>
           <Solid
             fill={INK}
+            line={3}
             shapes={() => (
-              <path d="M74 124 C58 124 46 112 50 98 C56 106 62 106 66 102 C60 92 64 80 74 78 C72 88 76 94 82 96 C84 86 92 82 100 86 C92 92 92 104 86 116 C84 122 80 124 74 124 Z" />
+              <path d="M148 170 C124 156 112 126 92 116 C110 114 122 120 130 128 C124 114 126 100 134 92 C140 116 150 140 164 154 Z" />
             )}
           />
-          <path d="M60 100 Q62 92 68 90" stroke={WHITE} strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M112 118 Q122 120 128 126" stroke={GREY_LT} strokeWidth="2.5" fill="none" strokeLinecap="round" />
         </g>
 
         {/* far legs */}
-        <g className={a("rh-leg-b")} style={at(126, 222)}>
-          <Hose d="M126 222 C104 246 84 238 66 260" />
-          <Boot x={60} y={266} rot={30} far />
+        <g className={a("rh-leg-b")} style={at(160, 200)}>
+          <Leg d="M160 200 C128 220 168 252 130 270" far />
+          <Hoof x={122} y={276} rot={24} far />
         </g>
-        <g className={a("rh-leg-a")} style={at(238, 230)}>
-          <Hose d="M238 230 C244 266 272 282 274 300" />
-          <Boot x={280} y={304} rot={-6} far />
+        <g className={a("rh-leg-a")} style={at(240, 200)}>
+          <Leg d="M240 200 C278 214 250 252 290 262" far />
+          <Hoof x={298} y={267} rot={-18} far />
         </g>
 
-        {/* body */}
+        {/* body + neck as one silhouette, cel-shaded belly */}
         <Solid
-          fill={INK}
+          fill={GREY}
+          line={3}
           shapes={() => (
-            <path d="M108 192 C102 152 160 136 208 140 C258 144 288 166 282 202 C276 236 226 248 180 245 C134 242 112 226 108 192 Z" />
+            <>
+              <path d="M140 178 C138 150 170 138 205 142 C240 146 266 158 264 186 C262 212 232 220 200 218 C168 216 142 206 140 178 Z" />
+              <path d="M228 152 C244 122 262 100 282 84 L306 100 C290 118 274 142 264 172 Z" />
+            </>
           )}
         />
-        <path d="M140 156 Q170 142 204 146" stroke={WHITE} strokeWidth="4" fill="none" strokeLinecap="round" />
-        <path d="M150 168 Q160 162 172 162" stroke={WHITE} strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.8" />
+        <g clipPath={`url(#${bodyClip})`}>
+          <path d="M130 196 C170 214 230 214 270 190 L270 240 L130 240 Z" fill={GREY_DK} />
+          <rect x="130" y="186" width="140" height="40" fill={`url(#${dotsInk})`} opacity="0.25" />
+        </g>
+        {/* mane */}
+        <Solid
+          fill={INK}
+          line={2}
+          shapes={() => (
+            <path d="M230 152 C238 120 256 96 282 78 C278 90 272 94 268 100 C264 106 256 110 254 118 C248 122 246 132 242 146 Z" />
+          )}
+        />
+        {/* saddle cloth */}
+        <Solid
+          fill={`url(#${harl})`}
+          line={3}
+          shapes={() => <path d="M174 146 C190 138 220 138 238 146 L235 170 C218 176 194 176 177 170 Z" />}
+        />
 
         {/* near legs */}
-        <g className={a("rh-leg-a")} style={at(142, 228)}>
-          <Hose d="M142 228 C132 262 104 264 86 288" />
-          <Boot x={78} y={294} rot={24} />
+        <g className={a("rh-leg-a")} style={at(176, 206)}>
+          <Leg d="M176 206 C148 238 192 262 168 290" />
+          <Hoof x={162} y={297} rot={10} />
         </g>
-        <g className={a("rh-leg-b")} style={at(252, 226)}>
-          <Hose d="M252 226 C268 258 302 256 318 282" />
-          <Boot x={324} y={288} rot={-14} />
+        <g className={a("rh-leg-b")} style={at(226, 208)}>
+          <Leg d="M226 208 C256 236 222 270 248 292" />
+          <Hoof x={256} y={299} rot={-6} />
         </g>
 
-        {/* neck + head */}
-        <g className={a("rh-head")} style={at(258, 170)}>
-          <Hose d="M252 172 C268 150 286 128 296 96" w={34} />
+        {/* head */}
+        <g className={a("rh-head")} style={at(262, 150)}>
           {/* ears */}
-          <Solid fill={INK} shapes={() => (<><path d="M280 52 C270 30 276 16 286 22 C292 32 292 44 290 54 Z" /><path d="M298 48 C296 26 306 14 314 22 C316 34 312 44 306 52 Z" /></>)} />
-          <path d="M282 44 C278 34 280 28 284 30" stroke={PINK} strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M302 42 C302 32 306 26 309 29" stroke={PINK} strokeWidth="4" fill="none" strokeLinecap="round" />
-          {/* skull + snout as one silhouette */}
+          <Solid fill={GREY} line={3} shapes={() => (<><path d="M282 78 L272 44 L298 70 Z" /><path d="M294 72 L300 40 L314 70 Z" /></>)} />
+          <path d="M282 70 L278 54 L290 66 Z" fill={INK} />
+          <path d="M298 66 L301 50 L308 66 Z" fill={INK} />
+          {/* long head with big rounded muzzle */}
           <Solid
-            fill={INK}
-            shapes={() => <circle cx="300" cy="80" r="34" />}
-          />
-          <Solid
-            fill={CREAM}
+            fill={GREY}
+            line={3}
             shapes={() => (
-              <>
-                <ellipse cx="350" cy="110" rx="44" ry="30" transform="rotate(18 350 110)" />
-                <ellipse cx="318" cy="72" rx="20" ry="24" />
-              </>
+              <path d="M280 76 C298 60 330 68 348 90 C368 98 382 110 378 128 C374 144 350 148 332 142 C310 136 290 120 282 104 C276 94 274 84 280 76 Z" />
             )}
           />
-          {/* halftone shading under the snout */}
-          <g clipPath={`url(#${snoutClip})`}>
-            <rect x="300" y="112" width="100" height="40" fill={`url(#${dots})`} />
+          <g clipPath={`url(#${headClip})`}>
+            <ellipse cx="356" cy="120" rx="30" ry="24" fill={GREY_LT} />
+            <path d="M276 104 C300 130 340 150 390 134 L390 160 L270 160 Z" fill={GREY_DK} opacity="0.6" />
           </g>
-          {/* grin */}
+          {/* wide toothy grin */}
           <Solid
-            fill={INK}
+            fill={WHITE}
             line={2.5}
-            shapes={() => <path d="M320 112 C334 140 372 146 392 118 C370 128 340 124 320 112 Z" />}
+            shapes={() => <path d="M316 120 C332 134 358 136 376 124 C374 134 362 144 344 144 C328 142 318 132 316 120 Z" />}
           />
-          <path d="M346 132 C352 140 366 141 374 134 C366 130 354 130 346 132 Z" fill={PINK} />
-          <path d="M328 118 C344 126 368 128 388 122 L386 128 C366 134 344 132 330 124 Z" fill={WHITE} />
-          <path d="M346 125 V131 M360 127 V133 M374 126 V131" stroke={INK} strokeWidth="2" />
-          {/* nostrils + nose shine */}
-          <ellipse cx="380" cy="100" rx="3.5" ry="5" fill={INK} transform="rotate(20 380 100)" />
-          <ellipse cx="368" cy="96" rx="3" ry="4.5" fill={INK} transform="rotate(20 368 96)" />
-          {/* pie eyes */}
-          <PieEye cx={310} cy={64} look={1} />
-          <PieEye cx={329} cy={68} look={1} />
+          <path d="M328 130 L330 139 M340 133 L341 143 M352 134 L352 143 M364 131 L362 140" stroke={INK} strokeWidth="2" strokeLinecap="round" />
+          <path d="M312 114 Q314 122 320 124" stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round" />
+          {/* big nostril on top of the muzzle */}
+          <path d="M350 100 Q362 94 368 104" stroke={INK} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <circle cx="364" cy="104" r="2.5" fill={INK} />
+          {/* sleepy, contented eye: heavy lid over a white almond */}
+          <ellipse cx="308" cy="88" rx="10" ry="7.5" fill={WHITE} stroke={INK} strokeWidth="3" />
+          <circle cx="311" cy="91" r="4" fill={INK} />
+          <path d="M297 89 C300 76 316 76 319 89 Z" fill={GREY} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+          <path d="M298 76 Q308 70 318 76" stroke={INK} strokeWidth="2.5" fill="none" strokeLinecap="round" />
           {/* forelock */}
-          <Solid fill={INK} line={3} shapes={() => <path d="M292 50 C300 34 316 36 318 46 C310 42 304 46 300 54 Z" />} />
+          <Solid fill={INK} line={2} shapes={() => <path d="M284 74 C288 60 300 58 304 66 C298 66 294 70 292 78 Z" />} />
         </g>
 
         {/* reins */}
-        <path d="M244 134 C276 132 312 118 336 116" stroke={INK} strokeWidth="2.5" fill="none" />
+        <path d="M244 128 C270 128 296 122 316 120" stroke={INK} strokeWidth="2.5" fill="none" />
 
         {/* jockey */}
+        <g transform="translate(2 -8)">
         <g className={a("rh-rider")} style={at(190, 148)}>
           {/* leg + boot */}
           <Hose d="M184 146 C206 152 214 170 216 190" w={20} />
@@ -280,6 +313,7 @@ export const Mascot = ({
             <Hose d="M184 112 C164 108 156 90 164 64" w={9} />
             <Glove x={165} y={56} rot={-14} />
           </g>
+        </g>
         </g>
       </g>
     </svg>
