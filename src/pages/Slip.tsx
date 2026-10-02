@@ -363,7 +363,7 @@ const Slip = () => {
 
     const totalLine = isFullyPending ? "" : `\nTOTAL: ${myTotal} PTS${myRank ? `  |  RANK: #${myRank} OF ${playerCount}` : ""}`;
 
-    const url = `https://slip-racing.vercel.app/scrum/${id}/slip`;
+    const url = `${window.location.origin}/scrum/${id}/slip`;
 
     const text = `${playerLabel} — ${venue}${group}${dateStr ? "\n" + dateStr : ""}\n\n${pickLines}${totalLine}`;
 

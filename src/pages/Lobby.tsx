@@ -54,6 +54,7 @@ const Lobby = () => {
   useEffect(() => {
     if (!id) return;
     let unsubFn: (() => void) | undefined;
+    let cancelled = false;
     (async () => {
       try {
         const scrumDoc = await getDoc(doc(db, "scrums", id));
@@ -89,6 +90,7 @@ const Lobby = () => {
         const handleMap: Record<string, string> = {};
         memberList.forEach(m => { handleMap[m.userId] = m.handle; });
 
+        if (cancelled) return;
         unsubFn = onSnapshot(
           query(collection(db, "picks"), where("scrumId", "==", id)),
           (snap) => {
@@ -121,7 +123,7 @@ const Lobby = () => {
         setLoadError(err?.message || "Failed to load group — please go back and try again.");
       }
     })();
-    return () => { if (unsubFn) unsubFn(); };
+    return () => { cancelled = true; if (unsubFn) unsubFn(); };
   }, [id]);
 
   async function handleLeave() {
@@ -185,7 +187,7 @@ const Lobby = () => {
 
   function handleShare() {
     if (!scrum?.joinCode) return;
-    const url = `https://slip-racing.vercel.app/join/${scrum.joinCode}`;
+    const url = `${window.location.origin}/join/${scrum.joinCode}`;
     if (navigator.share) {
       navigator.share({ title: "SLIP", text: "Join my SLIP group!", url }).catch(() => {});
     } else {

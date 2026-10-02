@@ -301,8 +301,11 @@ const Spindle = () => {
           const status = race ? statusFor(winners, pick.horseId) : statusFromStored();
           const pts = race ? pointsFor(status) : storedPts;
           return {
-            raceNumber: race?.raceNumber ?? (i + 1),
-            horseName: horse?.name ?? "—",
+            raceNumber: race?.raceNumber
+              ?? pick.raceNumber
+              ?? parseInt(pick.raceId?.match(/-r(\d+)$/)?.[1] ?? "0", 10)
+              ?? (i + 1),
+            horseName: horse?.name ?? pick.horseName ?? "—",
             horseNumber: horse?.number ?? 0,
             offTime: race?.offTime ?? null,
             status,

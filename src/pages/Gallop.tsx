@@ -203,13 +203,22 @@ const Gallop = () => {
 
   async function handlePick(raceId: string, horseId: string, horseName: string, raceNumber: number) {
     if (navigator.vibrate) navigator.vibrate(40);
+    const previous = picks[raceId];
     setPicks(p => ({ ...p, [raceId]: horseId }));
     try {
       await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {
         scrumId: id, raceId, horseId, userId, points: null,
         horseName, raceNumber,
       });
-    } catch { }
+    } catch {
+      // Roll back the optimistic update so the UI never shows an unsaved pick
+      setPicks(p => {
+        const next = { ...p };
+        if (previous) next[raceId] = previous; else delete next[raceId];
+        return next;
+      });
+      toast.error("Couldn't save that pick — try again");
+    }
   }
 
   async function handleSubmit() {
@@ -221,6 +230,9 @@ const Gallop = () => {
       const raceMap = Object.fromEntries(races.map(r => [r.id, r]));
       Object.entries(picks).forEach(([raceId, horseId]) => {
         const race = raceMap[raceId];
+        // Locked races are already saved (and may be scored) — rewriting them
+        // would reset points to null and lose the result.
+        if (!race || raceIsLocked(race) || race.status === "settled") return;
         const horse = race?.horses.find(h => h.id === horseId);
         batch.set(doc(db, "picks", `${id}_${userId}_${raceId}`), {
           scrumId: id, raceId, horseId, userId, points: null,

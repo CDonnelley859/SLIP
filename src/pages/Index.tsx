@@ -31,6 +31,8 @@ const Index = () => {
   const hasAutoScrolled = useRef(false);
   // Always-current ref so the virtual slot check interval doesn't capture stale cards
   const cardsForInterval = useRef<Card[]>([]);
+  // Throttle reseed→reload so a failing seed can't loop forever
+  const lastSeedAttempt = useRef(0);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -170,11 +172,12 @@ const Index = () => {
       const expected = expectedVenueName(id);
       return !!expected && card.trackName !== expected;
     });
-    if (needsSeed) {
+    if (needsSeed && Date.now() - lastSeedAttempt.current > 60_000) {
+      lastSeedAttempt.current = Date.now();
       // Always reseed when cards are stale — don't let sessionStorage block it.
       // seedSlot() is idempotent (skips if already fresh), so this is safe to call every load.
       seedVirtualTrack().then(() => loadData()).catch(() => {});
-    } else {
+    } else if (!needsSeed) {
       // Cards are fresh — just settle finished races once per session
       const settleKey = `blotto-settled-v5-${localToday}`;
       if (!sessionStorage.getItem(settleKey)) {

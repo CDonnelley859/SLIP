@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { HandlePrompt } from "@/components/HandlePrompt";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
@@ -11,7 +12,7 @@ const JoinViaLink = () => {
   const [status, setStatus] = useState("Joining…");
 
   useEffect(() => {
-    if (!code || !userId) return;
+    if (!code || !userId || !handle) return;
     (async () => {
       try {
         const snap = await getDocs(
@@ -27,7 +28,9 @@ const JoinViaLink = () => {
         setStatus("Something went wrong. Try entering the code manually.");
       }
     })();
-  }, [code, userId]);
+  }, [code, userId, handle]);
+
+  if (!handle) return <HandlePrompt />;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--green)" }}>
