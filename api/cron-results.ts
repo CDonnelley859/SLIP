@@ -117,13 +117,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (horseId === winners.first) points = 5;
         else if (horseId === winners.second) points = 3;
         else if (horseId === winners.third) points = 1;
-        batch.update(pickDoc.ref, { points });
+        batch.update(pickDoc.ref, { points, settled: true });
         if (scrumId) uniqueScrumIds.add(scrumId);
       }
       await batch.commit();
 
       // Send push notifications per scrum
       for (const scrumId of uniqueScrumIds) {
+        // Shared with api/notify so a client-triggered notification isn't repeated
+        try {
+          await db.collection("notifySent").doc(`${scrumId}_${raceDoc.id}`).create({ at: Date.now() });
+        } catch { continue; }
         const scrumPicksSnap = await db.collection("picks")
           .where("scrumId", "==", scrumId)
           .where("raceId", "==", raceDoc.id)
