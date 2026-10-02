@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { HandlePrompt } from "@/components/HandlePrompt";
 import { useAuth } from "@/hooks/useAuth";
 import { joinMegaSlip } from "@/lib/megaSlip";
 
@@ -15,6 +16,8 @@ const JoinMegaViaLink = () => {
       .then(megaSlipId => navigate(`/mega/${megaSlipId}/hub`, { replace: true }))
       .catch(err => setError(err.message ?? "Invalid code"));
   }, [code, userId, handle]);
+
+  if (!handle) return <HandlePrompt />;
 
   if (error) return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--green)", padding: 24 }}>

@@ -33,6 +33,50 @@ function normaliseName(name: string): string {
   return name.replace(/\s*\([A-Z]+\)\s*$/, "").trim().toUpperCase();
 }
 
+type RunnerLike = Record<string, any>;
+
+// Writes a race's runners while keeping existing horse doc ids stable.
+// Horses are matched by name, so a non-runner being removed from the card
+// can no longer shift the remaining horses onto different ids (which would
+// silently re-point users' picks). Horses no longer listed are flagged `withdrawn`.
+async function upsertRunners(raceId: string, runners: RunnerLike[], withLbs: boolean): Promise<number> {
+  const existingSnap = await getDocs(query(collection(db, "horses"), where("raceId", "==", raceId)));
+  const idByName: Record<string, string> = {};
+  const usedIdx = new Set<number>();
+  existingSnap.docs.forEach(h => {
+    idByName[normaliseName(h.data().name ?? "")] = h.id;
+    const m = h.id.match(/-h(\d+)$/);
+    if (m) usedIdx.add(Number(m[1]));
+  });
+  let nextIdx = 1;
+  const nextFree = () => { while (usedIdx.has(nextIdx)) nextIdx++; usedIdx.add(nextIdx); return nextIdx; };
+
+  const batch = writeBatch(db);
+  const seen = new Set<string>();
+  runners.forEach((runner, idx) => {
+    const key = normaliseName(runner.horse ?? "");
+    const horseId = idByName[key] ?? `${raceId}-h${nextFree()}`;
+    seen.add(horseId);
+    batch.set(doc(db, "horses", horseId), {
+      raceId,
+      number: Number(runner.number) || idx + 1,
+      name: runner.horse ?? "Unknown",
+      jockey: runner.jockey ?? null,
+      trainer: runner.trainer ?? null,
+      owner: runner.owner ?? null,
+      form: runner.form ?? null,
+      ...(withLbs ? { lbs: runner.lbs ? Number(runner.lbs) : null } : {}),
+      odds: null,
+      withdrawn: false,
+    }, { merge: true });
+  });
+  existingSnap.docs.forEach(h => {
+    if (!seen.has(h.id)) batch.set(h.ref, { withdrawn: true }, { merge: true });
+  });
+  await batch.commit();
+  return runners.length;
+}
+
 // Syncs today's cards, races, and horses from TRA /racecards/free
 export async function syncCards(): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
@@ -89,23 +133,7 @@ export async function syncCards(): Promise<string> {
 
       const runners: any[] = rc.runners ?? [];
       if (runners.length > 0) {
-        const batch = writeBatch(db);
-        runners.forEach((runner, idx) => {
-          const horseId = `${raceId}-h${idx + 1}`;
-          batch.set(doc(db, "horses", horseId), {
-            raceId,
-            number: Number(runner.number) || idx + 1,
-            name: runner.horse ?? "Unknown",
-            jockey: runner.jockey ?? null,
-            trainer: runner.trainer ?? null,
-            owner: runner.owner ?? null,
-            form: runner.form ?? null,
-            lbs: runner.lbs ? Number(runner.lbs) : null,
-            odds: null,
-          }, { merge: true });
-          horseCount++;
-        });
-        await batch.commit();
+        horseCount += await upsertRunners(raceId, runners, true);
       }
 
       raceCount++;
@@ -158,22 +186,7 @@ export async function syncRunners(cardId: string): Promise<number> {
     const runners: any[] = match.runners ?? [];
     if (runners.length === 0) continue;
 
-    const batch = writeBatch(db);
-    runners.forEach((runner, idx) => {
-      const horseId = `${raceDoc.id}-h${idx + 1}`;
-      batch.set(doc(db, "horses", horseId), {
-        raceId: raceDoc.id,
-        number: Number(runner.number) || idx + 1,
-        name: runner.horse ?? "Unknown",
-        jockey: runner.jockey ?? null,
-        trainer: runner.trainer ?? null,
-        owner: runner.owner ?? null,
-        form: runner.form ?? null,
-        odds: null,
-      }, { merge: true });
-      horseCount++;
-    });
-    await batch.commit();
+    horseCount += await upsertRunners(raceDoc.id, runners, false);
   }
 
   return horseCount;
@@ -243,8 +256,10 @@ export async function syncResults(cardId: string): Promise<void> {
       second: toId(second),
       third: toId(third),
     };
-    // Settle the race regardless of whether we could map the winner horse —
-    // a null ID just means all picks score 0 (correct behaviour)
+    // If we couldn't map the winner to a horse (name mismatch / runners not yet
+    // synced), leave the race open rather than permanently scoring everyone 0.
+    // The 2h fallback below still settles it if the data never lines up.
+    if (!winners.first) continue;
     await updateDoc(raceDoc.ref, { status: "settled", winners });
 
     const picksSnap = await getDocs(
@@ -258,7 +273,7 @@ export async function syncResults(cardId: string): Promise<void> {
       if (winners.first && horseId === winners.first) points = 5;
       else if (winners.second && horseId === winners.second) points = 3;
       else if (winners.third && horseId === winners.third) points = 1;
-      batch.update(pickDoc.ref, { points });
+      batch.update(pickDoc.ref, { points, settled: true });
       if (scrumId) uniqueScrumIds.add(scrumId);
     }
     await batch.commit();
@@ -289,7 +304,7 @@ export async function syncResults(cardId: string): Promise<void> {
     );
     if (!stalePicksSnap.empty) {
       const batch = writeBatch(db);
-      stalePicksSnap.docs.forEach(p => batch.update(p.ref, { points: 0 }));
+      stalePicksSnap.docs.forEach(p => batch.update(p.ref, { points: 0, settled: true }));
       await batch.commit();
     }
   }

@@ -76,7 +76,7 @@ const Gallop = () => {
         );
         const raceList: Race[] = racesSnap.docs.map((raceDoc, i) => {
           const r = raceDoc.data();
-          const horses: Horse[] = horseSnaps[i].docs.map(h => ({
+          const horses: Horse[] = horseSnaps[i].docs.filter(h => !h.data().withdrawn).map(h => ({
             id: h.id,
             number: h.data().number,
             name: h.data().name,
@@ -203,17 +203,31 @@ const Gallop = () => {
 
   async function handlePick(raceId: string, horseId: string, horseName: string, raceNumber: number) {
     if (navigator.vibrate) navigator.vibrate(40);
+    const previous = picks[raceId];
     setPicks(p => ({ ...p, [raceId]: horseId }));
     try {
       await setDoc(doc(db, "picks", `${id}_${userId}_${raceId}`), {
         scrumId: id, raceId, horseId, userId, points: null,
         horseName, raceNumber,
       });
-    } catch { }
+    } catch {
+      // Roll back the optimistic update so the UI never shows an unsaved pick
+      setPicks(p => {
+        const next = { ...p };
+        if (previous) next[raceId] = previous; else delete next[raceId];
+        return next;
+      });
+      toast.error("Couldn't save that pick — try again");
+    }
   }
 
   async function handleSubmit() {
-    if (!allPicked) { toast.error("Pick a horse in every race"); return; }
+    if (!allPicked && pickableRaces.length > 0) {
+      const firstMissing = races.findIndex(r => !raceIsLocked(r) && !picks[r.id]);
+      toast.error(`Pick a horse in race ${races[firstMissing]?.raceNumber ?? ""} first`);
+      if (firstMissing !== -1) { slideDir.current = "forward"; setCurrentIdx(firstMissing); }
+      return;
+    }
     setSubmitting(true);
     try {
       const batch = writeBatch(db);
@@ -221,6 +235,9 @@ const Gallop = () => {
       const raceMap = Object.fromEntries(races.map(r => [r.id, r]));
       Object.entries(picks).forEach(([raceId, horseId]) => {
         const race = raceMap[raceId];
+        // Locked races are already saved (and may be scored) — rewriting them
+        // would reset points to null and lose the result.
+        if (!race || raceIsLocked(race) || race.status === "settled") return;
         const horse = race?.horses.find(h => h.id === horseId);
         batch.set(doc(db, "picks", `${id}_${userId}_${raceId}`), {
           scrumId: id, raceId, horseId, userId, points: null,
@@ -304,6 +321,8 @@ const Gallop = () => {
                 <button
                   key={r.id}
                   onClick={() => setCurrentIdx(i)}
+                  aria-label={`Race ${r.raceNumber}${locked ? " (locked)" : ""}${picks[r.id] ? ", picked" : ""}`}
+                  aria-current={active ? "true" : undefined}
                   className="display"
                   style={{
                     width: 36, height: 36,
@@ -313,6 +332,7 @@ const Gallop = () => {
                     fontSize: 16, cursor: "pointer",
                     textDecoration: locked ? "line-through" : "none",
                     opacity: locked ? 0.45 : 1,
+                    boxShadow: picks[r.id] ? "inset 0 -4px 0 var(--pink)" : "none",
                   }}
                 >
                   {r.raceNumber}
@@ -323,7 +343,7 @@ const Gallop = () => {
               className="label-sm"
               style={{ marginLeft: "auto", opacity: 0.6, color: "var(--cream)" }}
             >
-              ENTRY {String(currentIdx + 1).padStart(2, "0")}/{String(races.length).padStart(2, "0")}
+              {Object.keys(picks).length}/{races.length} PICKED
             </span>
           </div>
         )}
@@ -509,11 +529,11 @@ const Gallop = () => {
         {isLastRace ? (
           <button
             onClick={handleSubmit}
-            disabled={submitting || !allPicked}
+            disabled={submitting}
             className="btn-retro btn-retro-pink"
             style={{
               width: "auto", padding: "10px 18px", fontSize: 14,
-              opacity: (submitting || !allPicked) ? 0.35 : 1,
+              opacity: (submitting || !allPicked) ? 0.6 : 1,
             }}
           >
             {submitting ? "PRINTING…" : "PRINT SLIP →"}

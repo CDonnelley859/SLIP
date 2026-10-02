@@ -33,7 +33,7 @@ const HostResults = () => {
     if (!id) return;
     (async () => {
       const scrumDoc = await getDoc(doc(db, "scrums", id));
-      if (!scrumDoc.exists()) return;
+      if (!scrumDoc.exists()) { setLoading(false); return; }
       const scrumData = scrumDoc.data();
       setScrum(scrumData);
 
@@ -111,7 +111,7 @@ const HostResults = () => {
         if (horseId === winners.first) points = 5;
         else if (horseId === winners.second) points = 3;
         else if (horseId === winners.third) points = 1;
-        batch.update(pickDoc.ref, { points });
+        batch.update(pickDoc.ref, { points, settled: true });
       }
       await batch.commit();
 

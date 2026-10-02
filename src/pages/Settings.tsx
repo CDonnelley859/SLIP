@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where, writeBatch } from "firebase/firestore";
 import { getCrewsForUser, deleteCrew, type Crew } from "@/lib/crews";
 import { getFriends, removeFriend, type Friend } from "@/lib/friends";
 
@@ -72,6 +74,20 @@ const Settings = () => {
     setHandle(trimmed);
     setEditingName(false);
     toast.success("Name updated");
+    // Propagate to existing groups so standings show the new name
+    if (userId) {
+      (async () => {
+        try {
+          const [scrumSnap, megaSnap] = await Promise.all([
+            getDocs(query(collection(db, "scrumMembers"), where("userId", "==", userId))),
+            getDocs(query(collection(db, "megaSlipMembers"), where("userId", "==", userId))),
+          ]);
+          const batch = writeBatch(db);
+          [...scrumSnap.docs, ...megaSnap.docs].forEach(d => batch.update(d.ref, { handle: trimmed }));
+          await batch.commit();
+        } catch { /* local name still updated */ }
+      })();
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
