@@ -1,4 +1,5 @@
 import { db } from "./firebase";
+import { uniqueJoinCode } from "./codes";
 import {
   doc, getDoc, setDoc, getDocs, updateDoc, writeBatch,
   collection, query, where,
@@ -24,8 +25,6 @@ export type MegaMember = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const genCode6 = () => Math.random().toString(36).slice(2, 8).toUpperCase();
-const genCode4 = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
@@ -41,7 +40,7 @@ export async function createMegaSlip(
   handle: string,
 ): Promise<string> {
   const megaSlipId = crypto.randomUUID();
-  const joinCode = genCode6();
+  const joinCode = await uniqueJoinCode("megaSlips", 6);
 
   // Create one scrum per card
   const scrumIds: string[] = [];
@@ -51,7 +50,7 @@ export async function createMegaSlip(
       cardId: card.id,
       hostId: userId,
       name,
-      joinCode: genCode4(),   // each scrum gets its own 4-char code for direct access
+      joinCode: await uniqueJoinCode("scrums", 4),   // each scrum gets its own 4-char code for direct access
       showDetails: false,
       megaSlipId,
     });
@@ -161,7 +160,7 @@ export async function addTrackToMega(
     cardId: card.id,
     hostId,
     name: megaName,
-    joinCode: genCode4(),
+    joinCode: await uniqueJoinCode("scrums", 4),
     showDetails: false,
     megaSlipId,
   });

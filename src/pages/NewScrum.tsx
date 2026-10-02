@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
-const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
+import { uniqueJoinCode } from "@/lib/codes";
 
 const NewScrum = () => {
   const { userId, handle } = useAuth();
@@ -23,7 +23,7 @@ const NewScrum = () => {
     if (!name.trim()) return;
     setBusy(true);
     try {
-      const joinCode = genCode();
+      const joinCode = await uniqueJoinCode("scrums", 4);
       const scrumId = crypto.randomUUID();
 
       await setDoc(doc(db, "scrums", scrumId), {

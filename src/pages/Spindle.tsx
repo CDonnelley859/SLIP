@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import {
-  collection, query, where, getDocs, doc, getDoc, writeBatch,
+  collection, query, where, getDocs, doc, getDoc, updateDoc,
 } from "firebase/firestore";
 import { settleVirtualRaces } from "@/lib/virtualTrack";
 
@@ -196,13 +196,8 @@ const Spindle = () => {
     if (!userId) return;
     setDeleting(true);
     try {
-      const batch = writeBatch(db);
-      batch.delete(doc(db, "scrumMembers", `${scrumId}_${userId}`));
-      const picksSnap = await getDocs(
-        query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))
-      );
-      picksSnap.docs.forEach(p => batch.delete(p.ref));
-      await batch.commit();
+      // Hide rather than delete: keeps picks so Stats / standings stay correct
+      await updateDoc(doc(db, "scrums", scrumId), { [`spindleHidden.${userId}`]: true });
       setItems(prev => prev.filter(item =>
         !(item.kind === "single" && item.data.scrumId === scrumId)
       ));
@@ -231,6 +226,7 @@ const Spindle = () => {
         const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
         if (!scrumDoc.exists()) return null;
         const scrum = scrumDoc.data();
+        if (scrum.spindleHidden?.[userId ?? ""] === true) return null;
 
         const [cardDocReal, myPicksSnap, allPicksSnap, allMembersSnap] = await Promise.all([
           getDoc(doc(db, "cards", scrum.cardId)),

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
@@ -21,7 +21,7 @@ const Lobby = () => {
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [countdown, setCountdown] = useState<string | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderRow[]>([]);
+  const [pickRows, setPickRows] = useState<{ userId: string; points: number }[]>([]);
   const [togglingDetails, setTogglingDetails] = useState(false);
   const [showHostSettings, setShowHostSettings] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -71,14 +71,10 @@ const Lobby = () => {
         const membersSnap = await getDocs(
           query(collection(db, "scrumMembers"), where("scrumId", "==", id))
         );
-        const picksSnap = await getDocs(
-          query(collection(db, "picks"), where("scrumId", "==", id))
-        );
-        const submittedUserIds = new Set(picksSnap.docs.map(d => d.data().userId));
         const memberList = membersSnap.docs.map(d => ({
           handle: d.data().handle ?? "Anonymous",
           userId: d.data().userId,
-          submitted: submittedUserIds.has(d.data().userId),
+          submitted: false,
         }));
         setMembers(memberList);
 
@@ -87,44 +83,42 @@ const Lobby = () => {
           getFriends(userId).then(f => setFriendIds(new Set(f.map(fr => fr.friendUserId)))).catch(() => {});
         }
 
-        const handleMap: Record<string, string> = {};
-        memberList.forEach(m => { handleMap[m.userId] = m.handle; });
-
         if (cancelled) return;
-        unsubFn = onSnapshot(
+        const unsubPicks = onSnapshot(
           query(collection(db, "picks"), where("scrumId", "==", id)),
-          (snap) => {
-            // Seed all members at 0 so everyone appears even before picking
-            const statsByUser: Record<string, { points: number; wins: number; places: number; shows: number }> = {};
-            Object.keys(handleMap).forEach(uid => {
-              statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
-            });
-            snap.docs.forEach(p => {
-              const uid = p.data().userId;
-              const pts = p.data().points ?? 0;
-              if (!statsByUser[uid]) statsByUser[uid] = { points: 0, wins: 0, places: 0, shows: 0 };
-              statsByUser[uid].points += pts;
-              if (pts === 5) statsByUser[uid].wins++;
-              else if (pts === 3) statsByUser[uid].places++;
-              else if (pts === 1) statsByUser[uid].shows++;
-            });
-            const board = Object.entries(statsByUser)
-              .map(([uid, s]) => ({ userId: uid, handle: handleMap[uid] ?? "—", ...s }))
-              .sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                if (b.wins !== a.wins) return b.wins - a.wins;
-                if (b.places !== a.places) return b.places - a.places;
-                return b.shows - a.shows;
-              });
-            setLeaderboard(board);
-          }
+          (snap) => setPickRows(snap.docs.map(p => ({ userId: p.data().userId as string, points: (p.data().points ?? 0) as number })))
         );
+        const unsubMembers = onSnapshot(
+          query(collection(db, "scrumMembers"), where("scrumId", "==", id)),
+          (snap) => setMembers(prev => snap.docs.map(d => ({
+            handle: d.data().handle || "Anonymous",
+            userId: d.data().userId as string,
+            submitted: prev.find(m => m.userId === d.data().userId)?.submitted ?? false,
+          })))
+        );
+        unsubFn = () => { unsubPicks(); unsubMembers(); };
       } catch (err: any) {
         setLoadError(err?.message || "Failed to load group — please go back and try again.");
       }
     })();
     return () => { cancelled = true; if (unsubFn) unsubFn(); };
   }, [id]);
+
+  // Standings: current members only, seeded at 0 so everyone appears before picking
+  const leaderboard = useMemo<LeaderRow[]>(() => {
+    const stats: Record<string, LeaderRow> = {};
+    members.forEach(m => { stats[m.userId] = { userId: m.userId, handle: m.handle, points: 0, wins: 0, places: 0, shows: 0 }; });
+    pickRows.forEach(p => {
+      const row = stats[p.userId];
+      if (!row) return; // player has left the group
+      row.points += p.points;
+      if (p.points === 5) row.wins++;
+      else if (p.points === 3) row.places++;
+      else if (p.points === 1) row.shows++;
+    });
+    return Object.values(stats).sort((a, b) =>
+      b.points - a.points || b.wins - a.wins || b.places - a.places || b.shows - a.shows);
+  }, [members, pickRows]);
 
   async function handleLeave() {
     if (!id || !userId) return;
@@ -318,7 +312,7 @@ const Lobby = () => {
 
         {/* ── STANDINGS ── */}
         {(() => {
-          const submittedSet = new Set(members.filter(m => m.submitted).map(m => m.userId));
+          const submittedSet = new Set(pickRows.map(p => p.userId));
           return (
             <div>
               <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>STANDINGS</span>

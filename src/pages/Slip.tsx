@@ -81,7 +81,7 @@ const Slip = () => {
   const { userId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const printOnLoad = !!(location.state as any)?.printOnLoad;
+  const printOnLoad = !!(location.state as any)?.printOnLoad && !(typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   const [scrum, setScrum] = useState<any>(null);
   const [card, setCard] = useState<any>(null);
   const [players, setPlayers] = useState<{ userId: string; handle: string }[]>([]);
@@ -95,6 +95,7 @@ const Slip = () => {
   const [slideKey, setSlideKey] = useState(0);
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [printing, setPrinting] = useState(printOnLoad); // blank until animation if coming from Gallop
 
   // Print animation — randomly picks one of three receipt-feed styles.
@@ -246,7 +247,7 @@ const Slip = () => {
     if (!id) return;
     (async () => {
       const scrumDoc = await getDoc(doc(db, "scrums", id));
-      if (!scrumDoc.exists()) return;
+      if (!scrumDoc.exists()) { setNotFound(true); setPrinting(false); return; }
       const scrumData = scrumDoc.data();
       setScrum(scrumData);
       const cardDoc = await getDoc(doc(db, "cards", scrumData.cardId));
@@ -412,6 +413,13 @@ const Slip = () => {
       setRefreshing(false);
     }
   }
+
+  if (notFound) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "var(--green)" }}>
+      <p className="label" style={{ color: "var(--cream)", opacity: 0.8 }}>Slip not found.</p>
+      <Link to="/" className="label" style={{ color: "var(--cream)", textDecoration: "underline" }}>← HOME</Link>
+    </div>
+  );
 
   return (
     <div

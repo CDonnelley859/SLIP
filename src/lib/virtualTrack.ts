@@ -139,6 +139,29 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** Deterministic Fisher–Yates using a string seed (xmur3 hash → mulberry32). */
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = (h ^= h >>> 16) >>> 0;
+  const rand = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 // ── Slot helpers ──────────────────────────────────────────────────────────────
 
 function dayStart(): number {
@@ -201,7 +224,8 @@ async function settleCardRaces(cardId: string): Promise<void> {
     const horsesSnap = await getDocs(
       query(collection(db, "horses"), where("raceId", "==", raceId))
     );
-    const horseIds = shuffle(horsesSnap.docs.map(h => h.id));
+    // Seeded by race id + date so every client settling the same race agrees on the result
+    const horseIds = seededShuffle(horsesSnap.docs.map(h => h.id).sort(), `${raceId}:${raceSnap.data().offTime}`);
     if (horseIds.length < 3) return;
 
     const winners = { first: horseIds[0], second: horseIds[1], third: horseIds[2] };

@@ -2,21 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import {
-  collection, doc, getDoc, getDocs, query, where,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
+import { computeUserStats, EMPTY_STATS, type StatSummary as CrewStats } from "@/lib/stats";
 import { type Crew } from "@/lib/crews";
-
-type CrewStats = {
-  gamesPlayed: number;
-  totalPoints: number;
-  bestScore: number;
-  wins: number;
-  places: number;
-  shows: number;
-  bestRank: number | null;
-  avgPoints: number;
-};
 
 const CrewPage = () => {
   const { crewId } = useParams();
@@ -39,63 +27,13 @@ const CrewPage = () => {
       };
       setCrew(crewData);
 
-      // Find all scrums this user was part of that used this crew
-      const membersSnap = await getDocs(
-        query(collection(db, "scrumMembers"), where("userId", "==", userId))
-      );
-      const scrumDocs = await Promise.all(
-        membersSnap.docs.map(m => getDoc(doc(db, "scrums", m.data().scrumId)))
-      );
-      const crewScrums = scrumDocs.filter(
-        d => d.exists() && d.data()?.crewId === crewId
-      );
-
-      if (crewScrums.length === 0) {
-        setStats({ gamesPlayed: 0, totalPoints: 0, bestScore: 0, wins: 0, places: 0, shows: 0, bestRank: null, avgPoints: 0 });
+      try {
+        setStats(await computeUserStats(userId, scrum => scrum.crewId === crewId));
+      } catch {
+        setStats({ ...EMPTY_STATS });
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const results = await Promise.all(crewScrums.map(async (scrumDoc) => {
-        const scrumId = scrumDoc.id;
-        const [myPicksSnap, allPicksSnap] = await Promise.all([
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))),
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId))),
-        ]);
-        if (myPicksSnap.empty) return null;
-
-        const myTotal = myPicksSnap.docs.reduce((s, p) => s + (p.data().points ?? 0), 0);
-        const wins   = myPicksSnap.docs.filter(p => p.data().points === 5).length;
-        const places = myPicksSnap.docs.filter(p => p.data().points === 3).length;
-        const shows  = myPicksSnap.docs.filter(p => p.data().points === 1).length;
-
-        const pointsByUser: Record<string, number> = {};
-        allPicksSnap.docs.forEach(p => {
-          const uid = p.data().userId;
-          pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
-        });
-        const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
-        const rank = sorted.indexOf(myTotal) + 1;
-        return { myTotal, wins, places, shows, rank, members: sorted.length };
-      }));
-
-      const valid = results.filter(Boolean) as NonNullable<typeof results[0]>[];
-      if (valid.length === 0) {
-        setStats({ gamesPlayed: 0, totalPoints: 0, bestScore: 0, wins: 0, places: 0, shows: 0, bestRank: null, avgPoints: 0 });
-      } else {
-        const rankedGames = valid.filter(r => r.members > 1);
-        setStats({
-          gamesPlayed: valid.length,
-          totalPoints: valid.reduce((s, r) => s + r.myTotal, 0),
-          bestScore: Math.max(...valid.map(r => r.myTotal)),
-          wins:   valid.reduce((s, r) => s + r.wins, 0),
-          places: valid.reduce((s, r) => s + r.places, 0),
-          shows:  valid.reduce((s, r) => s + r.shows, 0),
-          bestRank: rankedGames.length > 0 ? Math.min(...rankedGames.map(r => r.rank)) : null,
-          avgPoints: Math.round(valid.reduce((s, r) => s + r.myTotal, 0) / valid.length),
-        });
-      }
-      setLoading(false);
     })();
   }, [userId, crewId]);
 

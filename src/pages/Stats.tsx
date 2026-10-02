@@ -2,82 +2,21 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import {
-  collection, query, where, getDocs, doc, getDoc,
-} from "firebase/firestore";
-
-type StatSummary = {
-  gamesPlayed: number;
-  totalPoints: number;
-  bestScore: number;
-  wins: number;
-  places: number;
-  shows: number;
-  bestRank: number | null;
-  avgPoints: number;
-};
+import { computeUserStats, type StatSummary } from "@/lib/stats";
 
 const Stats = () => {
   const { userId } = useAuth();
   const [stats, setStats] = useState<StatSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState(false);
+
   useEffect(() => {
     if (!userId) return;
-    (async () => {
-      const membersSnap = await getDocs(
-        query(collection(db, "scrumMembers"), where("userId", "==", userId))
-      );
-
-      const results = await Promise.all(membersSnap.docs.map(async (m) => {
-        const scrumId = m.data().scrumId;
-        const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
-        if (!scrumDoc.exists()) return null;
-        const scrum = scrumDoc.data();
-
-        const [myPicksSnap, allPicksSnap] = await Promise.all([
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", userId))),
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId))),
-        ]);
-
-        if (myPicksSnap.empty) return null;
-
-        const myTotal = myPicksSnap.docs.reduce((sum, p) => sum + (p.data().points ?? 0), 0);
-        const wins = myPicksSnap.docs.filter(p => p.data().points === 5).length;
-        const places = myPicksSnap.docs.filter(p => p.data().points === 3).length;
-        const shows = myPicksSnap.docs.filter(p => p.data().points === 1).length;
-
-        const pointsByUser: Record<string, number> = {};
-        allPicksSnap.docs.forEach(p => {
-          const uid = p.data().userId;
-          pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
-        });
-        const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
-        const rank = sorted.indexOf(myTotal) + 1;
-
-        return { myTotal, wins, places, shows, rank, members: sorted.length };
-      }));
-
-      const valid = results.filter(Boolean) as NonNullable<typeof results[0]>[];
-
-      if (valid.length === 0) {
-        setStats({ gamesPlayed: 0, totalPoints: 0, bestScore: 0, wins: 0, places: 0, shows: 0, bestRank: null, avgPoints: 0 });
-      } else {
-        const rankedGames = valid.filter(r => r.members > 1);
-        setStats({
-          gamesPlayed: valid.length,
-          totalPoints: valid.reduce((s, r) => s + r.myTotal, 0),
-          bestScore: Math.max(...valid.map(r => r.myTotal)),
-          wins: valid.reduce((s, r) => s + r.wins, 0),
-          places: valid.reduce((s, r) => s + r.places, 0),
-          shows: valid.reduce((s, r) => s + r.shows, 0),
-          bestRank: rankedGames.length > 0 ? Math.min(...rankedGames.map(r => r.rank)) : null,
-          avgPoints: Math.round(valid.reduce((s, r) => s + r.myTotal, 0) / valid.length),
-        });
-      }
-
-      setLoading(false);
-    })();
+    computeUserStats(userId)
+      .then(setStats)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, [userId]);
 
   return (
@@ -105,6 +44,13 @@ const Stats = () => {
               <div key={i} style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 16, height: 60, background: "rgba(245,232,223,0.05)" }} />
             ))}
           </>
+        ) : error ? (
+          <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
+            <p className="label" style={{ color: "var(--cream)" }}>COULDN'T LOAD YOUR FORM.</p>
+            <button onClick={() => window.location.reload()} className="label-sm" style={{ marginTop: 12, background: "transparent", border: "1.5px solid rgba(245,232,223,0.4)", color: "var(--cream)", padding: "8px 14px", cursor: "pointer" }}>
+              RETRY
+            </button>
+          </div>
         ) : !stats || stats.gamesPlayed === 0 ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
             <p className="label" style={{ color: "var(--cream)" }}>NO STATS YET.</p>

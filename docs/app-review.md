@@ -1,7 +1,12 @@
 # Slip app review — bugs and UI suggestions
 
 Scope: whole `src/` app plus `api/`. PR #1 (API credentials to env vars, results cron) is deliberately not duplicated here.
-Items marked **FIXED** are in the accompanying draft PR; everything else is a suggestion.
+Items marked **FIXED** are in the accompanying draft PR. A second pass fixed most of the rest (see "Second pass" below); what remains is listed there too.
+
+## Second pass (after "fix the lot")
+Fixed: #4 deterministic virtual settlement (seeded by race id), #6 stable horse ids (matched by name, withdrawn flagged), #7 client `syncResults` no longer settles unmatched winners, #13 name change propagates to groups, #14 Spindle delete now hides instead of deleting picks, #15 PRINT SLIP always tappable with a "pick race N" nudge, #16 shared `lib/stats.ts` + error states, #17 not-found states, #19 (stats fetch errors only), #20 unique 4/6-char join codes without lookalike characters, #21 `settled:true` on host/client scored picks, live Lobby members/standings (leavers excluded), dead code removed (Auth, NamePrompt, PageShell, NavLink, Stalls, supabase client — `tsc` is now clean), `viewport-fit=cover`, reduced-motion skips the print animation, keyboard access on Index group cards, aria labels + picked indicator on Gallop race buttons, multi-track hint on Index, package name.
+
+Not changed (needs your call or touches PR #1 files): #5 `/api/notify` auth and the `api/cron-results` equivalents of #7/#21 (PR #1 territory); #18 UTC/local date (only matters 00:00–01:00); #19 Firestore rules / friend privacy (needs rules in repo); Spindle losing the track name for wiped virtual cards (needs `trackName` stored on the scrum); ESLint `no-explicit-any` clean-up; larger visual/design-system work (below).
 
 ## Bugs (prioritised)
 

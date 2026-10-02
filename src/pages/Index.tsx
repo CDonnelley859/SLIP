@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import { syncCards, syncResults } from "@/lib/racingApi";
 import { seedVirtualTrack, settleVirtualRaces, activeVirtualCardIds, expectedVenueName } from "@/lib/virtualTrack";
 import { createMegaSlip, joinMegaSlip, getMegaSlipsForUser, type MegaSlip } from "@/lib/megaSlip";
+import { uniqueJoinCode } from "@/lib/codes";
 import { getCrewsForUser, type Crew } from "@/lib/crews";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, deleteDoc, writeBatch, updateDoc,
@@ -15,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 type Card = { id: string; trackName: string; tagline?: string; raceDate: string; postTime: string; raceCount: number; isVirtual?: boolean };
 type ActiveSlip = { scrumId: string; scrumName: string; trackName: string; completed: number; total: number; settled: number; nextRaceTime: string | null; allSettled: boolean };
 
-const genCode = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 
 const Index = () => {
   const { userId, handle, setHandle } = useAuth();
@@ -372,7 +372,7 @@ const Index = () => {
         navigate(`/mega/${megaSlipId}/hub`);
       } else {
         // Single track — existing scrum flow
-        const code = genCode();
+        const code = await uniqueJoinCode("scrums", 4);
         const scrumId = crypto.randomUUID();
         await setDoc(doc(db, "scrums", scrumId), {
           cardId: selectedCards[0].id, hostId: userId, name: groupName.trim(),
@@ -547,6 +547,7 @@ const Index = () => {
                   <button
                     key={card.id}
                     onClick={() => handleSelectCard(card)}
+                    aria-pressed={isSelected}
                     className="animate-fade-in"
                     style={{
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
@@ -584,7 +585,7 @@ const Index = () => {
             {/* Swipe hint — only shown when there are multiple cards to scroll through */}
             {cards.length > 1 && (
               <p className="label-sm" style={{ textAlign: "right", marginTop: 6, opacity: 0.4, color: "var(--cream)" }}>
-                SWIPE FOR MORE →
+                SWIPE FOR MORE → · TAP SEVERAL TRACKS FOR A MEGA GROUP
               </p>
             )}
             </>
@@ -810,7 +811,10 @@ const Index = () => {
                   }}
                 >
                   <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => navigate(`/mega/${mega.id}/hub`)}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/mega/${mega.id}/hub`); } }}
                     style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                   >
                     <div className="label-sm" style={{ opacity: 0.6, marginBottom: 2 }}>MEGA GROUP</div>
@@ -909,7 +913,10 @@ const Index = () => {
                   >
                     {/* Main content — go to lobby while racing, slip when finished */}
                     <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => navigate(s.allSettled ? `/scrum/${s.scrumId}/slip` : `/scrum/${s.scrumId}/lobby`)}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(s.allSettled ? `/scrum/${s.scrumId}/slip` : `/scrum/${s.scrumId}/lobby`); } }}
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
                       {s.allSettled && (

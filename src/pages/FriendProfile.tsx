@@ -2,21 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import {
-  collection, doc, getDoc, getDocs, query, where,
-} from "firebase/firestore";
+import { computeUserStats, EMPTY_STATS, type StatSummary as Stats } from "@/lib/stats";
 import { getFriends } from "@/lib/friends";
-
-type Stats = {
-  gamesPlayed: number;
-  totalPoints: number;
-  bestScore: number;
-  wins: number;
-  places: number;
-  shows: number;
-  bestRank: number | null;
-  avgPoints: number;
-};
 
 const FriendProfile = () => {
   const { friendUserId } = useParams();
@@ -35,54 +22,13 @@ const FriendProfile = () => {
         if (f) setFriendHandle(f.friendHandle);
       } catch { }
 
-      // Compute their stats (same logic as Stats.tsx but for friendUserId)
-      const membersSnap = await getDocs(
-        query(collection(db, "scrumMembers"), where("userId", "==", friendUserId))
-      );
-
-      const results = await Promise.all(membersSnap.docs.map(async (m) => {
-        const scrumId = m.data().scrumId;
-        const scrumDoc = await getDoc(doc(db, "scrums", scrumId));
-        if (!scrumDoc.exists()) return null;
-
-        const [myPicksSnap, allPicksSnap] = await Promise.all([
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId), where("userId", "==", friendUserId))),
-          getDocs(query(collection(db, "picks"), where("scrumId", "==", scrumId))),
-        ]);
-        if (myPicksSnap.empty) return null;
-
-        const myTotal = myPicksSnap.docs.reduce((s, p) => s + (p.data().points ?? 0), 0);
-        const wins   = myPicksSnap.docs.filter(p => p.data().points === 5).length;
-        const places = myPicksSnap.docs.filter(p => p.data().points === 3).length;
-        const shows  = myPicksSnap.docs.filter(p => p.data().points === 1).length;
-
-        const pointsByUser: Record<string, number> = {};
-        allPicksSnap.docs.forEach(p => {
-          const uid = p.data().userId;
-          pointsByUser[uid] = (pointsByUser[uid] ?? 0) + (p.data().points ?? 0);
-        });
-        const sorted = Object.values(pointsByUser).sort((a, b) => b - a);
-        const rank = sorted.indexOf(myTotal) + 1;
-        return { myTotal, wins, places, shows, rank, members: sorted.length };
-      }));
-
-      const valid = results.filter(Boolean) as NonNullable<typeof results[0]>[];
-      if (valid.length === 0) {
-        setStats({ gamesPlayed: 0, totalPoints: 0, bestScore: 0, wins: 0, places: 0, shows: 0, bestRank: null, avgPoints: 0 });
-      } else {
-        const rankedGames = valid.filter(r => r.members > 1);
-        setStats({
-          gamesPlayed: valid.length,
-          totalPoints: valid.reduce((s, r) => s + r.myTotal, 0),
-          bestScore: Math.max(...valid.map(r => r.myTotal)),
-          wins:   valid.reduce((s, r) => s + r.wins, 0),
-          places: valid.reduce((s, r) => s + r.places, 0),
-          shows:  valid.reduce((s, r) => s + r.shows, 0),
-          bestRank: rankedGames.length > 0 ? Math.min(...rankedGames.map(r => r.rank)) : null,
-          avgPoints: Math.round(valid.reduce((s, r) => s + r.myTotal, 0) / valid.length),
-        });
+      try {
+        setStats(await computeUserStats(friendUserId));
+      } catch {
+        setStats({ ...EMPTY_STATS });
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [friendUserId, userId]);
 
