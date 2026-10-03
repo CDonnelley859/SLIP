@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import webpush from "web-push";
+import { TRA_BASE, traAuth } from "./_tra";
 
 if (!getApps().length) {
   initializeApp({
@@ -19,10 +20,6 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!,
 );
 
-const TRA_USER = "08xHXpaIUHJ1IXZq1A4ds8A3";
-const TRA_PASS = "a2oT5R6AHlzP10XAhhEDAQhw";
-const TRA_BASE = "https://api.theracingapi.com/v1";
-const TRA_AUTH = "Basic " + Buffer.from(`${TRA_USER}:${TRA_PASS}`).toString("base64");
 
 function normaliseCourse(course: string): string {
   return course.replace(/\s*\([^)]+\)\s*$/, "").trim().toLowerCase();
@@ -43,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Fetch TRA results
   const upstream = await fetch(`${TRA_BASE}/results/today/free`, {
-    headers: { Authorization: TRA_AUTH },
+    headers: { Authorization: traAuth() },
   });
   if (!upstream.ok) return res.status(502).json({ error: `TRA error ${upstream.status}` });
   const data = await upstream.json();
@@ -120,13 +117,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (horseId === winners.first) points = 5;
         else if (horseId === winners.second) points = 3;
         else if (horseId === winners.third) points = 1;
-        batch.update(pickDoc.ref, { points });
+        batch.update(pickDoc.ref, { points, settled: true });
         if (scrumId) uniqueScrumIds.add(scrumId);
       }
       await batch.commit();
 
       // Send push notifications per scrum
       for (const scrumId of uniqueScrumIds) {
+        // Shared with api/notify so a client-triggered notification isn't repeated
+        try {
+          await db.collection("notifySent").doc(`${scrumId}_${raceDoc.id}`).create({ at: Date.now() });
+        } catch { continue; }
         const scrumPicksSnap = await db.collection("picks")
           .where("scrumId", "==", scrumId)
           .where("raceId", "==", raceDoc.id)

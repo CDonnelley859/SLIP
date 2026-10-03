@@ -22,12 +22,28 @@ webpush.setVapidDetails(
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const { scrumId, raceId, winners } = req.body ?? {};
-  if (!scrumId || !raceId || !winners) {
-    return res.status(400).json({ error: "Missing scrumId, raceId, or winners" });
+  const { scrumId, raceId } = req.body ?? {};
+  if (typeof scrumId !== "string" || typeof raceId !== "string" || !scrumId || !raceId) {
+    return res.status(400).json({ error: "Missing scrumId or raceId" });
   }
 
   const db = getFirestore();
+
+  // Never trust winners from the request body: this endpoint is public, so read
+  // the settled result from the race doc and only ever announce what is true.
+  const raceDoc = await db.collection("races").doc(raceId).get();
+  const winners = raceDoc.data()?.winners;
+  if (!raceDoc.exists || raceDoc.data()?.status !== "settled" || !winners?.first) {
+    return res.status(409).json({ error: "Race is not settled" });
+  }
+
+  // Notify each scrum/race pair at most once, so repeat calls can't spam members.
+  const sentRef = db.collection("notifySent").doc(`${scrumId}_${raceId}`);
+  try {
+    await sentRef.create({ at: Date.now() });
+  } catch {
+    return res.json({ ok: true, sent: 0, failed: 0, alreadySent: true });
+  }
 
   // Fetch all picks for this scrum + race
   const picksSnap = await db.collection("picks")
@@ -37,8 +53,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (picksSnap.empty) return res.json({ ok: true, sent: 0, failed: 0 });
 
-  // Fetch race number once
-  const raceDoc = await db.collection("races").doc(raceId).get();
   const raceNumber = raceDoc.data()?.raceNumber ?? "?";
 
   let sent = 0;
