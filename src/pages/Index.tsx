@@ -1,3 +1,5 @@
+import { BouncyTitle } from "@/components/rh/BouncyTitle";
+import { Ribbon } from "@/components/rh/Ribbon";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -477,11 +479,8 @@ const Index = () => {
           >
             SPINDLE
           </Link>
-          <h1
-            className="display-extruded"
-            style={{ fontSize: 56, color: "var(--cream)" }}
-          >
-            SLIP
+          <h1 style={{ margin: 0 }}>
+            <BouncyTitle text="SLIP" size={56} />
           </h1>
           <Link
             to="/settings"
@@ -490,6 +489,9 @@ const Index = () => {
           >
             SETTINGS
           </Link>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", margin: "6px 0 4px" }}>
+          <Ribbon>PICK YOUR HORSES · BEAT YOUR MATES</Ribbon>
         </div>
       </header>
 
@@ -544,14 +546,15 @@ const Index = () => {
                   <button
                     key={card.id}
                     onClick={() => handleSelectCard(card)}
-                    className="animate-fade-in"
+                    className="rh-pop"
                     style={{
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
                       textAlign: "left", padding: "18px 16px 16px",
                       border: isSelected ? "3px solid var(--cream)" : "3px solid var(--cream)",
                       background: isSelected ? "var(--pink)" : "var(--green)",
                       color: isSelected ? "var(--ink)" : "var(--cream)",
-                      cursor: "pointer", transition: "all 120ms",
+                      cursor: "pointer", transition: "background 120ms, color 120ms",
+                      animationDelay: `${i * 0.06}s`,
                     }}
                   >
                     <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
@@ -722,7 +725,7 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={creating || !groupName.trim() || !createName.trim()}
-                  className="display"
+                  className="display rh-squash"
                   style={{
                     background: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.25)" : "var(--cream)",
                     color: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.5)" : "var(--ink)",
@@ -772,7 +775,7 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}
-                  className="display"
+                  className="display rh-squash"
                   style={{
                     background: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.25)" : "var(--cream)",
                     color: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.5)" : "var(--ink)",
@@ -799,7 +802,7 @@ const Index = () => {
               {activeMegas.map((mega, i) => (
                 <div
                   key={mega.id}
-                  className="animate-fade-in"
+                  className="rh-pop"
                   style={{
                     border: "3px solid var(--cream)",
                     borderBottom: (i < activeMegas.length - 1 || activeSlips.length > 0) ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
@@ -894,7 +897,7 @@ const Index = () => {
                 return (
                   <div
                     key={s.scrumId}
-                    className="animate-fade-in"
+                    className="rh-pop"
                     style={{
                       border: s.allSettled ? "3px solid var(--pink)" : "3px solid var(--cream)",
                       borderBottom: i < activeSlips.length - 1

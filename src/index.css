@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -114,10 +112,11 @@
     cursor: pointer;
     font-size: 16px;
     box-shadow: 4px 4px 0 var(--ink);
-    transition: transform 80ms ease, box-shadow 80ms ease;
+    transition: transform 160ms cubic-bezier(.3, 1.8, .5, 1), box-shadow 120ms ease;
     width: 100%;
   }
-  .btn-retro:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn-retro:active:not(:disabled), .rh-squash:active:not(:disabled) { transform: scale(1.05, 0.88) translateY(2px); box-shadow: 1px 1px 0 var(--ink); }
+  .rh-squash { transition: transform 160ms cubic-bezier(.3, 1.8, .5, 1); }
 
   /* Disabled state — consistent across all buttons */
   button:disabled { cursor: not-allowed; }
@@ -197,6 +196,32 @@
     text-shadow: 1px 1px 0 var(--ext, var(--pink-deep)), 2px 2px 0 var(--ext, var(--pink-deep)),
                  3px 3px 0 var(--ext, var(--pink-deep)), 4px 4px 0 var(--ext, var(--pink-deep));
     letter-spacing: 0.02em;
+  }
+
+  /* ===== rubber-hose touches (motion on top of the retro look) ===== */
+  /* pop in with an overshoot, like a cartoon prop landing */
+  .rh-pop { animation: rhPop 0.55s cubic-bezier(.3, 1.7, .5, 1) both; }
+  @keyframes rhPop {
+    0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+    100% { transform: scale(1) rotate(var(--r, 0deg)); opacity: 1; }
+  }
+  /* hand-drawn boil: a tiny redraw jitter a few times a second */
+  .rh-jitter { animation: rhJitter 0.42s steps(1) infinite; }
+  @keyframes rhJitter {
+    0%   { transform: rotate(var(--r, 0deg)) translate(0, var(--y, 0px)); }
+    33%  { transform: rotate(calc(var(--r, 0deg) + 0.8deg)) translate(0.5px, calc(var(--y, 0px) - 0.5px)); }
+    66%  { transform: rotate(calc(var(--r, 0deg) - 0.7deg)) translate(-0.5px, calc(var(--y, 0px) + 0.5px)); }
+  }
+  /* idle bounce for a call to action */
+  .rh-bob { animation: rhBob 1.2s ease-in-out infinite; }
+  @keyframes rhBob {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    40%      { transform: translateY(-5px) scale(0.98, 1.03); }
+    55%      { transform: translateY(0) scale(1.04, 0.95); }
+    70%      { transform: translateY(0) scale(1, 1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rh-pop, .rh-jitter, .rh-bob { animation: none; }
   }
 
   /* ===== animations ===== */

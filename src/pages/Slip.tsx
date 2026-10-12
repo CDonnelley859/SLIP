@@ -1,3 +1,4 @@
+import { Ribbon } from "@/components/rh/Ribbon";
 import { TicketStub } from "@/components/TicketStub";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
@@ -64,14 +65,17 @@ const Stamp = ({ kind }: { kind: string }) => {
     RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
+  const settled = kind === "WIN" || kind === "PLACE" || kind === "SHOW";
   return (
-    <span className="display" style={{
-      display: "inline-block",
-      border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
-      color: s.color, padding: "3px 10px 2px",
-      fontSize: 14, letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
-      background: "transparent", opacity: s.dim ? 0.5 : 1, flexShrink: 0,
-    }}>{s.label}</span>
+    <span className={settled ? "rh-pop" : undefined} style={{ display: "inline-block", flexShrink: 0, ["--r" as any]: `${s.rot}deg` }}>
+      <span className="display rh-jitter" style={{
+        display: "inline-block",
+        border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
+        color: s.color, padding: "3px 10px 2px",
+        fontSize: 14, letterSpacing: ".06em", ["--r" as any]: `${s.rot}deg`,
+        background: "transparent", opacity: s.dim ? 0.7 : 1,
+      }}>{s.label}</span>
+    </span>
   );
 };
 
@@ -504,6 +508,13 @@ const Slip = () => {
           transition={printOnLoad ? { delay: 0.3, duration: printAnim.duration, times: printAnim.times, ease: printAnim.ease } : undefined}
           onAnimationComplete={() => { if (printing) setPrinting(false); }}
         >
+
+        {/* rubber-hose announcer when you finish first */}
+        {allSettled && myRank === 1 && (
+          <div className="rh-pop" style={{ display: "flex", justifyContent: "center", marginBottom: 14, ["--r" as any]: "-3deg" }}>
+            <Ribbon size={22}>A KNOCKOUT!</Ribbon>
+          </div>
+        )}
 
         {/* Ticket */}
         <div style={{ position: "relative" }}>
