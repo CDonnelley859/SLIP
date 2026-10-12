@@ -1,3 +1,6 @@
+import { CartoonTitle } from "@/components/rh/CartoonTitle";
+import { Ribbon } from "@/components/rh/Ribbon";
+import { FilmGrain } from "@/components/rh/FilmGrain";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -460,13 +463,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
+      <FilmGrain />
 
-      {/* ── HEADER ── */}
+      {/* ── HEADER: title card ── */}
       <header
         style={{
           background: "var(--green)",
-          borderBottom: "3px solid rgba(245,232,223,0.3)",
-          padding: "20px 18px 8px",
+          padding: "18px 18px 14px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -477,11 +480,8 @@ const Index = () => {
           >
             SPINDLE
           </Link>
-          <h1
-            className="display-extruded"
-            style={{ fontSize: 56, color: "var(--cream)" }}
-          >
-            SLIP
+          <h1 style={{ margin: 0 }}>
+            <CartoonTitle text="SLIP" size={64} />
           </h1>
           <Link
             to="/settings"
@@ -491,6 +491,9 @@ const Index = () => {
             SETTINGS
           </Link>
         </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 6 }}>
+          <Ribbon size={14}>PICK YOUR HORSES · BEAT YOUR MATES</Ribbon>
+        </div>
       </header>
 
       <main>
@@ -498,7 +501,7 @@ const Index = () => {
         {/* ── TOP TRACKS ── */}
         <section style={{ padding: "16px 18px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <span className="label" style={{ color: "var(--cream)" }}>TOP TRACKS</span>
+            <span className="rh-text" style={{ fontSize: 22, ["--rh-stroke" as any]: "5px", textShadow: "2px 3px 0 var(--ink)" }}>TOP TRACKS</span>
             <button
               onClick={handleRefresh}
               disabled={syncing}
@@ -514,7 +517,7 @@ const Index = () => {
           </div>
 
           {cards.length === 0 && !syncing ? (
-            <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
+            <div className="rh-wob" style={{ background: "var(--green-deep)", padding: "24px", textAlign: "center" }}>
               <p className="label" style={{ color: "var(--cream)" }}>No races today.</p>
             </div>
           ) : (
@@ -522,14 +525,14 @@ const Index = () => {
             {/* Fade overlay signals that the carousel scrolls */}
             <div style={{ position: "relative" }}>
               <div ref={carouselRef} style={{
-                display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory",
+                display: "flex", overflowX: "auto", scrollSnapType: "x mandatory",
                 WebkitOverflowScrolling: "touch", msOverflowStyle: "none", scrollbarWidth: "none",
-                paddingBottom: 4,
+                padding: "8px 4px 14px", gap: 14,
               }}>
               {(syncing && cards.length === 0 ? [0, 1, 2] : cards).map((c, i) => {
                 if (typeof c === "number") {
                   return (
-                    <div key={i} style={{ flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start", border: "3px solid var(--cream)", padding: "18px 16px 16px" }}>
+                    <div key={i} className="rh-wob" style={{ flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start", background: "var(--green-deep)", padding: "18px 16px 16px" }}>
                       <div style={{ height: 28, width: 160, background: "rgba(245,232,223,0.15)", marginBottom: 10 }} />
                       <div style={{ height: 11, width: 100, background: "rgba(245,232,223,0.1)" }} />
                     </div>
@@ -544,17 +547,23 @@ const Index = () => {
                   <button
                     key={card.id}
                     onClick={() => handleSelectCard(card)}
-                    className="animate-fade-in"
+                    className="rh-wob rh-boil rh-pop"
                     style={{
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
                       textAlign: "left", padding: "18px 16px 16px",
-                      border: isSelected ? "3px solid var(--cream)" : "3px solid var(--cream)",
-                      background: isSelected ? "var(--pink)" : "var(--green)",
-                      color: isSelected ? "var(--ink)" : "var(--cream)",
-                      cursor: "pointer", transition: "all 120ms",
+                      background: isSelected ? "var(--pink-deep)" : "var(--cream)",
+                      color: isSelected ? "var(--cream)" : "var(--ink)",
+                      cursor: "pointer", transition: "background 120ms",
+                      ["--r" as any]: i % 2 ? "1deg" : "-1deg",
+                      animationDelay: `${i * 0.06}s, ${-i * 0.11}s`,
+                      animationName: "rhBoil, rhPop",
+                      animationDuration: "0.42s, 0.55s",
+                      animationTimingFunction: "steps(1), cubic-bezier(.3,1.7,.5,1)",
+                      animationIterationCount: "infinite, 1",
+                      animationFillMode: "none, both",
                     }}
                   >
-                    <div className="display" style={{ fontSize: 28, lineHeight: 1 }}>
+                    <div className="display" style={{ fontSize: 30, lineHeight: 1 }}>
                       {card.trackName}
                     </div>
                     <div className="mono" style={{ fontSize: 11, marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -562,8 +571,8 @@ const Index = () => {
                       <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>
                       {card.isVirtual && (
                         <span style={{
-                          background: isSelected ? "var(--ink)" : "var(--pink)",
-                          color: "var(--cream)", padding: "1px 5px",
+                          background: isSelected ? "var(--ink)" : "var(--pink-deep)",
+                          color: "var(--cream)", padding: "2px 7px", borderRadius: 999,
                         }}>VIRTUAL</span>
                       )}
                     </div>
@@ -573,7 +582,7 @@ const Index = () => {
             </div>
             {/* Right-edge fade — signals that more cards scroll into view */}
             <div style={{
-              position: "absolute", right: 0, top: 0, bottom: 4,
+              position: "absolute", right: -18, top: 0, bottom: 14,
               width: 48, pointerEvents: "none",
               background: "linear-gradient(to right, transparent, var(--green))",
             }} />
@@ -611,14 +620,16 @@ const Index = () => {
             </div>
           )}
 
-          <div style={{ border: "3px solid var(--cream)", position: "relative" }}>
+          <div className="rh-wob" style={{ position: "relative", background: "var(--green-deep)", padding: "18px 14px 14px", marginTop: 10 }}>
             <div
-              className="label-sm"
+              className="rh-text"
               style={{
-                position: "absolute", top: -1, left: 12,
-                transform: "translateY(-50%)",
-                background: "var(--green)", padding: "0 4px",
-                color: "var(--cream)", letterSpacing: "0.18em",
+                position: "absolute", top: 0, left: 16,
+                transform: "translateY(-55%) rotate(-2deg)",
+                fontSize: 18, ["--rh-stroke" as any]: "5px", textShadow: "2px 3px 0 var(--ink)",
+                background: "var(--pink-deep)", padding: "6px 12px 2px",
+                border: "3px solid var(--ink)", borderRadius: "14px 18px 12px 16px",
+                whiteSpace: "nowrap", maxWidth: "calc(100% - 32px)", overflow: "hidden", textOverflow: "ellipsis",
               }}
             >
               {selectedCards.length === 0
@@ -638,10 +649,10 @@ const Index = () => {
                   maxLength={40}
                   className="mono"
                   style={{
-                    border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
-                    background: "transparent", padding: "16px 14px",
+                    border: "3px solid var(--ink)", borderRadius: "14px 20px 16px 22px / 20px 14px 22px 16px",
+                    background: "var(--cream)", padding: "14px 14px 12px", marginTop: 10,
                     fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                    color: "var(--cream)", outline: "none", width: "100%",
+                    color: "var(--ink)", outline: "none", width: "100%",
                   }}
                 />
                 {/* Crew selector — compact toggle, only shown when user has saved crews */}
@@ -699,7 +710,7 @@ const Index = () => {
                   </div>
                 )}
                 <div style={{ position: "relative" }}>
-                  <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)", opacity: 0.7 }}>YOUR NAME</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", marginTop: 12 }}>YOUR NAME</div>
                   <input
                     value={createName}
                     onChange={e => setCreateName(e.target.value)}
@@ -707,10 +718,10 @@ const Index = () => {
                     maxLength={30}
                     className="mono"
                     style={{
-                      border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
-                      background: "transparent", padding: "16px 14px",
+                      border: "3px solid var(--ink)", borderRadius: "14px 20px 16px 22px / 20px 14px 22px 16px",
+                      background: "var(--cream)", padding: "14px 14px 12px", marginTop: 6,
                       fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                      color: "var(--cream)", outline: "none", width: "100%",
+                      color: "var(--ink)", outline: "none", width: "100%",
                     }}
                   />
                 </div>
@@ -722,13 +733,8 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={creating || !groupName.trim() || !createName.trim()}
-                  className="display"
-                  style={{
-                    background: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.25)" : "var(--cream)",
-                    color: (creating || !groupName.trim() || !createName.trim()) ? "rgba(245,232,223,0.5)" : "var(--ink)",
-                    border: 0, padding: "16px", fontSize: 18, letterSpacing: "0.06em",
-                    cursor: "pointer", width: "100%", textTransform: "uppercase",
-                  }}
+                  className="rh-btn"
+                  style={{ marginTop: 14 }}
                 >
                   {creating ? "CREATING…" : isMegaMode ? "CREATE MEGA GROUP" : "CREATE GROUP"}
                 </button>
@@ -742,14 +748,14 @@ const Index = () => {
                   maxLength={6}
                   className="mono"
                   style={{
-                    border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
-                    background: "transparent", padding: "16px 14px",
+                    border: "3px solid var(--ink)", borderRadius: "14px 20px 16px 22px / 20px 14px 22px 16px",
+                    background: "var(--cream)", padding: "14px 14px 12px", marginTop: 10,
                     fontSize: 20, letterSpacing: "0.3em", textTransform: "uppercase",
-                    color: "var(--cream)", outline: "none", width: "100%",
+                    color: "var(--ink)", outline: "none", width: "100%",
                   }}
                 />
                 <div style={{ position: "relative" }}>
-                  <div className="label-sm" style={{ position: "absolute", top: -1, left: 12, transform: "translateY(-50%)", background: "var(--green)", padding: "0 4px", color: "var(--cream)", opacity: 0.7 }}>YOUR NAME</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", marginTop: 12 }}>YOUR NAME</div>
                   <input
                     value={joinName}
                     onChange={e => setJoinName(e.target.value)}
@@ -757,10 +763,10 @@ const Index = () => {
                     maxLength={30}
                     className="mono"
                     style={{
-                      border: 0, borderBottom: "1.5px solid rgba(245,232,223,0.3)",
-                      background: "transparent", padding: "16px 14px",
+                      border: "3px solid var(--ink)", borderRadius: "14px 20px 16px 22px / 20px 14px 22px 16px",
+                      background: "var(--cream)", padding: "14px 14px 12px", marginTop: 6,
                       fontSize: 14, letterSpacing: "0.14em", textTransform: "uppercase",
-                      color: "var(--cream)", outline: "none", width: "100%",
+                      color: "var(--ink)", outline: "none", width: "100%",
                     }}
                   />
                 </div>
@@ -772,13 +778,8 @@ const Index = () => {
                 <button
                   type="submit"
                   disabled={joining || joinCode.length < 4}
-                  className="display"
-                  style={{
-                    background: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.25)" : "var(--cream)",
-                    color: (joining || joinCode.length < 4) ? "rgba(245,232,223,0.5)" : "var(--ink)",
-                    border: 0, padding: "16px", fontSize: 18, letterSpacing: "0.06em",
-                    cursor: "pointer", width: "100%", textTransform: "uppercase",
-                  }}
+                  className="rh-btn"
+                  style={{ marginTop: 14 }}
                 >
                   {joining ? "JOINING…" : "JOIN GROUP"}
                 </button>
@@ -789,21 +790,20 @@ const Index = () => {
 
         {/* ── ACTIVE SLIPS ── */}
         <section style={{ padding: "24px 18px 0" }}>
-          <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>
+          <span className="rh-text" style={{ display: "block", marginBottom: 12, fontSize: 22, ["--rh-stroke" as any]: "5px", textShadow: "2px 3px 0 var(--ink)" }}>
             ACTIVE GROUPS
           </span>
 
           {/* Mega Groups */}
           {activeMegas.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: activeSlips.length > 0 ? 16 : 0 }}>
               {activeMegas.map((mega, i) => (
                 <div
                   key={mega.id}
-                  className="animate-fade-in"
+                  className="rh-wob rh-pop"
                   style={{
-                    border: "3px solid var(--cream)",
-                    borderBottom: (i < activeMegas.length - 1 || activeSlips.length > 0) ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)",
-                    color: "var(--cream)",
+                    background: "var(--green-deep)", color: "var(--cream)",
+                    ["--r" as any]: i % 2 ? "0.6deg" : "-0.6deg", animationDelay: `${i * 0.06}s`,
                   }}
                 >
                   <div
@@ -860,9 +860,9 @@ const Index = () => {
           )}
 
           {slipsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {[0, 1].map(i => (
-                <div key={i} style={{ border: "3px solid var(--cream)", borderBottom: i === 0 ? "1.5px solid rgba(245,232,223,0.4)" : "3px solid var(--cream)", padding: "16px" }}>
+                <div key={i} className="rh-wob rh-boil" style={{ background: "var(--green-deep)", padding: "16px" }}>
                   <div style={{ height: 8, width: 50, background: "rgba(245,232,223,0.15)", marginBottom: 6 }} />
                   <div style={{ height: 24, width: 150, background: "rgba(245,232,223,0.15)", marginBottom: 8 }} />
                   <div style={{ height: 8, width: 80, background: "rgba(245,232,223,0.15)" }} />
@@ -870,13 +870,13 @@ const Index = () => {
               ))}
             </div>
           ) : activeSlips.length === 0 && activeMegas.length === 0 ? (
-            <div style={{ border: "3px solid var(--cream)", padding: "24px", textAlign: "center" }}>
-              <p className="label" style={{ color: "var(--cream)", opacity: 0.7 }}>
+            <div className="rh-wob" style={{ background: "var(--green-deep)", padding: "24px", textAlign: "center" }}>
+              <p className="label" style={{ color: "var(--cream)", opacity: 0.85 }}>
                 No active slips. Pick a track above or enter a join code.
               </p>
             </div>
           ) : activeSlips.length === 0 ? null : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {activeSlips.map((s, i) => {
                 const nextRaceDisplay = s.nextRaceTime
                   ? (() => {
@@ -894,14 +894,11 @@ const Index = () => {
                 return (
                   <div
                     key={s.scrumId}
-                    className="animate-fade-in"
+                    className="rh-wob rh-pop"
                     style={{
-                      border: s.allSettled ? "3px solid var(--pink)" : "3px solid var(--cream)",
-                      borderBottom: i < activeSlips.length - 1
-                        ? s.allSettled ? "1.5px solid var(--pink)" : "1.5px solid rgba(245,232,223,0.4)"
-                        : s.allSettled ? "3px solid var(--pink)" : "3px solid var(--cream)",
                       color: "var(--cream)",
-                      background: s.allSettled ? "rgba(255,180,180,0.06)" : "transparent",
+                      background: s.allSettled ? "var(--pink-deep)" : "var(--green-deep)",
+                      ["--r" as any]: i % 2 ? "0.6deg" : "-0.6deg", animationDelay: `${i * 0.06}s`,
                     }}
                   >
                     {/* Main content — go to lobby while racing, slip when finished */}
@@ -910,7 +907,7 @@ const Index = () => {
                       style={{ padding: "16px 16px 12px", cursor: "pointer" }}
                     >
                       {s.allSettled && (
-                        <div className="label-sm" style={{ color: "var(--pink-light)", marginBottom: 6, letterSpacing: "0.16em" }}>
+                        <div className="label-sm" style={{ color: "var(--cream)", marginBottom: 6, letterSpacing: "0.16em" }}>
                           RACE FINISHED · READY TO SEND
                         </div>
                       )}
@@ -927,7 +924,7 @@ const Index = () => {
                     </div>
 
                     {/* Bottom row */}
-                    <div style={{ borderTop: s.allSettled ? "1.5px solid rgba(255,180,180,0.3)" : "1.5px solid rgba(245,232,223,0.3)", padding: "10px 16px" }}>
+                    <div style={{ borderTop: "2px dashed rgba(245,232,223,0.35)", padding: "10px 16px" }}>
                       {confirmLeaveScrumId === s.scrumId ? (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                           <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.7 }}>LEAVE THIS GROUP?</span>

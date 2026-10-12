@@ -46,7 +46,7 @@ export default {
       fontFamily: {
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-        display: ["Bowlby One SC", "system-ui", "sans-serif"],
+        display: ["Luckiest Guy", "system-ui", "sans-serif"],
       },
       fontSize: {
         "headline-xl": ["64px", { lineHeight: "1.0", letterSpacing: "-0.04em", fontWeight: "900" }],

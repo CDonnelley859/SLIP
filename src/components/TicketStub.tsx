@@ -34,7 +34,7 @@ const Barcode = ({ serial, color }: { serial: string; color: string }) => {
  * `edge` is the ticket's outline colour, `bg` the ticket ground (for the bites).
  */
 export const TicketStub = ({
-  seed, bg = "var(--green)", edge = "rgba(245,232,223,0.4)", ink = "var(--cream)", label = "ADMIT ONE",
+  seed, bg = "var(--green)", edge = "var(--ink)", ink = "var(--cream)", label = "ADMIT ONE",
 }: { seed: string; bg?: string; edge?: string; ink?: string; label?: string }) => {
   const serial = serialFor(seed);
   const bite = { width: 18, height: 18, borderRadius: "50%", background: "var(--green)", border: `3px solid ${edge}`, flexShrink: 0 } as const;
@@ -51,7 +51,7 @@ export const TicketStub = ({
         <div className="harlequin harlequin-sm" style={{ width: 34, borderRight: `3px solid ${edge}` }} aria-hidden />
         <div style={{ flex: 1, padding: "12px 16px 14px", display: "flex", flexDirection: "column", gap: 6, position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span className="display-extruded" style={{ fontSize: 22, ["--ext" as any]: "var(--pink-deep)" }}>{label}</span>
+            <span className="rh-text" style={{ fontSize: 24, ["--rh-stroke" as any]: "5px", textShadow: "2px 3px 0 var(--ink)" }}>{label}</span>
             <span className="mono" style={{ fontSize: 11, letterSpacing: "0.12em" }}>{serial}</span>
           </div>
           <Barcode serial={serial} color={ink} />
