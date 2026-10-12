@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,11 +25,6 @@
     --pink-pale: #fbd5e2;
     --pink-deep: #b3245a;   /* cream text on it: 5.3:1 */
     --pink-light: #f7a1c1;  /* pink text on green: 5:1 */
-    /* rubber-hose pop colours: fills that always carry an ink outline or ink text */
-    --pink-pop: #ff4f8f;       /* ink text on it: 5.8:1 */
-    --pink-pop-dark: #c2185b;
-    --gold-pop: #ffc83d;       /* as text on green: 7.8:1; ink on it: 11:1 */
-    --gold-pop-dark: #d99a00;
 
     /* Tailwind HSL tokens — mapped to retro palette */
     --background: 22 52% 92%;
@@ -87,10 +84,10 @@
   }
 
   /* ===== display font ===== */
-  .font-display { font-family: 'Luckiest Guy', system-ui, sans-serif; text-transform: uppercase; }
+  .font-display { font-family: 'Bowlby One SC', system-ui, sans-serif; }
 
   /* ===== new typography helpers ===== */
-  .display { font-family: 'Luckiest Guy', system-ui, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; line-height: 0.95; }
+  .display { font-family: 'Bowlby One SC', system-ui, sans-serif; font-weight: 400; letter-spacing: 0.005em; line-height: 0.92; }
   .label   { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; }
   .label-sm { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: 11px; }
   .mono    { font-family: 'JetBrains Mono', monospace; }
@@ -111,7 +108,7 @@
     border: 2.5px solid var(--ink);
     background: var(--cream);
     color: var(--ink);
-    font-family: 'Luckiest Guy', system-ui, sans-serif;
+    font-family: 'Bowlby One SC', system-ui, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     cursor: pointer;
@@ -167,7 +164,7 @@
     border: 2.5px solid var(--cream);
     color: var(--cream);
     padding: 3px 10px 2px;
-    font-family: 'Luckiest Guy', system-ui, sans-serif;
+    font-family: 'Bowlby One SC', system-ui, sans-serif;
     font-size: 15px;
     letter-spacing: 0.06em;
     background: transparent;
@@ -196,70 +193,10 @@
 
   /* ===== extruded display type ===== */
   .display-extruded {
-    font-family: 'Luckiest Guy', system-ui, sans-serif;
+    font-family: 'Bowlby One SC', system-ui, sans-serif;
     text-shadow: 1px 1px 0 var(--ext, var(--pink-deep)), 2px 2px 0 var(--ext, var(--pink-deep)),
                  3px 3px 0 var(--ext, var(--pink-deep)), 4px 4px 0 var(--ext, var(--pink-deep));
     letter-spacing: 0.02em;
-  }
-
-  /* ===== rubber-hose / Cuphead kit ===== */
-  /* outlined cartoon lettering: cream fill, thick ink stroke, hard drop */
-  .rh-text {
-    font-family: 'Luckiest Guy', system-ui, sans-serif; letter-spacing: 0.03em; text-transform: uppercase;
-    color: var(--cream);
-    -webkit-text-stroke: var(--rh-stroke, 6px) var(--ink); paint-order: stroke fill;
-    text-shadow: 3px 4px 0 var(--ink);
-  }
-  /* wobbly hand-inked frame */
-  .rh-wob {
-    border: 3.5px solid var(--ink);
-    border-radius: 22px 30px 24px 34px / 30px 22px 34px 24px;
-    box-shadow: 5px 6px 0 var(--ink);
-  }
-  /* line boil: the frame redraws itself a few times a second */
-  .rh-boil { animation: rhBoil 0.42s steps(1) infinite; }
-  @keyframes rhBoil {
-    0%   { border-radius: 22px 30px 24px 34px / 30px 22px 34px 24px; }
-    33%  { border-radius: 26px 24px 30px 28px / 24px 30px 26px 32px; }
-    66%  { border-radius: 20px 32px 22px 30px / 32px 24px 30px 22px; }
-  }
-  .rh-jitter { animation: rhJitter 0.42s steps(1) infinite; }
-  @keyframes rhJitter {
-    0%   { transform: rotate(var(--r, 0deg)) translate(0, var(--y, 0px)); }
-    33%  { transform: rotate(calc(var(--r, 0deg) + 0.7deg)) translate(0.5px, calc(var(--y, 0px) - 0.5px)); }
-    66%  { transform: rotate(calc(var(--r, 0deg) - 0.6deg)) translate(-0.5px, calc(var(--y, 0px) + 0.4px)); }
-  }
-  /* squash-and-stretch button */
-  .rh-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    font-family: 'Luckiest Guy', system-ui, sans-serif; font-size: 22px; letter-spacing: 0.04em; line-height: 1;
-    padding: 15px 18px 12px; cursor: pointer;
-    color: var(--cream); background: var(--pink-pop);
-    -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill;
-    border: 3.5px solid var(--ink);
-    border-radius: 40px 34px 44px 30px / 30px 44px 34px 40px;
-    box-shadow: 4px 5px 0 var(--ink);
-    transition: transform 140ms cubic-bezier(.3, 1.8, .5, 1), box-shadow 140ms ease;
-  }
-  .rh-btn:active:not(:disabled) { transform: scale(1.06, 0.86) translateY(3px); box-shadow: 1px 2px 0 var(--ink); }
-  .rh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-  .rh-btn-cream { background: var(--cream); color: var(--ink); -webkit-text-stroke: 0; }
-  .rh-btn-gold { background: var(--gold-pop); }
-  .rh-btn-green { background: var(--green-deep); color: var(--cream); }
-  /* pop in with overshoot */
-  .rh-pop { animation: rhPop 0.55s cubic-bezier(.3, 1.7, .5, 1) both; }
-  @keyframes rhPop {
-    0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-    100% { transform: scale(1) rotate(var(--r, 0deg)); opacity: 1; }
-  }
-  /* pill stamp */
-  .rh-stamp {
-    display: inline-block; font-family: 'Luckiest Guy', system-ui, sans-serif; font-size: 17px; letter-spacing: 0.04em; line-height: 1;
-    padding: 5px 12px 2px; border: 3px solid currentColor; border-radius: 999px 800px 999px 700px;
-    transform: rotate(var(--r, 0deg)); flex-shrink: 0;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .rh-boil, .rh-jitter, .rh-pop { animation: none; }
   }
 
   /* ===== animations ===== */

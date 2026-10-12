@@ -1,4 +1,3 @@
-import { Ribbon } from "@/components/rh/Ribbon";
 import { TicketStub } from "@/components/TicketStub";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
@@ -50,29 +49,29 @@ const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
     ...(side === "top" ? { top: 0, transform: "translateY(-1px)" } : { bottom: 0, transform: "translateY(1px) scaleY(-1)" }),
   }}>
     {Array.from({ length: 25 }).map((_, i) => (
-      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--green)" stroke="var(--ink)" strokeWidth={2.5} />
+      <circle key={i} cx={8 + i * 16} cy={0} r={4} fill="var(--green)" stroke="rgba(245,232,223,0.4)" strokeWidth={1.5} />
     ))}
   </svg>
 );
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN!",    color: "var(--gold-pop)",          rot: -8 },
+    WIN:     { label: "WIN",     color: "var(--pink-light)",        rot: -8 },
     PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
     SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
-    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.7)",    rot: 4, dashed: true },
-    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.7)",    rot: 0 },
+    OUT:     { label: "OUT",     color: "rgba(245,232,223,0.7)",    rot: 4, dashed: true, dim: true },
+    PENDING: { label: "PENDING", color: "rgba(245,232,223,0.7)",    rot: 0, dim: true },
     RUNNING: { label: "NOW",     color: "var(--cream)",             rot: -4 },
   };
   const s = map[kind] ?? map.PENDING;
-  const settled = kind === "WIN" || kind === "PLACE" || kind === "SHOW";
   return (
-    <span className={settled ? "rh-pop" : undefined} style={{ display: "inline-block", flexShrink: 0, ["--r" as any]: `${s.rot}deg` }}>
-      <span className="rh-stamp rh-jitter" style={{
-        color: s.color, borderStyle: s.dashed ? "dashed" : "solid",
-        ["--r" as any]: `${s.rot}deg`,
-      }}>{s.label}</span>
-    </span>
+    <span className="display" style={{
+      display: "inline-block",
+      border: `2.5px ${s.dashed ? "dashed" : "solid"} ${s.color}`,
+      color: s.color, padding: "3px 10px 2px",
+      fontSize: 14, letterSpacing: ".06em", transform: `rotate(${s.rot}deg)`,
+      background: "transparent", opacity: s.dim ? 0.5 : 1, flexShrink: 0,
+    }}>{s.label}</span>
   );
 };
 
@@ -436,7 +435,7 @@ const Slip = () => {
         >
           {scrum?.megaSlipId ? "← HUB" : "← PADDOCK"}
         </Link>
-        <span className="rh-text" style={{ fontSize: 28, textAlign: "center", ["--rh-stroke" as any]: "6px", display: "inline-block", transform: "rotate(-2deg)" }}>THE SLIP</span>
+        <span className="display" style={{ fontSize: 22, color: "var(--cream)", textAlign: "center" }}>THE SLIP</span>
         <div style={{ flex: 1 }} />
       </motion.div>
       )}
@@ -506,16 +505,9 @@ const Slip = () => {
           onAnimationComplete={() => { if (printing) setPrinting(false); }}
         >
 
-        {/* Cuphead-style announcer when you take the top spot */}
-        {allSettled && myRank === 1 && (
-          <div className="rh-pop" style={{ display: "flex", justifyContent: "center", marginBottom: 14, ["--r" as any]: "-3deg" }}>
-            <Ribbon size={26} bg="var(--gold-pop)" tail="var(--gold-pop-dark)">A KNOCKOUT!</Ribbon>
-          </div>
-        )}
-
         {/* Ticket */}
         <div style={{ position: "relative" }}>
-          <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3.5px solid var(--ink)", color: "var(--cream)", boxShadow: "7px 8px 0 var(--ink)" }}>
+          <div style={{ position: "relative", zIndex: 1, background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", color: "var(--cream)", boxShadow: "6px 6px 0 var(--cream)" }}>
             <ScalloppedEdge side="top" />
             <ScalloppedEdge side="bottom" />
             <div style={{ padding: "20px 18px 22px" }}>
@@ -533,7 +525,7 @@ const Slip = () => {
               )}
 
               {/* venue */}
-              <div className="rh-text" style={{ fontSize: 44, lineHeight: 0.95, textAlign: "center", ["--rh-stroke" as any]: "7px", textShadow: "3px 4px 0 var(--ink)" }}>{card?.trackName ?? "—"}</div>
+              <div className="display" style={{ fontSize: 44, lineHeight: 0.9, textAlign: "center" }}>{card?.trackName ?? "—"}</div>
 
               {/* date + post time */}
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }}>
@@ -552,14 +544,14 @@ const Slip = () => {
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, padding: "0 6px" }}>
                 <div>
                   <div className="label-sm" style={{ opacity: 0.7 }}>TOTAL</div>
-                  <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px", color: "var(--gold-pop)" }}>
+                  <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
                     {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>PTS</span>
                   </div>
                 </div>
                 {myRank && (
                   <div style={{ textAlign: "right" }}>
                     <div className="label-sm" style={{ opacity: 0.7 }}>RANK</div>
-                    <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px", color: "var(--gold-pop)" }}>
+                    <div className="display" style={{ fontSize: 44, lineHeight: 0.9 }}>
                       #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>OF {playerCount}</span>
                     </div>
                   </div>
@@ -568,9 +560,9 @@ const Slip = () => {
 
               {/* perforated tear */}
               <div style={{ display: "flex", alignItems: "center", margin: "18px -22px 14px" }}>
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid var(--ink)", marginLeft: -10 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginLeft: -10 }} />
                 <div className="perf" style={{ flex: 1, opacity: 0.7 }} />
-                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid var(--ink)", marginRight: -10 }} />
+                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--green)", border: "3px solid rgba(245,232,223,0.4)", marginRight: -10 }} />
               </div>
 
               {/* pick cards */}
@@ -581,7 +573,7 @@ const Slip = () => {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {lines.map(line => (
-                  <div key={line.raceNumber} className="rh-wob" style={{ background: "var(--green-deep)", padding: "12px 14px", borderWidth: 3, boxShadow: "3px 4px 0 var(--ink)" }}>
+                  <div key={line.raceNumber} style={{ border: "1.5px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "10px 12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
@@ -592,7 +584,7 @@ const Slip = () => {
                             {line.offTime ? new Date(line.offTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </span>
                         </div>
-                        <div className="display" style={{ fontSize: 19, lineHeight: 1, marginTop: 4, color: "var(--cream)",
+                        <div className="display" style={{ fontSize: 16, lineHeight: 1, marginTop: 4, color: "var(--cream)",
                           textDecoration: line.status === "OUT" ? "line-through" : "none",
                           opacity: line.status === "OUT" ? 0.45 : 1 }}>
                           {line.horseNumber}. {line.horseName}
@@ -604,7 +596,7 @@ const Slip = () => {
                       {(["1ST", "2ND", "3RD"] as const).map((pos, idx) => {
                         const w = idx === 0 ? line.podium?.first : idx === 1 ? line.podium?.second : line.podium?.third;
                         return (
-                          <div key={pos} style={{ flex: 1, border: "2px solid var(--ink)", borderRadius: "10px 14px 10px 12px", padding: "5px 6px 3px", textAlign: "center", background: "rgba(0,0,0,0.18)", opacity: w ? 1 : 0.55 }}>
+                          <div key={pos} style={{ flex: 1, border: "1.5px solid rgba(245,232,223,0.25)", padding: "5px 6px", textAlign: "center", background: "rgba(245,232,223,0.08)", opacity: w ? 1 : 0.55 }}>
                             <div className="label-sm" style={{ color: "var(--cream)" }}>{pos}</div>
                             <div className="display" style={{ fontSize: 12, marginTop: 1, color: "var(--cream)" }}>{w ? w.name : "—"}</div>
                           </div>
@@ -643,7 +635,7 @@ const Slip = () => {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeOut" }}
           style={{
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-            background: "var(--green-deep)", borderTop: "3.5px solid var(--ink)",
+            background: "var(--green)", borderTop: "3px solid var(--pink)",
             padding: "14px 18px 20px",
             display: "flex", flexDirection: "column", gap: 8,
           }}
@@ -651,7 +643,13 @@ const Slip = () => {
           <button
             onClick={handleSendToSpindle}
             disabled={sending}
-            className="rh-btn"
+            className="btn-retro"
+            style={{
+              background: "var(--pink)", color: "var(--ink)",
+              border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)",
+              fontSize: 20, letterSpacing: "0.06em",
+              opacity: sending ? 0.5 : 1,
+            }}
           >
             {sending ? "SENDING…" : "SEND TO SPINDLE →"}
           </button>
@@ -682,7 +680,8 @@ const Slip = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="rh-btn rh-btn-green"
+                className="btn-retro"
+                style={{ opacity: refreshing ? 0.4 : 1, background: "var(--green)", color: "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
               >
                 {refreshing ? "REFRESHING…" : "↻ REFRESH RESULTS"}
               </button>
@@ -691,7 +690,8 @@ const Slip = () => {
             {lines.length > 0 && (
               <button
                 onClick={handleShareSlip}
-                className="rh-btn"
+                className="btn-retro"
+                style={{ background: "var(--pink)", color: "var(--ink)", border: "3px solid var(--ink)", boxShadow: "4px 4px 0 var(--ink)" }}
               >
                 ↗ SHARE {isOwnSlip ? "MY" : `${currentPlayer?.handle?.toUpperCase() ?? ""}'S`} SLIP
               </button>
@@ -701,8 +701,8 @@ const Slip = () => {
               <button
                 onClick={handleNotifToggle}
                 disabled={notifLoading}
-                className={notifEnabled ? "rh-btn" : "rh-btn rh-btn-green"}
-                style={{ fontSize: 17 }}
+                className="btn-retro"
+                style={{ opacity: notifLoading ? 0.4 : 1, background: notifEnabled ? "var(--pink)" : "var(--green)", color: notifEnabled ? "var(--ink)" : "var(--cream)", border: "3px solid rgba(245,232,223,0.3)", boxShadow: "none" }}
               >
                 <span>{notifEnabled ? "🔔" : "🔕"}</span>
                 <span>
