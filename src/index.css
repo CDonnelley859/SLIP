@@ -191,26 +191,6 @@
   }
   .harlequin-sm { background-size: 20px 20px; }
 
-  /* ===== halftone shading ===== */
-  .halftone-dots {
-    background-image: radial-gradient(circle, var(--dot, var(--ink)) 1.1px, transparent 1.6px);
-    background-size: 6px 6px;
-  }
-  .halftone-diamond {
-    background-image: linear-gradient(45deg, var(--dot, var(--ink)) 25%, transparent 25%, transparent 75%, var(--dot, var(--ink)) 75%),
-                      linear-gradient(45deg, var(--dot, var(--ink)) 25%, transparent 25%, transparent 75%, var(--dot, var(--ink)) 75%);
-    background-size: 8px 8px; background-position: 0 0, 4px 4px;
-  }
-  /* overlay that fades from solid dots to nothing; add to any position:relative box */
-  .halftone-shade { position: relative; }
-  .halftone-shade::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background-image: radial-gradient(circle, var(--dot, rgba(26,20,16,0.55)) 1.3px, transparent 1.8px);
-    background-size: 6px 6px;
-    -webkit-mask-image: linear-gradient(to var(--fade, bottom), #000, transparent 70%);
-            mask-image: linear-gradient(to var(--fade, bottom), #000, transparent 70%);
-  }
-
   /* ===== extruded display type ===== */
   .display-extruded {
     font-family: 'Bowlby One SC', system-ui, sans-serif;

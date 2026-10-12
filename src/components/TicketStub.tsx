@@ -47,7 +47,7 @@ export const TicketStub = ({
         <div style={{ ...bite, marginRight: -12, clipPath: "inset(0 50% 0 0)" }} />
       </div>
       {/* stub */}
-      <div className="halftone-shade" style={{ display: "flex", background: bg, ["--dot" as any]: "rgba(0,0,0,0.35)", ["--fade" as any]: "top" }}>
+      <div style={{ display: "flex", background: bg }}>
         <div className="harlequin harlequin-sm" style={{ width: 34, borderRight: `3px solid ${edge}` }} aria-hidden />
         <div style={{ flex: 1, padding: "12px 16px 14px", display: "flex", flexDirection: "column", gap: 6, position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
