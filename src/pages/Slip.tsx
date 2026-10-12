@@ -1,4 +1,3 @@
-import { FilmGrain } from "@/components/rh/FilmGrain";
 import { Ribbon } from "@/components/rh/Ribbon";
 import { TicketStub } from "@/components/TicketStub";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +57,7 @@ const ScalloppedEdge = ({ side }: { side: "top" | "bottom" }) => (
 
 const Stamp = ({ kind }: { kind: string }) => {
   const map: Record<string, { label: string; color: string; rot: number; dashed?: boolean; dim?: boolean }> = {
-    WIN:     { label: "WIN!",    color: "var(--pink-light)",        rot: -8 },
+    WIN:     { label: "WIN!",    color: "var(--gold-pop)",          rot: -8 },
     PLACE:   { label: "PLACE",   color: "var(--cream)",             rot: -5 },
     SHOW:    { label: "SHOW",    color: "var(--cream)",             rot: -3 },
     OUT:     { label: "OUT",     color: "rgba(245,232,223,0.7)",    rot: 4, dashed: true },
@@ -421,7 +420,6 @@ const Slip = () => {
       className="min-h-screen flex flex-col items-center"
       style={{ background: "var(--green)", padding: "0 0 80px", touchAction: "pan-y" }}
     >
-      <FilmGrain />
       {/* ── PAGE HEADER ── */}
       {!printing && (
       <motion.div
@@ -511,7 +509,7 @@ const Slip = () => {
         {/* Cuphead-style announcer when you take the top spot */}
         {allSettled && myRank === 1 && (
           <div className="rh-pop" style={{ display: "flex", justifyContent: "center", marginBottom: 14, ["--r" as any]: "-3deg" }}>
-            <Ribbon size={26}>A KNOCKOUT!</Ribbon>
+            <Ribbon size={26} bg="var(--gold-pop)" tail="var(--gold-pop-dark)">A KNOCKOUT!</Ribbon>
           </div>
         )}
 
@@ -554,14 +552,14 @@ const Slip = () => {
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, padding: "0 6px" }}>
                 <div>
                   <div className="label-sm" style={{ opacity: 0.7 }}>TOTAL</div>
-                  <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px" }}>
+                  <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px", color: "var(--gold-pop)" }}>
                     {isFullyPending ? "—" : myTotal}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>PTS</span>
                   </div>
                 </div>
                 {myRank && (
                   <div style={{ textAlign: "right" }}>
                     <div className="label-sm" style={{ opacity: 0.7 }}>RANK</div>
-                    <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px" }}>
+                    <div className="rh-text" style={{ fontSize: 46, lineHeight: 0.95, ["--rh-stroke" as any]: "7px", color: "var(--gold-pop)" }}>
                       #{myRank}<span style={{ fontSize: 13, marginLeft: 6, opacity: 0.7 }}>OF {playerCount}</span>
                     </div>
                   </div>

@@ -23,6 +23,11 @@
     --pink-pale: #fbd5e2;
     --pink-deep: #b3245a;   /* cream text on it: 5.3:1 */
     --pink-light: #f7a1c1;  /* pink text on green: 5:1 */
+    /* rubber-hose pop colours: fills that always carry an ink outline or ink text */
+    --pink-pop: #ff4f8f;       /* ink text on it: 5.8:1 */
+    --pink-pop-dark: #c2185b;
+    --gold-pop: #ffc83d;       /* as text on green: 7.8:1; ink on it: 11:1 */
+    --gold-pop-dark: #d99a00;
 
     /* Tailwind HSL tokens — mapped to retro palette */
     --background: 22 52% 92%;
@@ -229,7 +234,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
     font-family: 'Luckiest Guy', system-ui, sans-serif; font-size: 22px; letter-spacing: 0.04em; line-height: 1;
     padding: 15px 18px 12px; cursor: pointer;
-    color: var(--cream); background: var(--pink-deep);
+    color: var(--cream); background: var(--pink-pop);
     -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill;
     border: 3.5px solid var(--ink);
     border-radius: 40px 34px 44px 30px / 30px 44px 34px 40px;
@@ -239,6 +244,7 @@
   .rh-btn:active:not(:disabled) { transform: scale(1.06, 0.86) translateY(3px); box-shadow: 1px 2px 0 var(--ink); }
   .rh-btn:disabled { opacity: 0.45; cursor: not-allowed; }
   .rh-btn-cream { background: var(--cream); color: var(--ink); -webkit-text-stroke: 0; }
+  .rh-btn-gold { background: var(--gold-pop); }
   .rh-btn-green { background: var(--green-deep); color: var(--cream); }
   /* pop in with overshoot */
   .rh-pop { animation: rhPop 0.55s cubic-bezier(.3, 1.7, .5, 1) both; }
@@ -252,23 +258,8 @@
     padding: 5px 12px 2px; border: 3px solid currentColor; border-radius: 999px 800px 999px 700px;
     transform: rotate(var(--r, 0deg)); flex-shrink: 0;
   }
-  /* old-film grain + vignette */
-  .rh-film { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
-  .rh-film::before {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 8, 6, 0.42) 100%);
-  }
-  .rh-film::after {
-    content: ""; position: absolute; inset: -10%; opacity: 0.16;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0 0.04 0 0 0 1.4 -0.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: rhGrain 0.5s steps(1) infinite;
-  }
-  @keyframes rhGrain {
-    0% { transform: translate(0, 0); } 25% { transform: translate(-4%, 3%); }
-    50% { transform: translate(3%, -4%); } 75% { transform: translate(-2%, -3%); }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .rh-boil, .rh-jitter, .rh-pop, .rh-film::after { animation: none; }
+    .rh-boil, .rh-jitter, .rh-pop { animation: none; }
   }
 
   /* ===== animations ===== */

@@ -9,7 +9,7 @@ const Tail = ({ flip, color }: { flip?: boolean; color: string }) => (
 );
 
 export const Ribbon = ({
-  children, bg = "var(--pink-deep)", tail = "#8a1c45", size = 16,
+  children, bg = "var(--pink-pop)", tail = "var(--pink-pop-dark)", size = 16,
 }: { children: ReactNode; bg?: string; tail?: string; size?: number }) => (
   <div style={{ display: "inline-flex", alignItems: "flex-start" }}>
     <Tail color={tail} />

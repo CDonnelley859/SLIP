@@ -1,6 +1,5 @@
 import { CartoonTitle } from "@/components/rh/CartoonTitle";
 import { Ribbon } from "@/components/rh/Ribbon";
-import { FilmGrain } from "@/components/rh/FilmGrain";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -463,7 +462,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "var(--green)" }}>
-      <FilmGrain />
 
       {/* ── HEADER: title card ── */}
       <header
@@ -481,7 +479,7 @@ const Index = () => {
             SPINDLE
           </Link>
           <h1 style={{ margin: 0 }}>
-            <CartoonTitle text="SLIP" size={64} />
+            <CartoonTitle text="SLIP" size={64} color="var(--gold-pop)" />
           </h1>
           <Link
             to="/settings"
@@ -551,8 +549,8 @@ const Index = () => {
                     style={{
                       flexShrink: 0, width: "82vw", maxWidth: 320, scrollSnapAlign: "start",
                       textAlign: "left", padding: "18px 16px 16px",
-                      background: isSelected ? "var(--pink-deep)" : "var(--cream)",
-                      color: isSelected ? "var(--cream)" : "var(--ink)",
+                      background: isSelected ? "var(--pink-pop)" : "var(--cream)",
+                      color: "var(--ink)",
                       cursor: "pointer", transition: "background 120ms",
                       ["--r" as any]: i % 2 ? "1deg" : "-1deg",
                       animationDelay: `${i * 0.06}s, ${-i * 0.11}s`,
@@ -571,8 +569,8 @@ const Index = () => {
                       <span style={{ opacity: 0.7 }}>{card.raceCount} RACES</span>
                       {card.isVirtual && (
                         <span style={{
-                          background: isSelected ? "var(--ink)" : "var(--pink-deep)",
-                          color: "var(--cream)", padding: "2px 7px", borderRadius: 999,
+                          background: isSelected ? "var(--ink)" : "var(--pink-pop)",
+                          color: isSelected ? "var(--cream)" : "var(--ink)", padding: "2px 7px", borderRadius: 999,
                         }}>VIRTUAL</span>
                       )}
                     </div>
@@ -627,7 +625,7 @@ const Index = () => {
                 position: "absolute", top: 0, left: 16,
                 transform: "translateY(-55%) rotate(-2deg)",
                 fontSize: 18, ["--rh-stroke" as any]: "5px", textShadow: "2px 3px 0 var(--ink)",
-                background: "var(--pink-deep)", padding: "6px 12px 2px",
+                background: "var(--pink-pop)", padding: "6px 12px 2px",
                 border: "3px solid var(--ink)", borderRadius: "14px 18px 12px 16px",
                 whiteSpace: "nowrap", maxWidth: "calc(100% - 32px)", overflow: "hidden", textOverflow: "ellipsis",
               }}
