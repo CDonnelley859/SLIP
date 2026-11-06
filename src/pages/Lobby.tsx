@@ -203,7 +203,7 @@ const Lobby = () => {
           </button>
         </div>
       ) : (
-        <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading…</p>
+        <p className="label" style={{ color: "var(--cream)", opacity: 0.8 }}>Loading…</p>
       )}
     </div>
   );
@@ -247,7 +247,7 @@ const Lobby = () => {
           <div style={{ padding: "14px 16px 12px" }}>
             <div className="display" style={{ fontSize: 30, lineHeight: 1, marginBottom: 6 }}>{card?.trackName ?? "—"}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.6 }}>
+              <div className="mono" style={{ fontSize: 10, opacity: 0.8 }}>
                 {[
                   card?.raceCount ? `${card.raceCount} RACES` : null,
                   card?.postTime ? new Date(card.postTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null,
@@ -258,7 +258,7 @@ const Lobby = () => {
               {countdown && (
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   {picksLocked ? (
-                    <span className="mono" style={{ fontSize: 9, opacity: 0.55 }}>UNDERWAY</span>
+                    <span className="mono" style={{ fontSize: 9, opacity: 0.8 }}>UNDERWAY</span>
                   ) : (
                     <div className="display" style={{ fontSize: 24, lineHeight: 1, color: "var(--pink)" }}>
                       {countdown}
@@ -298,7 +298,7 @@ const Lobby = () => {
 
         {/* ── JOIN CODE — compact ── */}
         <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}>
-          <span className="mono" style={{ fontSize: 9, opacity: 0.55, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
+          <span className="mono" style={{ fontSize: 9, opacity: 0.8, color: "var(--cream)", letterSpacing: "0.14em" }}>JOIN CODE</span>
           <span className="display" style={{ fontSize: 22, letterSpacing: "0.16em", color: "var(--cream)", textAlign: "center" }}>{scrum.joinCode}</span>
           <div style={{ display: "flex", gap: 14, justifyContent: "flex-end" }}>
             <button onClick={handleCopyCode} className="label-sm" style={{ background: "transparent", border: 0, color: "var(--cream)", cursor: "pointer", textDecoration: "underline", opacity: 0.7 }}>
@@ -318,7 +318,7 @@ const Lobby = () => {
               <span className="label" style={{ color: "var(--cream)", display: "block", marginBottom: 10 }}>STANDINGS</span>
               {leaderboard.length === 0 ? (
                 <div style={{ border: "3px solid rgba(245,232,223,0.3)", padding: 24, textAlign: "center" }}>
-                  <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>No players yet.</p>
+                  <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>No players yet.</p>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -340,7 +340,7 @@ const Lobby = () => {
                         <span className="display" style={{ fontSize: 28, lineHeight: 1, minWidth: 32, opacity: 0.5 }}>{i + 1}</span>
                         <div style={{ flex: 1 }}>
                           <div className="display" style={{ fontSize: 18, lineHeight: 1 }}>{row.handle}</div>
-                          <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.65 }}>
+                          <div className="mono" style={{ fontSize: 10, marginTop: 4, opacity: 0.8 }}>
                             {hasPicked
                               ? `${row.wins}W · ${row.places}P · ${row.shows}S`
                               : "NOT PICKED YET"}
@@ -384,8 +384,8 @@ const Lobby = () => {
                 background: "transparent", border: 0, cursor: "pointer", padding: "12px 14px",
               }}
             >
-              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.6 }}>HOST SETTINGS</span>
-              <span className="mono" style={{ color: "var(--cream)", opacity: 0.5, fontSize: 14 }}>
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>HOST SETTINGS</span>
+              <span className="mono" style={{ color: "var(--cream)", opacity: 0.8, fontSize: 14 }}>
                 {showHostSettings ? "▲" : "▼"}
               </span>
             </button>
@@ -424,7 +424,7 @@ const Lobby = () => {
         ) : (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px" }}>
             <span className="label" style={{ color: "var(--cream)" }}>Horse Data</span>
-            <span className="label-sm" style={{ opacity: 0.6, color: "var(--cream)" }}>
+            <span className="label-sm" style={{ opacity: 0.8, color: "var(--cream)" }}>
               {(scrum.showDetails ?? false) ? "FULL CARD" : "NAME ONLY"}
             </span>
           </div>
@@ -432,12 +432,12 @@ const Lobby = () => {
 
         {/* ── SAVE AS CREW ── */}
         {crewSaved ? (
-          <p className="label-sm" style={{ textAlign: "center", color: "var(--cream)", opacity: 0.45, padding: "12px 0" }}>
+          <p className="label-sm" style={{ textAlign: "center", color: "var(--cream)", opacity: 0.8, padding: "12px 0" }}>
             ✓ CREW SAVED
           </p>
         ) : showSaveCrew ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", background: "var(--green)", padding: "14px" }}>
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 10 }}>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 10 }}>
               SAVE {members.length} PLAYERS AS A CREW
             </p>
             <input

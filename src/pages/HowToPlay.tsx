@@ -83,14 +83,14 @@ const STEPS: Step[] = [
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
+              <div className="mono" style={{ fontSize: 10, opacity: 0.8, letterSpacing: "0.14em", marginBottom: 4 }}>4-CHARACTER CODE</div>
               <div className="display" style={{ fontSize: 18, color: "var(--cream)" }}>AB12</div>
             </div>
-            <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>Single track</div>
+            <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>Single track</div>
           </div>
           <div style={{ border: "1.5px solid rgba(245,232,223,0.25)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div className="mono" style={{ fontSize: 10, opacity: 0.5, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
+              <div className="mono" style={{ fontSize: 10, opacity: 0.8, letterSpacing: "0.14em", marginBottom: 4 }}>6-CHARACTER CODE</div>
               <div className="display" style={{ fontSize: 18, color: "var(--pink)" }}>AB1234</div>
             </div>
             <div className="label-sm" style={{ color: "var(--pink)", opacity: 0.7 }}>Mega Slip</div>
@@ -114,7 +114,7 @@ const STEPS: Step[] = [
             "The leaderboard starts filling in as picks come in.",
           ].map((t, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.4, flexShrink: 0, paddingTop: 2 }}>—</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.8, flexShrink: 0, paddingTop: 2 }}>—</span>
               <p>{t}</p>
             </div>
           ))}
@@ -191,7 +191,7 @@ const STEPS: Step[] = [
                 fontSize: 12, border: `2px solid ${r.color}`, color: r.color,
                 padding: "3px 8px", flexShrink: 0, minWidth: 64, textAlign: "center",
               }}>{r.label}</span>
-              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.65 }}>{r.desc}</span>
+              <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>{r.desc}</span>
             </div>
           ))}
         </div>
@@ -212,7 +212,7 @@ const STEPS: Step[] = [
             "Your final rank and score are saved to your Form.",
           ].map((t, i) => (
             <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.4, flexShrink: 0, paddingTop: 2 }}>—</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--cream)", opacity: 0.8, flexShrink: 0, paddingTop: 2 }}>—</span>
               <p>{t}</p>
             </div>
           ))}

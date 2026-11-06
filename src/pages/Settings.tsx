@@ -115,13 +115,13 @@ const Settings = () => {
 
         {/* ── DISPLAY NAME ── */}
         <section style={{ marginBottom: 8 }}>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8, letterSpacing: "0.14em" }}>
             YOUR PROFILE
           </div>
           <div style={{ border: "3px solid rgba(245,232,223,0.35)", background: "var(--green)" }}>
             {editingName ? (
               <div style={{ padding: "14px 16px" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.55, marginBottom: 8 }}>DISPLAY NAME</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8 }}>DISPLAY NAME</div>
                 <input
                   ref={inputRef}
                   value={nameInput}
@@ -172,12 +172,12 @@ const Settings = () => {
                 }}
               >
                 <div>
-                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.55, marginBottom: 4 }}>DISPLAY NAME</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>DISPLAY NAME</div>
                   <div className="display" style={{ fontSize: 24, color: "var(--cream)", lineHeight: 1 }}>
                     {handle || "— NOT SET —"}
                   </div>
                 </div>
-                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>EDIT →</span>
+                <span className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>EDIT →</span>
               </button>
             )}
           </div>
@@ -185,7 +185,7 @@ const Settings = () => {
 
         {/* ── YOUR FORM ── */}
         <section style={{ marginBottom: 8 }}>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8, letterSpacing: "0.14em" }}>
             STATS
           </div>
           <button
@@ -200,7 +200,7 @@ const Settings = () => {
               <div className="display" style={{ fontSize: 20, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
                 YOUR FORM
               </div>
-              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>
+              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>
                 Wins, points, and your best finish
               </div>
             </div>
@@ -210,7 +210,7 @@ const Settings = () => {
 
         {/* ── HOW TO PLAY ── */}
         <section style={{ marginBottom: 8 }}>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8, letterSpacing: "0.14em" }}>
             HELP
           </div>
           <button
@@ -225,7 +225,7 @@ const Settings = () => {
               <div className="display" style={{ fontSize: 20, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
                 HOW TO PLAY
               </div>
-              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5 }}>
+              <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>
                 Groups, picking horses, scoring — the full rundown
               </div>
             </div>
@@ -235,7 +235,7 @@ const Settings = () => {
 
         {/* ── SAVED CREWS ── */}
         <section>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8, letterSpacing: "0.14em" }}>
             SAVED CREWS
           </div>
           {loadingCrews ? (
@@ -244,8 +244,8 @@ const Settings = () => {
             </div>
           ) : crews.length === 0 ? (
             <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO SAVED CREWS</p>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>NO SAVED CREWS</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
                 SAVE A CREW FROM THE PEN WHILE IN AN ACTIVE GROUP
               </p>
             </div>
@@ -303,7 +303,7 @@ const Settings = () => {
                         <div className="display" style={{ fontSize: 16, color: "var(--cream)", lineHeight: 1, marginBottom: 4 }}>
                           {crew.name} →
                         </div>
-                        <div className="mono" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div className="mono" style={{ fontSize: 10, color: "var(--cream)", opacity: 0.8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {crew.members.map(m => m.handle).join(", ")}
                         </div>
                       </button>
@@ -328,7 +328,7 @@ const Settings = () => {
 
         {/* ── FRIENDS ── */}
         <section style={{ marginTop: 8 }}>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.14em" }}>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 8, letterSpacing: "0.14em" }}>
             FRIENDS
           </div>
           {loadingFriends ? (
@@ -337,8 +337,8 @@ const Settings = () => {
             </div>
           ) : friends.length === 0 ? (
             <div style={{ border: "3px solid rgba(245,232,223,0.35)", padding: "16px 16px 18px", textAlign: "center" }}>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.4 }}>NO FRIENDS SAVED</p>
-              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.3, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8 }}>NO FRIENDS SAVED</p>
+              <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginTop: 6, fontSize: 10, lineHeight: 1.4 }}>
                 TAP + FRIEND ON A PLAYER IN THE PEN STANDINGS
               </p>
             </div>
