@@ -273,7 +273,7 @@ const Gallop = () => {
             </button>
           </>
         ) : (
-          <p className="label" style={{ color: "var(--cream)", opacity: 0.6 }}>Loading card…</p>
+          <p className="label" style={{ color: "var(--cream)", opacity: 0.8 }}>Loading card…</p>
         )}
       </div>
     );
@@ -405,7 +405,7 @@ const Gallop = () => {
             }}>
               <div>
                 <div className="display" style={{ fontSize: 16, color: "var(--cream)" }}>RACE STARTED</div>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 2 }}>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginTop: 2 }}>
                   Picking is closed.
                 </div>
               </div>

@@ -90,8 +90,8 @@
 
   /* ===== new typography helpers ===== */
   .display { font-family: 'Bowlby One SC', system-ui, sans-serif; font-weight: 400; letter-spacing: 0.005em; line-height: 0.92; }
-  .label   { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; }
-  .label-sm { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: 9px; }
+  .label   { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; }
+  .label-sm { font-family: 'Space Grotesk', system-ui; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; }
   .mono    { font-family: 'JetBrains Mono', monospace; }
   .perf-v {
     background-image: linear-gradient(to bottom, rgba(245,232,223,0.4) 50%, transparent 50%);
@@ -268,5 +268,14 @@
   @keyframes slideBack {
     from { opacity: 0; transform: translateX(-20px); }
     to   { opacity: 1; transform: translateX(0); }
+  }
+}
+
+/* ===== accessibility ===== */
+@layer base {
+  :focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+  input::placeholder, textarea::placeholder { color: var(--cream); opacity: 0.6; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
 }

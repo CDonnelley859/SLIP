@@ -54,7 +54,7 @@ const Stats = () => {
         ) : !stats || stats.gamesPlayed === 0 ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
             <p className="label" style={{ color: "var(--cream)" }}>NO STATS YET.</p>
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 8 }}>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginTop: 8 }}>
               FINISH A DAILY GALLOP TO SEE YOUR FORM.
             </p>
           </div>
@@ -63,11 +63,11 @@ const Stats = () => {
             {/* hero row — games + best finish */}
             <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
               <div style={{ flex: 1, padding: "16px 18px 18px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>GAMES PLAYED</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>GAMES PLAYED</div>
                 <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--cream)" }}>{stats.gamesPlayed}</div>
               </div>
               <div style={{ flex: 1, padding: "16px 18px 18px", textAlign: "right" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST FINISH</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>BEST FINISH</div>
                 <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--pink)" }}>
                   {stats.bestRank ? `#${stats.bestRank}` : "—"}
                 </div>
@@ -77,15 +77,15 @@ const Stats = () => {
             {/* points row */}
             <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
               <div style={{ flex: 1, padding: "14px 18px 16px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>TOTAL PTS</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>TOTAL PTS</div>
                 <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.totalPoints}</div>
               </div>
               <div style={{ flex: 1, padding: "14px 18px 16px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>AVG / GAME</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>AVG / GAME</div>
                 <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.avgPoints}</div>
               </div>
               <div style={{ flex: 1, padding: "14px 18px 16px", textAlign: "right" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST SCORE</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>BEST SCORE</div>
                 <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{stats.bestScore}</div>
               </div>
             </div>
@@ -104,7 +104,7 @@ const Stats = () => {
                     borderRight: i < 2 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
                   }}
                 >
-                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>{s.label}</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>{s.label}</div>
                   <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: s.color }}>{s.value}</div>
                 </div>
               ))}

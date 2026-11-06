@@ -47,7 +47,7 @@ const FriendProfile = () => {
       <main style={{ padding: "24px 18px 64px", maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
         {/* Name badge */}
         <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: "14px 18px" }}>
-          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginBottom: 4 }}>PLAYER</div>
+          <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>PLAYER</div>
           <div className="display" style={{ fontSize: 28, color: "var(--cream)", lineHeight: 1 }}>{friendHandle}</div>
         </div>
 
@@ -64,7 +64,7 @@ const FriendProfile = () => {
         ) : !stats || stats.gamesPlayed === 0 ? (
           <div style={{ border: "3px solid rgba(245,232,223,0.25)", padding: 32, textAlign: "center" }}>
             <p className="label" style={{ color: "var(--cream)" }}>NO STATS YET.</p>
-            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.5, marginTop: 8 }}>
+            <p className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginTop: 8 }}>
               {friendHandle} HASN'T FINISHED A GROUP YET.
             </p>
           </div>
@@ -73,11 +73,11 @@ const FriendProfile = () => {
             {/* Games + best finish */}
             <div style={{ border: "3px solid rgba(245,232,223,0.25)", display: "flex" }}>
               <div style={{ flex: 1, padding: "16px 18px 18px", borderRight: "1.5px solid rgba(245,232,223,0.15)" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>GAMES PLAYED</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>GAMES PLAYED</div>
                 <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--cream)" }}>{stats.gamesPlayed}</div>
               </div>
               <div style={{ flex: 1, padding: "16px 18px 18px", textAlign: "right" }}>
-                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>BEST FINISH</div>
+                <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>BEST FINISH</div>
                 <div className="display" style={{ fontSize: 56, lineHeight: 0.9, color: "var(--pink)" }}>
                   {stats.bestRank ? `#${stats.bestRank}` : "—"}
                 </div>
@@ -96,7 +96,7 @@ const FriendProfile = () => {
                   textAlign: i === 2 ? "right" : i === 1 ? "center" : "left",
                   borderRight: i < 2 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
                 }}>
-                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>{s.label}</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>{s.label}</div>
                   <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: "var(--cream)" }}>{s.value}</div>
                 </div>
               ))}
@@ -114,7 +114,7 @@ const FriendProfile = () => {
                   textAlign: i === 2 ? "right" : i === 1 ? "center" : "left",
                   borderRight: i < 2 ? "1.5px solid rgba(245,232,223,0.15)" : undefined,
                 }}>
-                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.6, marginBottom: 4 }}>{s.label}</div>
+                  <div className="label-sm" style={{ color: "var(--cream)", opacity: 0.8, marginBottom: 4 }}>{s.label}</div>
                   <div className="display" style={{ fontSize: 40, lineHeight: 0.9, color: s.color }}>{s.value}</div>
                 </div>
               ))}
